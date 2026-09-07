@@ -28,69 +28,97 @@
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
   <!-- ================================================================= -->
-  <!-- 1. 빠칭코(그림 4자리) 무민감정보 로그인 모달 -->
+  <!-- 1. 빠칭코(그림 4자리) 회원가입 & 로그인 모달 -->
   <!-- ================================================================= -->
-  <div id="login-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-6">
+  <div id="auth-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5">
       
-      <!-- 헤더 -->
-      <div class="text-center space-y-2">
-        <div class="w-14 h-14 rounded-2xl bg-indigo-600 text-white text-2xl flex items-center justify-center mx-auto shadow-lg shadow-indigo-200">
+      <!-- 상단 로고 및 설명 -->
+      <div class="text-center space-y-1.5">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white text-xl flex items-center justify-center mx-auto shadow-md shadow-indigo-200">
           <i class="fa-solid fa-graduation-cap"></i>
         </div>
-        <h2 class="text-xl font-bold text-slate-900">메타인지 AI 학습터 입장하기</h2>
+        <h2 class="text-xl font-bold text-slate-900">메타인지 AI 학습터</h2>
         <p class="text-xs text-slate-500">
           <span class="inline-flex items-center gap-1 text-emerald-600 font-semibold">
             <i class="fa-solid fa-shield-check"></i> 개인정보 완벽 보호:
           </span>
-          실명, 전화번호 대신 <b>닉네임</b>과 <b>4자리 그림 비밀번호</b>로 로그인합니다.
+          실명, 전화번호 없이 <b>닉네임</b>과 <b>4자리 그림 비밀번호</b>로 관리됩니다.
         </p>
       </div>
 
-      <!-- 닉네임 입력 -->
-      <div class="space-y-2">
+      <!-- 회원가입 vs 로그인 탭 전환 -->
+      <div class="flex bg-slate-100 p-1 rounded-2xl text-xs font-bold">
+        <button id="tab-btn-register" onclick="switchAuthTab('register')" class="flex-1 py-2.5 rounded-xl bg-white text-indigo-600 shadow-xs transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-user-plus"></i> 새 계정 만들기 (회원가입)
+        </button>
+        <button id="tab-btn-login" onclick="switchAuthTab('login')" class="flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> 기존 계정으로 시작 (로그인)
+        </button>
+      </div>
+
+      <!-- 공통: 닉네임 입력 -->
+      <div class="space-y-1.5">
         <label class="block text-xs font-bold text-slate-700">1. 학습자 닉네임</label>
         <div class="flex gap-2">
-          <input id="login-nickname" type="text" placeholder="예: 탐구왕민우, 호기심많은토끼" class="flex-1 text-sm border border-slate-300 rounded-xl px-4 py-2.5 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+          <input id="auth-nickname" type="text" placeholder="예: 탐구왕민우, 호기심많은토끼" class="flex-1 text-sm border border-slate-300 rounded-xl px-4 py-2 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
           <button onclick="generateRandomNickname()" class="px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition flex items-center gap-1 shrink-0">
             <i class="fa-solid fa-dice"></i> 자동생성
           </button>
         </div>
       </div>
 
-      <!-- 빠칭코 4자리 그림 비밀번호 선택기 -->
+      <!-- 회원가입 전용: 학년 선택 -->
+      <div id="register-grade-box" class="space-y-1.5">
+        <label class="block text-xs font-bold text-slate-700">2. 학년 선택 (최소 정보)</label>
+        <select id="auth-grade" class="w-full text-xs font-medium border border-slate-300 rounded-xl px-3 py-2 bg-slate-50 focus:outline-none">
+          <option value="초등 3~4학년">초등 3~4학년</option>
+          <option value="초등 5~6학년" selected>초등 5~6학년</option>
+          <option value="중학교 1~3학년">중학교 1~3학년</option>
+        </select>
+      </div>
+
+      <!-- 빠칭코 4자리 그림 비밀번호 영역 -->
       <div class="space-y-2">
         <div class="flex justify-between items-center">
-          <label class="text-xs font-bold text-slate-700">2. 빠칭코 4자리 그림 비밀번호</label>
+          <label class="text-xs font-bold text-slate-700" id="pin-label">3. 빠칭코 4자리 그림 비밀번호 설정</label>
           <button onclick="spinSlots()" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition">
             <i class="fa-solid fa-arrows-rotate"></i> 🎰 룰렛 돌리기
           </button>
         </div>
 
         <!-- 4자리 슬롯 디스플레이 -->
-        <div class="grid grid-cols-4 gap-2 bg-slate-100 p-3 rounded-2xl border border-slate-200 text-center">
-          <div id="slot-0" class="slot-box bg-white h-14 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
-          <div id="slot-1" class="slot-box bg-white h-14 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
-          <div id="slot-2" class="slot-box bg-white h-14 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
-          <div id="slot-3" class="slot-box bg-white h-14 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
+        <div class="grid grid-cols-4 gap-2 bg-slate-100 p-2.5 rounded-2xl border border-slate-200 text-center">
+          <div id="slot-0" class="slot-box bg-white h-12 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
+          <div id="slot-1" class="slot-box bg-white h-12 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
+          <div id="slot-2" class="slot-box bg-white h-12 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
+          <div id="slot-3" class="slot-box bg-white h-12 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
         </div>
 
         <p class="text-[11px] text-slate-400 text-center">아래 15개 그림 중 4개를 순서대로 터치하거나 [룰렛 돌리기]를 누르세요.</p>
 
-        <!-- 15종류 아이콘 팔레트 (과일, 동물, 사물) -->
-        <div id="emoji-palette" class="grid grid-cols-5 gap-2 p-2 bg-slate-50 rounded-2xl border border-slate-200">
+        <!-- 15종류 아이콘 팔레트 -->
+        <div id="emoji-palette" class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 rounded-2xl border border-slate-200">
           <!-- 동적 생성됨 -->
         </div>
       </div>
 
-      <!-- 입장 버튼 -->
-      <div class="space-y-2 pt-2">
-        <button onclick="attemptLogin()" class="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-200 transition flex items-center justify-center gap-2">
-          <span>AI 튜터와 학습 시작하기</span> <i class="fa-solid fa-arrow-right"></i>
+      <!-- 제출 버튼 -->
+      <div class="space-y-2 pt-1">
+        <button id="auth-submit-btn" onclick="submitAuth()" class="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-200 transition flex items-center justify-center gap-2">
+          <span>회원가입 완료하고 학습 시작</span> <i class="fa-solid fa-arrow-right"></i>
         </button>
-        <button onclick="clearSlotPassword()" class="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-700">
-          그림 비밀번호 다시 고르기
+        <button onclick="clearSlotPassword()" class="w-full py-1 text-xs font-semibold text-slate-400 hover:text-slate-600">
+          그림 비밀번호 초기화
         </button>
+      </div>
+
+      <!-- 백엔드 연결 상태 안내 배지 -->
+      <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+        <span>백엔드 상태:</span>
+        <span id="backend-status-badge" class="font-semibold text-indigo-600 flex items-center gap-1">
+          <i class="fa-solid fa-database"></i> 브라우저 내장 데이터베이스 (영구 보관)
+        </span>
       </div>
 
     </div>
@@ -110,11 +138,11 @@
         <div>
           <div class="flex items-center gap-2">
             <h1 class="text-base font-bold text-slate-900 leading-tight">메타인지 & AI 성찰 챗봇</h1>
-            <span id="current-user-badge" class="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
-              <i class="fa-solid fa-user"></i> <span id="user-display-name">게스트</span>
+            <span id="current-user-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
+              <i class="fa-solid fa-user"></i> <span id="user-display-name">게스트</span> (<span id="user-display-grade">초등 5~6학년</span>)
             </span>
           </div>
-          <p class="text-xs text-slate-500">초중등 13대 설계원리 기반 대화형 자기조절학습 튜터 (Upstage Solar Pro)</p>
+          <p class="text-xs text-slate-500">초중등 13대 설계원리 기반 대화형 자기조절학습 시스템 (Upstage Solar Pro)</p>
         </div>
       </div>
 
@@ -135,8 +163,8 @@
 
       <!-- 로그아웃 및 API 설정 -->
       <div class="flex items-center gap-2">
-        <button onclick="openLoginModal()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i> 사용자 전환
+        <button onclick="openAuthModal()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> 계정 전환
         </button>
         <button onclick="toggleConfigModal()" class="p-2 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition" title="API 설정">
           <i class="fa-solid fa-gear"></i>
@@ -163,7 +191,6 @@
           <span id="status-phase-text" class="text-indigo-600 font-semibold">[준비 국면] 학습 목표 및 사전지식 점검 중</span>
         </div>
 
-        <!-- 성찰 국면으로 강제 전환/마침 버튼 -->
         <button id="btn-next-phase" onclick="forceNextPhase()" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition flex items-center gap-1.5">
           <i class="fa-solid fa-forward-step"></i> <span id="btn-phase-label">본 탐구 대화로 넘어가기</span>
         </button>
@@ -307,10 +334,10 @@
   </div>
 
   <!-- ================================================================= -->
-  <!-- 5. 프론트엔드 자바스크립트 엔진 (대화형 원리 질문 & 빠칭코 로그인) -->
+  <!-- 5. 프론트엔드 자바스크립트 엔진 (회원가입/로그인 분리 & 백엔드 연동) -->
   <!-- ================================================================= -->
   <script>
-    // 15종류 그림 아이콘 목록 (과일, 동물, 사물)
+    // 15종류 그림 아이콘 목록
     const EMOJI_LIST = [
       { id: 'apple', icon: '🍎', name: '사과' },
       { id: 'banana', icon: '🍌', name: '바나나' },
@@ -334,65 +361,127 @@
       '질문쟁이고양이', '우주로켓탐구자', '달콤한지혜딸기', '번뜩이는사과'
     ];
 
+    // 현재 인증 모드: 'register' vs 'login'
+    let currentAuthTab = 'register';
+    let selectedPin = [];
+
+    // 백엔드 API URL (로컬 서버 켜져 있을 시 http://localhost:8000 사용)
+    const BACKEND_URL = "http://localhost:8000";
+
     // 애플리케이션 상태
     const state = {
       user: {
-        nickname: localStorage.getItem('user_nickname') || '',
-        pin: JSON.parse(localStorage.getItem('user_pin') || '[]')
+        nickname: localStorage.getItem('current_user_nickname') || '',
+        grade: localStorage.getItem('current_user_grade') || '초등 5~6학년',
+        pin: []
       },
       apiKey: localStorage.getItem("UPSTAGE_API_KEY") || "up_8n84t1USbP93gILYJ4x7w7QRHkhYX",
       model: localStorage.getItem("UPSTAGE_MODEL") || "solar-pro",
       baseUrl: "https://api.upstage.ai/v1",
       
-      // 대화 국면 (1: PREP 준비, 2: DIALOGUE 본 대화, 3: REFLECT 종결 성찰)
       phase: 1,
-      subStep: 0, // 준비 및 성찰 국면 내 AI 발문 진행 인덱스
-
+      subStep: 0,
       scaffolding: "High",
       currentStrategy: "정교화(Elaboration)",
       messages: [],
       
-      // 누적 메타인지 컨텍스트
       context: {
         subject: "과학",
         unit: "빛과 렌즈",
         goal: "볼록렌즈와 오목렌즈의 굴절 원리 탐구",
-        priorScore: 3,
-        priorKnowledge: "",
-        qUnder: "",
-        qStrat: "",
-        qConn: ""
+        priorScore: 3
       },
       postScore: 5
     };
 
     let chartDelInstance = null;
     let chartScoreInstance = null;
-    let selectedPin = [];
 
-    // --- 빠칭코 로그인 초기화 ---
+    // --- 가상 백엔드 데이터베이스 (Local Account DB) ---
+    const LocalDB = {
+      getUsers() {
+        return JSON.parse(localStorage.getItem('registered_users_db') || '{}');
+      },
+      saveUser(nickname, pin, grade) {
+        const users = this.getUsers();
+        users[nickname] = {
+          nickname,
+          pin,
+          grade,
+          createdAt: new Date().toISOString()
+        };
+        localStorage.setItem('registered_users_db', JSON.stringify(users));
+      },
+      findUser(nickname) {
+        return this.getUsers()[nickname] || null;
+      }
+    };
+
+    // 초기화
     window.addEventListener('DOMContentLoaded', () => {
       initEmojiPalette();
       initCharts();
+      checkBackendHealth();
 
-      if (state.user.nickname && state.user.pin.length === 4) {
-        // 기존 로그인 이력 있음
-        document.getElementById('login-modal').classList.add('hidden');
+      if (state.user.nickname) {
+        // 이미 로그인된 사용자가 있으면 바로 학습 시작
+        document.getElementById('auth-modal').classList.add('hidden');
         document.getElementById('user-display-name').innerText = state.user.nickname;
+        document.getElementById('user-display-grade').innerText = state.user.grade;
         startAITutoring();
       } else {
+        switchAuthTab('register');
         generateRandomNickname();
         spinSlots();
       }
     });
 
+    // 백엔드 연결 상태 확인
+    async function checkBackendHealth() {
+      try {
+        const res = await fetch(`${BACKEND_URL}/docs`, { mode: 'no-cors' });
+        document.getElementById('backend-status-badge').innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> FastAPI 서버 연결됨 (:8000)
+        `;
+      } catch (e) {
+        // 브라우저 내장 DB 모드 유지
+      }
+    }
+
+    // 회원가입 vs 로그인 탭 전환
+    function switchAuthTab(tab) {
+      currentAuthTab = tab;
+      const btnReg = document.getElementById('tab-btn-register');
+      const btnLog = document.getElementById('tab-btn-login');
+      const gradeBox = document.getElementById('register-grade-box');
+      const submitBtn = document.getElementById('auth-submit-btn');
+      const pinLabel = document.getElementById('pin-label');
+
+      clearSlotPassword();
+
+      if (tab === 'register') {
+        btnReg.className = "flex-1 py-2.5 rounded-xl bg-white text-indigo-600 shadow-xs transition flex items-center justify-center gap-1.5";
+        btnLog.className = "flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5";
+        gradeBox.classList.remove('hidden');
+        submitBtn.innerHTML = `<span>회원가입 완료하고 학습 시작</span> <i class="fa-solid fa-arrow-right"></i>`;
+        pinLabel.innerText = "3. 빠칭코 4자리 그림 비밀번호 설정";
+      } else {
+        btnLog.className = "flex-1 py-2.5 rounded-xl bg-white text-indigo-600 shadow-xs transition flex items-center justify-center gap-1.5";
+        btnReg.className = "flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5";
+        gradeBox.classList.add('hidden');
+        submitBtn.innerHTML = `<span>로그인하고 내 학습터 입장</span> <i class="fa-solid fa-right-to-bracket"></i>`;
+        pinLabel.innerText = "2. 빠칭코 4자리 그림 비밀번호 입력";
+      }
+    }
+
+    // 빠칭코 아이콘 팔레트
     function initEmojiPalette() {
       const palette = document.getElementById('emoji-palette');
       palette.innerHTML = '';
       EMOJI_LIST.forEach(item => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'slot-item p-2 rounded-xl bg-white hover:bg-indigo-50 border border-slate-200 text-xl flex flex-col items-center justify-center gap-0.5 shadow-2xs';
+        btn.className = 'slot-item p-1.5 rounded-xl bg-white hover:bg-indigo-50 border border-slate-200 text-lg flex flex-col items-center justify-center gap-0.5 shadow-2xs';
         btn.innerHTML = `<span>${item.icon}</span><span class="text-[9px] text-slate-500 font-medium">${item.name}</span>`;
         btn.onclick = () => addPinEmoji(item.icon);
         palette.appendChild(btn);
@@ -423,7 +512,6 @@
       }
     }
 
-    // 빠칭코 룰렛 회전 애니메이션 및 랜덤 4자리 생성
     function spinSlots() {
       selectedPin = [];
       for (let i = 0; i < 4; i++) {
@@ -439,47 +527,98 @@
     function generateRandomNickname() {
       const rand = RANDOM_NICKNAMES[Math.floor(Math.random() * RANDOM_NICKNAMES.length)];
       const num = Math.floor(Math.random() * 90 + 10);
-      document.getElementById('login-nickname').value = `${rand}_${num}`;
+      document.getElementById('auth-nickname').value = `${rand}_${num}`;
     }
 
-    function attemptLogin() {
-      const nick = document.getElementById('login-nickname').value.trim();
-      if (!nick) {
+    // --- 회원가입 / 로그인 제출 처리 ---
+    async function submitAuth() {
+      const nickname = document.getElementById('auth-nickname').value.trim();
+      if (!nickname) {
         alert("닉네임을 입력하거나 [자동생성]을 눌러주세요!");
         return;
       }
       if (selectedPin.length < 4) {
-        alert("4자리의 그림 비밀번호를 모두 선택해주세요!");
+        alert("4자리의 그림 비밀번호를 모두 입력해주세요!");
         return;
       }
 
-      state.user.nickname = nick;
-      state.user.pin = selectedPin;
-      localStorage.setItem('user_nickname', nick);
-      localStorage.setItem('user_pin', JSON.stringify(selectedPin));
+      if (currentAuthTab === 'register') {
+        // [회원가입 로직]
+        const grade = document.getElementById('auth-grade').value;
 
-      document.getElementById('user-display-name').innerText = nick;
-      document.getElementById('login-modal').classList.add('hidden');
-      
+        // 로컬 DB 중복 검사
+        if (LocalDB.findUser(nickname)) {
+          alert("이미 등록된 닉네임입니다! 다른 닉네임을 사용하거나 [로그인] 탭을 이용하세요.");
+          return;
+        }
+
+        // 1. 로컬 DB에 영구 저장
+        LocalDB.saveUser(nickname, selectedPin, grade);
+
+        // 2. 백엔드 FastAPI 서버가 켜져 있으면 서버 DB에도 전송
+        try {
+          await fetch(`${BACKEND_URL}/api/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nickname, slot_pin: selectedPin, grade_level: grade })
+          });
+        } catch (e) {
+          // 백엔드 미구동 시 로컬 DB로 자동 대체
+        }
+
+        alert(`🎉 '${nickname}' 학생의 회원가입이 성공적으로 완료되었습니다!`);
+        completeLogin(nickname, grade, selectedPin);
+
+      } else {
+        // [로그인 로직]
+        const user = LocalDB.findUser(nickname);
+        if (!user) {
+          alert("가입되지 않은 닉네임입니다. 먼저 [새 계정 만들기(회원가입)]를 진행해주세요!");
+          return;
+        }
+
+        // 4자리 그림 비밀번호 일치 검사
+        const isMatch = JSON.stringify(user.pin) === JSON.stringify(selectedPin);
+        if (!isMatch) {
+          alert("❌ 그림 비밀번호가 일치하지 않습니다! 내가 고른 4자리 그림을 다시 확인해주세요.");
+          return;
+        }
+
+        alert(`환영합니다, ${nickname} 학생! 🌟`);
+        completeLogin(nickname, user.grade, selectedPin);
+      }
+    }
+
+    function completeLogin(nickname, grade, pin) {
+      state.user.nickname = nickname;
+      state.user.grade = grade;
+      state.user.pin = pin;
+
+      localStorage.setItem('current_user_nickname', nickname);
+      localStorage.setItem('current_user_grade', grade);
+
+      document.getElementById('user-display-name').innerText = nickname;
+      document.getElementById('user-display-grade').innerText = grade;
+      document.getElementById('auth-modal').classList.add('hidden');
+
       startAITutoring();
     }
 
-    function openLoginModal() {
-      document.getElementById('login-modal').classList.remove('hidden');
+    function openAuthModal() {
+      document.getElementById('auth-modal').classList.remove('hidden');
     }
 
-    // --- 대화형 AI 시스템 중심의 13대 설계원리 발문 엔진 ---
+    // --- 대화형 AI 발문 엔진 (13대 설계원리 완벽 구현) ---
     function startAITutoring() {
       state.messages = [];
       state.phase = 1;
       state.subStep = 0;
       updatePhaseUI();
 
-      // AI 튜터의 첫 대화 준비 발문 (원리 4: 학습 목표 및 교과 맥락)
       pushAIMessage(
-        `반가워요, <b class="text-indigo-600">${state.user.nickname}</b> 학생! 🦉\n` +
+        `반가워요, <b class="text-indigo-600">${state.user.nickname}</b> 학생! (${state.user.grade}) 🦉\n` +
         `저는 여러분의 자기주도적 생각과 메타인지를 함께 키워줄 교육 AI 튜터 <b>'소크라-봇'</b>이에요.\n\n` +
-        `오늘은 어떤 과목의 어떤 주제를 공부하고 싶나요? 그리고 오늘 꼭 달성하고 싶은 **학습 목표**가 무엇인지 편하게 이야기해 줄래요? (원리 4: 학습 목표 및 교과 맥락 설정)`
+        `오늘은 어떤 과목의 어떤 주제를 공부해볼까요? 그리고 오늘 달성하고 싶은 **학습 목표**가 무엇인지 편하게 들려주세요! (원리 4: 학습 목표 및 맥락 설정)`
       );
     }
 
@@ -520,7 +659,11 @@
         state.phase = 3;
         state.subStep = 0;
         updatePhaseUI();
-        triggerReflectionDialogue();
+        pushAIMessage(
+          `수고 많았어요! 이제 AI와의 대화를 마치고 <b>[3단계: 종결 및 성찰]</b>을 진행합니다. 🌟\n\n` +
+          `<b>[원리 11: 주도권 성찰]</b>\n` +
+          `오늘 대화에서 여러분이 스스로 주도권을 쥐고 탐구했던 순간과, 저에게 단순히 정답을 위임해버렸던 순간은 각각 언제였나요? (우측의 주도권 원형 차트를 참고하며 여러분의 생각을 솔직하게 들려주세요!)`
+        );
       } else {
         if (confirm("새로운 학습 세션을 시작할까요?")) {
           startAITutoring();
@@ -528,16 +671,6 @@
       }
     }
 
-    // --- 3단계: 대화형 종결 성찰 AI 발문 시퀀스 (원리 11, 12, 13) ---
-    function triggerReflectionDialogue() {
-      pushAIMessage(
-        `수고 많았어요! 이제 AI와의 대화를 마치고 <b>[3단계: 종결 및 성찰]</b>을 진행합니다. 🌟\n\n` +
-        `<b>[원리 11: 주도권 성찰]</b>\n` +
-        `오늘 대화에서 여러분이 스스로 주도권을 쥐고 탐구했던 순간과, 저에게 단순히 정답을 위임해버렸던 순간은 각각 언제였나요? (우측의 주도권 원형 차트를 참고하며 여러분의 생각을 솔직하게 들려주세요!)`
-      );
-    }
-
-    // 메시지 전송 및 AI 응답 처리
     async function sendMessage() {
       const inputEl = document.getElementById('user-input');
       const text = inputEl.value.trim();
@@ -546,7 +679,6 @@
       const qType = document.querySelector("input[name='question_type']:checked").value;
       const anonText = anonymize(text);
 
-      // 사용자 메시지 추가
       state.messages.push({
         id: state.messages.length,
         role: "user",
@@ -560,7 +692,6 @@
       renderMessages();
       updateCharts();
 
-      // 로딩 버블 렌더링
       renderLoadingBubble();
 
       try {
@@ -585,40 +716,39 @@
       renderMessages();
     }
 
-    // Upstage API 통신 및 단계별 시스템 프롬프트 주입
     async function generateAIResponse(userText) {
       let phaseGuidance = "";
 
       if (state.phase === 1) {
         state.subStep++;
         if (state.subStep === 1) {
-          phaseGuidance = `학습자가 목표와 주제를 말했습니다. 칭찬하고, [원리 5: AI 과업 분담]을 안내하며 "오늘 AI에게 어떤 역할을 기대하니? (힌트 질문자 / 동료 탐구자 / 설명 점검자)" 및 [원리 6: 사전 지식] "이 주제에 대해 이미 알고 있는 지식이나 경험은 무엇이니? 스스로 5점 만점 중 몇 점이라고 생각하니?"를 질문하세요.`;
+          phaseGuidance = `학습자가 주제와 목표를 말했습니다. 격려한 뒤, [원리 5: AI 과업 분담] "오늘 저에게 어떤 역할을 기대하나요? (힌트 질문자 / 동료 탐구자 / 설명 점검자)" 및 [원리 6: 사전 지식] "이 주제에 대해 이미 알고 있는 경험이나 개념은 무엇인가요? 5점 만점 중 스스로 몇 점이라고 생각하나요?"를 대화로 질문하세요.`;
         } else if (state.subStep === 2) {
-          phaseGuidance = `학습자가 사전지식을 말했습니다. [원리 7: 메타인지 3대 질문]인 ① 이해 질문(이 주제의 가장 핵심 원리는?), ② 전략 질문(이걸 잘 이해하기 위해 어떤 방법/전략을 쓸까?), ③ 연결 질문(이전에 배운 것이나 일상과 어떻게 연결될까?)을 친절하게 질문하세요.`;
+          phaseGuidance = `학습자가 사전지식을 말했습니다. [원리 7: 메타인지 3대 질문]인 ① 이해 질문(이 주제의 가장 중요한 핵심은?), ② 전략 질문(이걸 잘 이해하기 위해 어떤 방법/전략을 쓸까?), ③ 연결 질문(이전에 배운 것이나 일상과 어떻게 연결될까?)을 친절하게 질문하세요.`;
         } else {
-          phaseGuidance = `학습자가 메타인지 질문에 답했습니다. 훌륭하다고 격려하며, 이제 [2단계: 본 탐구 대화]로 넘어갈 준비가 되었음을 알리고, [원리 8: 인지전략 선택]을 안내하며 첫 탐구 질문을 해보자고 유도하세요.`;
+          phaseGuidance = `학습자가 답했습니다. 칭찬하고, 이제 [2단계: 본 탐구 대화]로 들어갈 준비가 완료되었음을 안내하며 [원리 8: 인지전략 선택]에 맞추어 첫 탐구 질문을 해보자고 유도하세요.`;
         }
       } else if (state.phase === 2) {
         phaseGuidance = `[2단계 본 대화]
-1. 비계 수준 [${state.scaffolding}]: ${state.scaffolding === 'High' ? '정답을 주지 말고 친절한 예시와 단계별 힌트 발문 제시' : state.scaffolding === 'Medium' ? '스스로 관계를 설명하도록 반문 유도' : '독립적 검증 발문만 짧게 제시'}
-2. 현재 적용 인지전략 [${state.currentStrategy}]을 학습자가 직접 실천하도록 이끄세요.
+1. 비계 수준 [${state.scaffolding}]: ${state.scaffolding === 'High' ? '정답 대신 친절한 예시와 단계별 힌트 발문 제공' : state.scaffolding === 'Medium' ? '스스로 관계를 설명하도록 반문 유도' : '독립적 검증 발문만 짧게 제시'}
+2. 현재 적용 인지전략 [${state.currentStrategy}]을 실천하도록 이끄세요.
 3. 결정권은 학습자에게 넘기세요 (원리 2).
-4. 말끝에 가끔 AI 답변에 부족한 점이 없는지 검토하도록 질문하세요 (원리 10).`;
+4. 말끝에 가끔 AI 답변에 부족한 점이 없는지 검토하도록 권장하세요 (원리 10).`;
       } else {
         state.subStep++;
         if (state.subStep === 1) {
-          phaseGuidance = `[원리 12: 질문 궤적 성찰] 학습자의 주도권 성찰에 공감한 뒤, "네가 오늘 나에게 던졌던 질문들을 돌아보면, 어떤 질문이 가장 효과적이었고 어떤 점을 보완하고 싶니?"를 질문하세요.`;
+          phaseGuidance = `[원리 12: 질문 궤적 성찰] 학습자의 주도권 성찰에 공감한 뒤, "오늘 나에게 했던 질문들 중 어떤 질문이 가장 효과적이었고, 어떤 점을 개선하고 싶나요?"를 질문하세요.`;
         } else if (state.subStep === 2) {
           phaseGuidance = `[원리 13: AI 소거 전이 과업 출제] 이제 AI의 도움을 전혀 받지 않고 스스로 풀어볼 수 있는 '유사한 수준의 새로운 적용 과제(문제) 1개'를 출제해주세요. (정답은 주지 말고 학습자가 직접 풀도록 하세요)`;
         } else {
-          phaseGuidance = `[원리 13: 이해도 성장 및 인지전략 성찰] 문제를 잘 풀었다고 격려하고, "학습 전 ${state.context.priorScore}점이었던 이해도가 지금은 몇 점으로 올라간 것 같니? 인지전략을 쓰면서 어떤 점이 성장했니?"를 묻고 전체 배움을 따뜻하게 칭찬하며 마무리하세요.`;
+          phaseGuidance = `[원리 13: 이해도 성장 및 인지전략 성찰] 문제를 잘 풀었다고 격려하고, "학습 전 ${state.context.priorScore}점이었던 이해도가 지금은 몇 점으로 올라간 것 같나요? 인지전략을 쓰면서 어떤 점이 성장했나요?"를 묻고 전체 배움을 따뜻하게 칭찬하며 마무리하세요.`;
         }
       }
 
       const systemPrompt = `당신은 초·중등 학습자의 메타인지와 인간-AI 성찰을 돕는 교육 전문 소크라테스 AI 튜터 '소크라-봇'입니다.
-학습자 닉네임: ${state.user.nickname}
+학습자 닉네임: ${state.user.nickname} (${state.user.grade})
 현재 국면: ${state.phase}단계 (${phaseGuidance})
-언제나 친절하고 다정한 초등학생 눈높이 존댓말을 사용하세요.`;
+학생의 눈높이에 맞춘 다정하고 격려하는 한국어 존댓말을 사용하세요.`;
 
       const apiMsgs = [
         { role: "system", content: systemPrompt },
@@ -646,7 +776,6 @@
       return data.choices[0].message.content;
     }
 
-    // 렌더링 함수
     function renderMessages() {
       const container = document.getElementById('chat-messages');
       container.innerHTML = '';
@@ -691,7 +820,7 @@
                   <button onclick="updateVerification(${msg.id}, '의문')" class="px-2.5 py-1 rounded-lg border text-xs font-semibold ${verStatus === '의문' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-300'}">❓ 의문 (확인필요)</button>
                   <button onclick="updateVerification(${msg.id}, '수정필요')" class="px-2.5 py-1 rounded-lg border text-xs font-semibold ${verStatus === '수정필요' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-600 border-slate-300'}">✏️ 수정필요 (오류)</button>
                 </div>
-                <input type="text" onchange="updateVerificationComment(${msg.id}, this.value)" value="${escapeHTML(msg.verification?.comment || '')}" placeholder="비판적 코멘트 입력 (예: 설명은 좋으나 왜 초점이 생기는지 구체적 설명이 부족함)" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <input type="text" onchange="updateVerificationComment(${msg.id}, this.value)" value="${escapeHTML(msg.verification?.comment || '')}" placeholder="비판적 코멘트 입력 (예: 설명은 좋으나 구체적인 원인 설명이 부족함)" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </div>
             </div>
           `;
@@ -737,7 +866,6 @@
       }
     }
 
-    // --- 인지 전략 및 비계 제어 ---
     function changeStrategy(val) {
       state.currentStrategy = val;
       document.getElementById('active-strat-badge').innerText = val.split('(')[0];
@@ -764,7 +892,6 @@
       });
     }
 
-    // --- Chart.js 시각화 대시보드 ---
     function initCharts() {
       const ctxDel = document.getElementById('chart-delegation').getContext('2d');
       chartDelInstance = new Chart(ctxDel, {
@@ -815,7 +942,6 @@
       }
     }
 
-    // --- 개인정보 비식별화 및 내보내기 ---
     function anonymize(str) {
       return str
         .replace(/01[016789]-?\d{3,4}-?\d{4}/g, '[전화번호 보호]')
@@ -828,6 +954,7 @@
         metadata: {
           system: "초중등 메타인지 & 인간-AI 성찰 챗봇 시스템",
           user_nickname: state.user.nickname,
+          user_grade: state.user.grade,
           principles: "13대 설계원리 완벽 구현",
           exported_at: new Date().toISOString()
         },
@@ -845,7 +972,6 @@
       URL.revokeObjectURL(url);
     }
 
-    // --- 모달 제어 ---
     function toggleConfigModal() {
       document.getElementById('config-modal').classList.toggle('hidden');
     }
