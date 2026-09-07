@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- 교육과정 성취기준 메타데이터 DB 로드 -->
+  <script src="curriculum_standards.js"></script>
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
     body { font-family: 'Pretendard', sans-serif; }
@@ -32,21 +34,20 @@
   <!-- 1. 빠칭코(그림 4자리) 회원가입 & 로그인 모달 -->
   <!-- ================================================================= -->
   <div id="auth-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 max-h-[90vh] overflow-y-auto">
       
-      <div class="text-center space-y-1.5">
+      <div class="text-center space-y-1">
         <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white text-xl flex items-center justify-center mx-auto shadow-md shadow-indigo-200">
           <i class="fa-solid fa-graduation-cap"></i>
         </div>
         <h2 class="text-xl font-bold text-slate-900">메타인지 AI 학습터</h2>
         <p class="text-xs text-slate-500">
-          <span class="inline-flex items-center gap-1 text-emerald-600 font-semibold">
-            <i class="fa-solid fa-shield-check"></i> 개인정보 보호:
-          </span>
-          실명·연락처 없이 <b>닉네임</b>과 <b>4자리 그림 비밀번호</b>로 관리됩니다.
+          <span class="text-emerald-600 font-semibold"><i class="fa-solid fa-shield-check"></i> 개인정보 보호:</span>
+          실명·연락처 없이 <b>닉네임</b>과 <b>4자리 그림 비밀번호</b>로 입장합니다.
         </p>
       </div>
 
+      <!-- 탭 전환 -->
       <div class="flex bg-slate-100 p-1 rounded-2xl text-xs font-bold">
         <button id="tab-btn-register" onclick="switchAuthTab('register')" class="flex-1 py-2.5 rounded-xl bg-white text-indigo-600 shadow-xs transition flex items-center justify-center gap-1.5">
           <i class="fa-solid fa-user-plus"></i> 새 계정 만들기 (회원가입)
@@ -56,55 +57,82 @@
         </button>
       </div>
 
-      <div class="space-y-1.5">
+      <!-- 닉네임 입력 -->
+      <div class="space-y-1">
         <label class="block text-xs font-bold text-slate-700">1. 학습자 닉네임</label>
-        <input id="auth-nickname" type="text" placeholder="사용할 닉네임을 입력하세요" class="w-full text-sm border border-slate-300 rounded-xl px-4 py-2.5 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+        <input id="auth-nickname" type="text" placeholder="사용할 닉네임을 입력하세요" class="w-full text-sm border border-slate-300 rounded-xl px-4 py-2 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
       </div>
 
-      <div id="register-grade-box" class="space-y-1.5">
-        <label class="block text-xs font-bold text-slate-700">2. 학교급 및 학년 선택</label>
-        <select id="auth-grade" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50 focus:outline-none">
-          <option value="초등 3~4학년">초등학교 3~4학년</option>
-          <option value="초등 5~6학년" selected>초등학교 5~6학년</option>
-          <option value="중학교 1~3학년">중학교 1~3학년</option>
-          <option value="고등학교 1~3학년">고등학교 1~3학년</option>
-        </select>
+      <!-- 회원가입 전용: 학년(초3~고3 개별 선택), 교과목, 성취기준 선택 -->
+      <div id="register-curriculum-box" class="space-y-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+        
+        <!-- 학년 선택 (초3~고3 각각 따로따로 선택) -->
+        <div class="space-y-1">
+          <label class="block text-xs font-bold text-slate-700">2. 학년 선택 (초3~고3 개별 선택)</label>
+          <select id="auth-grade" onchange="onGradeChange()" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white focus:outline-none">
+            <option value="초등학교 3학년">초등학교 3학년</option>
+            <option value="초등학교 4학년">초등학교 4학년</option>
+            <option value="초등학교 5학년">초등학교 5학년</option>
+            <option value="초등학교 6학년" selected>초등학교 6학년</option>
+            <option value="중학교 1학년">중학교 1학년</option>
+            <option value="중학교 2학년">중학교 2학년</option>
+            <option value="중학교 3학년">중학교 3학년</option>
+            <option value="고등학교 1학년">고등학교 1학년</option>
+            <option value="고등학교 2학년">고등학교 2학년</option>
+            <option value="고등학교 3학년">고등학교 3학년</option>
+          </select>
+        </div>
+
+        <!-- 교과목 선택 (초3~중3: 국어,영어,수학,사회,과학 / 고등: 국어,수학,영어,통합사회,통합과학 국한) -->
+        <div class="space-y-1">
+          <label class="block text-xs font-bold text-slate-700">3. 학습할 교과목 선택</label>
+          <select id="auth-subject" onchange="onSubjectChange()" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white focus:outline-none">
+            <!-- 동적으로 채워짐 -->
+          </select>
+        </div>
+
+        <!-- 교육과정 성취기준 선택 메타데이터 기반 -->
+        <div class="space-y-1">
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-bold text-slate-700">4. 교육과정 성취기준 선택</label>
+            <span class="text-[10px] text-indigo-600 font-bold">공식 교육과정 메타데이터 연동</span>
+          </div>
+          <select id="auth-standard" onchange="onStandardChange()" class="w-full text-xs font-medium border border-slate-300 rounded-xl px-3 py-2 bg-white focus:outline-none">
+            <!-- 동적으로 채워짐 -->
+          </select>
+          <textarea id="auth-custom-standard" rows="2" class="w-full text-xs border border-slate-200 rounded-xl p-2 bg-white hidden" placeholder="성취기준을 직접 작성해보세요."></textarea>
+        </div>
+
       </div>
 
+      <!-- 빠칭코 4자리 그림 비밀번호 영역 -->
       <div class="space-y-2">
         <div class="flex justify-between items-center">
-          <label class="text-xs font-bold text-slate-700" id="pin-label">3. 빠칭코 4자리 그림 비밀번호 설정</label>
+          <label class="text-xs font-bold text-slate-700" id="pin-label">빠칭코 4자리 그림 비밀번호 설정</label>
           <button onclick="spinSlots()" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition">
             <i class="fa-solid fa-arrows-rotate"></i> 🎰 룰렛 돌리기
           </button>
         </div>
 
-        <div class="grid grid-cols-4 gap-2 bg-slate-100 p-2.5 rounded-2xl border border-slate-200 text-center">
-          <div id="slot-0" class="slot-box bg-white h-12 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
-          <div id="slot-1" class="slot-box bg-white h-12 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
-          <div id="slot-2" class="slot-box bg-white h-12 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
-          <div id="slot-3" class="slot-box bg-white h-12 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
+        <div class="grid grid-cols-4 gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200 text-center">
+          <div id="slot-0" class="slot-box bg-white h-11 rounded-xl border border-slate-300 flex items-center justify-center text-xl shadow-xs">❓</div>
+          <div id="slot-1" class="slot-box bg-white h-11 rounded-xl border border-slate-300 flex items-center justify-center text-xl shadow-xs">❓</div>
+          <div id="slot-2" class="slot-box bg-white h-11 rounded-xl border border-slate-300 flex items-center justify-center text-xl shadow-xs">❓</div>
+          <div id="slot-3" class="slot-box bg-white h-11 rounded-xl border border-slate-300 flex items-center justify-center text-xl shadow-xs">❓</div>
         </div>
 
         <p class="text-[11px] text-slate-400 text-center">아래 15개 그림 중 4개를 순서대로 터치하거나 [룰렛 돌리기]를 누르세요.</p>
-
-        <div id="emoji-palette" class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 rounded-2xl border border-slate-200"></div>
+        <div id="emoji-palette" class="grid grid-cols-5 gap-1.5 p-1.5 bg-slate-50 rounded-2xl border border-slate-200"></div>
       </div>
 
-      <div class="space-y-2 pt-1">
+      <!-- 제출 버튼 -->
+      <div class="space-y-1.5 pt-1">
         <button id="auth-submit-btn" onclick="submitAuth()" class="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-200 transition flex items-center justify-center gap-2">
-          <span>회원가입 완료하고 학습 시작</span> <i class="fa-solid fa-arrow-right"></i>
+          <span>선택한 성취기준으로 학습 시작하기</span> <i class="fa-solid fa-arrow-right"></i>
         </button>
         <button onclick="clearSlotPassword()" class="w-full py-1 text-xs font-semibold text-slate-400 hover:text-slate-600">
           그림 비밀번호 초기화
         </button>
-      </div>
-
-      <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-        <span>백엔드 저장소:</span>
-        <span id="backend-status-badge" class="font-semibold text-indigo-600 flex items-center gap-1">
-          <i class="fa-solid fa-database"></i> 브라우저 내장 데이터베이스 (영구 보관)
-        </span>
       </div>
 
     </div>
@@ -114,7 +142,7 @@
   <!-- 2. 원리 10: AI 답변 비판적 검증 전용 팝업 모달 -->
   <!-- ================================================================= -->
   <div id="verification-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">
@@ -122,7 +150,7 @@
           </div>
           <div>
             <h3 class="font-bold text-sm text-slate-900">원리 10: AI 응답 비판적 검증 &amp; 판단</h3>
-            <p class="text-[11px] text-slate-500">AI의 산출물을 맹신하지 않고 주도적으로 검증합니다.</p>
+            <p class="text-[11px] text-slate-500">AI 산출물을 비판적으로 검토하고 주도적 수용 여부를 결정합니다.</p>
           </div>
         </div>
         <button onclick="closeVerificationModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
@@ -130,35 +158,31 @@
         </button>
       </div>
 
-      <!-- 검증 대상 AI 메시지 미리보기 -->
       <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-700 max-h-32 overflow-y-auto leading-relaxed">
-        <span class="font-bold text-slate-500 block mb-1">검토 중인 AI 답변 발췌:</span>
+        <span class="font-bold text-slate-500 block mb-1">검토 중인 AI 답변:</span>
         <div id="modal-target-ai-text" class="whitespace-pre-line text-slate-800"></div>
       </div>
 
-      <!-- 1. 판단 라디오 선택 -->
       <div class="space-y-1.5">
         <label class="block text-xs font-bold text-slate-700">1. 나의 비판적 수용 여부 판단</label>
         <div class="grid grid-cols-3 gap-2 text-xs">
-          <button type="button" onclick="selectModalStatus('수용')" id="modal-btn-accept" class="py-2.5 px-2 rounded-xl border border-slate-200 hover:border-emerald-500 font-bold flex items-center justify-center gap-1 transition">
+          <button type="button" onclick="selectModalStatus('수용')" id="modal-btn-accept" class="py-2.5 px-2 rounded-xl border border-slate-200 font-bold flex items-center justify-center gap-1 transition">
             👍 수용 (타당함)
           </button>
-          <button type="button" onclick="selectModalStatus('의문')" id="modal-btn-question" class="py-2.5 px-2 rounded-xl border border-slate-200 hover:border-amber-500 font-bold flex items-center justify-center gap-1 transition">
+          <button type="button" onclick="selectModalStatus('의문')" id="modal-btn-question" class="py-2.5 px-2 rounded-xl border border-slate-200 font-bold flex items-center justify-center gap-1 transition">
             ❓ 의문 (확인필요)
           </button>
-          <button type="button" onclick="selectModalStatus('수정필요')" id="modal-btn-reject" class="py-2.5 px-2 rounded-xl border border-slate-200 hover:border-rose-500 font-bold flex items-center justify-center gap-1 transition">
+          <button type="button" onclick="selectModalStatus('수정필요')" id="modal-btn-reject" class="py-2.5 px-2 rounded-xl border border-slate-200 font-bold flex items-center justify-center gap-1 transition">
             ✏️ 수정필요 (오류)
           </button>
         </div>
       </div>
 
-      <!-- 2. 비판적 코멘트 작성 -->
       <div class="space-y-1.5">
-        <label class="block text-xs font-bold text-slate-700">2. 나의 비판적 코멘트 및 근거</label>
-        <textarea id="modal-ver-comment" rows="3" class="w-full text-xs border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="예: 설명의 결론은 맞으나, 왜 그런 현상이 발생하는지에 대한 구체적 과학적 근거가 빠져 있습니다."></textarea>
+        <label class="block text-xs font-bold text-slate-700">2. 나의 비판적 코멘트 및 의견</label>
+        <textarea id="modal-ver-comment" rows="3" class="w-full text-xs border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="예: 설명의 핵심 결론은 맞으나, 왜 굴절이 일어나는지 구체적인 원인 설명이 미흡합니다."></textarea>
       </div>
 
-      <!-- 모달 하단 버튼 -->
       <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
         <button onclick="closeVerificationModal()" class="px-4 py-2 text-xs font-bold rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 transition">취소</button>
         <button onclick="saveModalVerification()" class="px-5 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition shadow-xs">검증 완료 및 저장</button>
@@ -177,34 +201,31 @@
           <i class="fa-solid fa-brain"></i>
         </div>
         <div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
             <h1 class="text-base font-bold text-slate-900 leading-tight">메타인지 & AI 성찰 챗봇</h1>
             <span id="current-user-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
-              <i class="fa-solid fa-user-graduate"></i> <span id="user-display-name">-</span> • <span id="user-display-grade" class="text-indigo-600 font-bold">-</span>
+              <i class="fa-solid fa-user-graduate"></i> <span id="user-display-name">-</span>
+              (<span id="user-display-grade" class="text-indigo-600 font-bold">-</span> | <span id="user-display-subject" class="text-indigo-600 font-bold">-</span>)
             </span>
           </div>
-          <p class="text-xs text-slate-500">13대 설계원리 Step-by-Step 단계별 순차 문답 대화 시스템 (Upstage Solar Pro)</p>
+          <p id="user-display-standard-line" class="text-[11px] text-slate-500 truncate max-w-xl">성취기준: 선택 전</p>
         </div>
       </div>
 
-      <!-- Step by Step 진행 단계 표시 -->
+      <!-- 진행 국면 표시 -->
       <div class="flex items-center gap-2 text-xs font-bold">
-        <span id="step-badge-prep" class="px-3 py-1 rounded-full bg-indigo-600 text-white transition">
-          1단계: 대화 준비
-        </span>
-        <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
-        <span id="step-badge-dialogue" class="px-3 py-1 rounded-full bg-slate-100 text-slate-400 transition">
-          2단계: 본 탐구 대화
+        <span id="step-badge-dialogue" class="px-3 py-1 rounded-full bg-indigo-600 text-white transition">
+          1단계: 문답 탐구 대화
         </span>
         <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
         <span id="step-badge-reflect" class="px-3 py-1 rounded-full bg-slate-100 text-slate-400 transition">
-          3단계: 종결 및 성찰
+          2단계: 대화 종결 후 성찰
         </span>
       </div>
 
       <div class="flex items-center gap-2">
         <button onclick="openAuthModal()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i> 계정 전환
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> 계정/성취기준 변경
         </button>
         <button onclick="toggleConfigModal()" class="p-2 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition" title="API 설정">
           <i class="fa-solid fa-gear"></i>
@@ -215,28 +236,29 @@
   </header>
 
   <!-- ================================================================= -->
-  <!-- 4. 메인 인터페이스 -->
+  <!-- 4. 메인 대화 & 실시간 성찰 대시보드 -->
   <!-- ================================================================= -->
   <div class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-    <!-- 좌측: 대화형 AI 발문 엔진 (8컬럼) -->
+    <!-- 좌측: 대화형 소크라테스 AI 발문 엔진 (8컬럼) -->
     <main class="lg:col-span-8 flex flex-col bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden" style="min-height: 720px;">
       
-      <!-- 상태 표시줄 -->
+      <!-- 상태 표시줄 및 [대화 종결 및 성찰 시작] 버튼 -->
       <div class="px-6 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-2 text-xs">
           <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
           <span class="font-bold text-slate-800">소크라-봇</span>
           <span class="text-slate-300">•</span>
-          <span id="dialogue-step-indicator" class="text-indigo-600 font-bold">[Step 1: 학습 목표 및 주제 설정]</span>
+          <span id="dialogue-status-text" class="text-indigo-600 font-bold">[성취기준 기반 탐구 대화 진행 중]</span>
         </div>
 
-        <button id="btn-phase-toggle" onclick="transitionToNextMajorPhase()" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition flex items-center gap-1.5">
-          <i class="fa-solid fa-forward-step"></i> <span id="btn-phase-toggle-label">본 탐구 대화로 전환</span>
+        <!-- 핵심: 대화 종결 후 성찰로 전환하는 버튼 -->
+        <button id="btn-terminate-dialogue" onclick="terminateDialogueAndStartReflection()" class="px-4 py-1.5 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition flex items-center gap-1.5 shadow-xs">
+          <i class="fa-solid fa-flag-checkered"></i> <span>대화 종결 및 성찰 시작</span>
         </button>
       </div>
 
-      <!-- 대화 메시지 영역 -->
+      <!-- 대화 메시지 스크롤 영역 -->
       <div id="chat-messages" class="flex-1 p-6 space-y-6 overflow-y-auto max-h-[540px]"></div>
 
       <!-- 메시지 입력 영역 -->
@@ -260,7 +282,7 @@
         </div>
 
         <div class="flex gap-2">
-          <input id="user-input" type="text" onkeydown="if(event.key==='Enter') sendMessage()" class="flex-1 text-sm border border-slate-300 rounded-2xl px-4 py-3 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs" placeholder="AI 튜터의 질문에 답하거나 생각을 들려주세요..." />
+          <input id="user-input" type="text" onkeydown="if(event.key==='Enter') sendMessage()" class="flex-1 text-sm border border-slate-300 rounded-2xl px-4 py-3 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs" placeholder="생각이나 질문을 입력하세요..." />
           <button id="btn-send" onclick="sendMessage()" class="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-200 transition flex items-center gap-2 shrink-0">
             <span>전송</span> <i class="fa-solid fa-paper-plane"></i>
           </button>
@@ -270,7 +292,7 @@
 
     </main>
 
-    <!-- 우측: 13대 설계원리 실시간 시각화 & 조절 대시보드 (4컬럼) -->
+    <!-- 우측: 13대 설계원리 실시간 시각화 & 대시보드 (4컬럼) -->
     <aside class="lg:col-span-4 space-y-5">
       
       <!-- 1. 원리 8/9: 인지 전략 카드 -->
@@ -370,7 +392,7 @@
   </div>
 
   <!-- ================================================================= -->
-  <!-- 6. 프론트엔드 자바스크립트 엔진 (Step-by-Step 순차 문답 & 팝업형 원리 10) -->
+  <!-- 6. 프론트엔드 자바스크립트 엔진 (성취기준 연동 & 대화 종결 후 성찰 분리) -->
   <!-- ================================================================= -->
   <script>
     const EMOJI_LIST = [
@@ -395,79 +417,68 @@
     let selectedPin = [];
     const BACKEND_URL = "http://localhost:8000";
 
-    // 13대 설계원리 Step-by-Step 세부 순차 상태 정의 (한 번에 하나씩만 문답)
-    const STEP_STATES = {
-      STEP_1_GOAL: "STEP_1_GOAL",           // 원리 4: 학습 목표 및 주제 1개 질문
-      STEP_2_ROLE: "STEP_2_ROLE",           // 원리 5: AI 과업 분담 1개 질문
-      STEP_3_PRIOR: "STEP_3_PRIOR",         // 원리 6: 사전지식 & 1~5점 점수 1개 질문
-      STEP_4_METACOG: "STEP_4_METACOG",     // 원리 7: 메타인지 질문 1개
-      STEP_5_STRATEGY: "STEP_5_STRATEGY",   // 원리 8: 인지 전략 선택 확인
-      STEP_IN_DIALOGUE: "STEP_IN_DIALOGUE", // 원리 1, 2, 8, 9, 10: 본 탐구 대화
-      STEP_REFL_ROLE: "STEP_REFL_ROLE",     // 원리 11: 주도권 성찰 1개 질문
-      STEP_REFL_PROMPT: "STEP_REFL_PROMPT", // 원리 12: 질문 궤적 성찰 1개 질문
-      STEP_REFL_TRANSFER: "STEP_REFL_TRANSFER", // 원리 13: AI 소거 유사 전이 과업 1문제
-      STEP_REFL_GROWTH: "STEP_REFL_GROWTH"  // 원리 13: 사후 점수 및 종합 성장 성찰
+    // 대화 진행 상태 머신 (대화 단계 vs 대화 종결 후 성찰 단계 엄격 분리)
+    const WORKFLOW_STAGES = {
+      // 1단계: 문답 탐구 대화 국면 (준비 -> 본 탐구 대화)
+      PREP_STEP_1_CONFIRM: "PREP_STEP_1_CONFIRM", // 성취기준 확인 & 나의 구체적 학습 목표
+      PREP_STEP_2_ROLE: "PREP_STEP_2_ROLE",       // AI 과업 분담 1개 질문
+      PREP_STEP_3_PRIOR: "PREP_STEP_3_PRIOR",     // 사전 지식 및 사전 점수 1개 질문
+      PREP_STEP_4_METACOG: "PREP_STEP_4_METACOG", // 메타인지 1개 질문
+      DIALOGUE_ACTIVE: "DIALOGUE_ACTIVE",         // 본 탐구 대화 (지속적 핑퐁 문답)
+
+      // 2단계: 대화 종결 후 성찰 국면 (대화 종결 버튼 누른 후 시작)
+      REFL_STEP_1_ROLE: "REFL_STEP_1_ROLE",       // 주도권 vs AI 위임 성찰
+      REFL_STEP_2_PROMPT: "REFL_STEP_2_PROMPT",   // 질문 궤적 및 프롬프트 개선 성찰
+      REFL_STEP_3_TRANSFER: "REFL_STEP_3_TRANSFER",// AI 소거 유사 전이 과업
+      REFL_STEP_4_GROWTH: "REFL_STEP_4_GROWTH"    // 이해도 성장 및 인지전략 최종 성찰
     };
 
     const GRADE_PEDAGOGY = {
-      "초등 3~4학년": {
-        tone: "매우 다정하고 친근하며 재미있는 어조, 이모지 적극 사용",
-        scaffoldingGuide: "친숙한 일상 비유 사용. 한 번에 단 1개의 쉬운 질문만 할 것.",
-        transferDifficulty: "직관적인 일상 관찰 상황 문제"
-      },
-      "초등 5~6학년": {
-        tone: "다정하고 호기심을 북돋우는 존댓말",
-        scaffoldingGuide: "인과관계 탐색 유도. 한 번에 단 1개의 질문만 할 것.",
-        transferDifficulty: "기본 개념을 일상 상황에 적용해보는 문제"
-      },
-      "중학교 1~3학년": {
-        tone: "논리적이고 존중하는 동료 탐구자 톤",
-        scaffoldingGuide: "교과 핵심 개념 용어 정착 및 반례 유도. 한 번에 단 1개의 질문만 할 것.",
-        transferDifficulty: "조건이 일부 변경된 심화 적용 문제"
-      },
-      "고등학교 1~3학년": {
-        tone: "지적이고 깊이 있는 학술 연구자 톤",
-        scaffoldingGuide: "심화 이론 모델링 및 정밀한 개념 정의 검토. 한 번에 단 1개의 질문만 간결하게 할 것.",
-        transferDifficulty: "교과 복합 원리가 융합된 심화 응용 과제"
-      }
+      "초등학교 3학년": { tone: "친근하고 쉬운 어조, 비유 중심", guide: "한 번에 단 1개의 쉬운 질문만 할 것." },
+      "초등학교 4학년": { tone: "친근하고 격려하는 어조", guide: "한 번에 단 1개의 질문만 할 것." },
+      "초등학교 5학년": { tone: "다정하고 호기심을 유발하는 존댓말", guide: "인과관계 탐색 유도." },
+      "초등학교 6학년": { tone: "논리적이고 다정한 어조", guide: "원인과 결과, 일상 적용 유도." },
+      "중학교 1학년": { tone: "체계적이고 존중하는 동료 톤", guide: "기초 학술 용어 정착 및 반례 탐색." },
+      "중학교 2학년": { tone: "논리적인 탐구 톤", guide: "개념 구조화 및 자기설명 유도." },
+      "중학교 3학년": { tone: "심층적이고 분석적인 톤", guide: "논리적 인과관계 및 오류 검증." },
+      "고등학교 1학년": { tone: "학술적 연구자 톤", guide: "심화 이론 모델링 및 고차원 비판적 검토." },
+      "고등학교 2학년": { tone: "전문적이고 지적인 톤", guide: "변인 간 상관관계 분석 및 엄밀한 정의." },
+      "고등학교 3학년": { tone: "심층 학술 담론 톤", guide: "복합 원리 융합 분석 및 AI 의존성 소거." }
     };
 
     const state = {
       user: {
         nickname: localStorage.getItem('current_user_nickname') || '',
-        grade: localStorage.getItem('current_user_grade') || '',
+        grade: localStorage.getItem('current_user_grade') || '초등학교 6학년',
+        subject: localStorage.getItem('current_user_subject') || '과학',
+        standard: localStorage.getItem('current_user_standard') || '',
         pin: []
       },
       apiKey: localStorage.getItem("UPSTAGE_API_KEY") || "up_8n84t1USbP93gILYJ4x7w7QRHkhYX",
       model: localStorage.getItem("UPSTAGE_MODEL") || "solar-pro",
       baseUrl: "https://api.upstage.ai/v1",
       
-      currentStep: STEP_STATES.STEP_1_GOAL,
+      stage: WORKFLOW_STAGES.PREP_STEP_1_CONFIRM,
       scaffolding: "High",
       currentStrategy: "정교화(Elaboration)",
       messages: [],
       
       context: {
-        subject: "",
-        unit: "",
-        goal: "",
         priorScore: null,
         postScore: null
       }
     };
 
-    // 검증 모달 상태 관리용 변수
     let activeVerMsgId = null;
     let activeVerStatus = '수용';
-
     let chartDelInstance = null;
     let chartScoreInstance = null;
 
     const LocalDB = {
       getUsers() { return JSON.parse(localStorage.getItem('registered_users_db') || '{}'); },
-      saveUser(nickname, pin, grade) {
+      saveUser(nickname, pin, grade, subject, standard) {
         const users = this.getUsers();
-        users[nickname] = { nickname, pin, grade, createdAt: new Date().toISOString() };
+        users[nickname] = { nickname, pin, grade, subject, standard, createdAt: new Date().toISOString() };
         localStorage.setItem('registered_users_db', JSON.stringify(users));
       },
       findUser(nickname) { return this.getUsers()[nickname] || null; }
@@ -476,12 +487,11 @@
     window.addEventListener('DOMContentLoaded', () => {
       initEmojiPalette();
       initCharts();
-      checkBackendHealth();
+      onGradeChange(); // 학년별 과목 및 성취기준 동적 초기화
 
-      if (state.user.nickname && state.user.grade) {
+      if (state.user.nickname && state.user.standard) {
         document.getElementById('auth-modal').classList.add('hidden');
-        document.getElementById('user-display-name').innerText = state.user.nickname;
-        document.getElementById('user-display-grade').innerText = state.user.grade;
+        updateHeaderUserInfo();
         startAITutoring();
       } else {
         switchAuthTab('register');
@@ -489,22 +499,79 @@
       }
     });
 
-    async function checkBackendHealth() {
-      try {
-        await fetch(`${BACKEND_URL}/docs`, { mode: 'no-cors' });
-        document.getElementById('backend-status-badge').innerHTML = `
-          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> FastAPI 서버 연결됨 (:8000)
-        `;
-      } catch (e) {}
+    // 학년 변경 이벤트 -> 교과목 드롭다운 업데이트
+    function onGradeChange() {
+      const grade = document.getElementById('auth-grade').value;
+      const subjectSelect = document.getElementById('auth-subject');
+      subjectSelect.innerHTML = '';
+
+      let subjects = [];
+      if (grade.startsWith('고등학교')) {
+        // 고등학교는 국어, 수학, 영어, 통합사회, 통합과학으로만 국한
+        subjects = ["국어", "수학", "영어", "통합사회", "통합과학"];
+      } else {
+        // 초3~중3: 국어, 영어, 수학, 사회, 과학
+        subjects = ["국어", "영어", "수학", "사회", "과학"];
+      }
+
+      subjects.forEach(sub => {
+        const opt = document.createElement('option');
+        opt.value = sub;
+        opt.innerText = sub;
+        subjectSelect.appendChild(opt);
+      });
+
+      onSubjectChange();
+    }
+
+    // 과목 변경 이벤트 -> 성취기준 드롭다운 업데이트
+    function onSubjectChange() {
+      const grade = document.getElementById('auth-grade').value;
+      const subject = document.getElementById('auth-subject').value;
+      const standardSelect = document.getElementById('auth-standard');
+      standardSelect.innerHTML = '';
+
+      const standardsList = (CURRICULUM_STANDARDS[grade] && CURRICULUM_STANDARDS[grade][subject]) || [];
+
+      standardsList.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = `[${item.code}] ${item.name}`;
+        opt.innerText = `[${item.code}] ${item.name}`;
+        standardSelect.appendChild(opt);
+      });
+
+      // 직접 입력 옵션 추가
+      const customOpt = document.createElement('option');
+      customOpt.value = "CUSTOM";
+      customOpt.innerText = "✏️ 성취기준 직접 입력하기...";
+      standardSelect.appendChild(customOpt);
+
+      onStandardChange();
+    }
+
+    function onStandardChange() {
+      const standardSelect = document.getElementById('auth-standard');
+      const customBox = document.getElementById('auth-custom-standard');
+      if (standardSelect.value === 'CUSTOM') {
+        customBox.classList.remove('hidden');
+      } else {
+        customBox.classList.add('hidden');
+      }
+    }
+
+    function updateHeaderUserInfo() {
+      document.getElementById('user-display-name').innerText = state.user.nickname;
+      document.getElementById('user-display-grade').innerText = state.user.grade;
+      document.getElementById('user-display-subject').innerText = state.user.subject;
+      document.getElementById('user-display-standard-line').innerText = `성취기준: ${state.user.standard}`;
     }
 
     function switchAuthTab(tab) {
       currentAuthTab = tab;
       const btnReg = document.getElementById('tab-btn-register');
       const btnLog = document.getElementById('tab-btn-login');
-      const gradeBox = document.getElementById('register-grade-box');
+      const curricBox = document.getElementById('register-curriculum-box');
       const submitBtn = document.getElementById('auth-submit-btn');
-      const pinLabel = document.getElementById('pin-label');
 
       clearSlotPassword();
       document.getElementById('auth-nickname').value = '';
@@ -512,15 +579,13 @@
       if (tab === 'register') {
         btnReg.className = "flex-1 py-2.5 rounded-xl bg-white text-indigo-600 shadow-xs transition flex items-center justify-center gap-1.5";
         btnLog.className = "flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5";
-        gradeBox.classList.remove('hidden');
-        submitBtn.innerHTML = `<span>회원가입 완료하고 학습 시작</span> <i class="fa-solid fa-arrow-right"></i>`;
-        pinLabel.innerText = "3. 빠칭코 4자리 그림 비밀번호 설정";
+        curricBox.classList.remove('hidden');
+        submitBtn.innerHTML = `<span>선택한 성취기준으로 학습 시작하기</span> <i class="fa-solid fa-arrow-right"></i>`;
       } else {
         btnLog.className = "flex-1 py-2.5 rounded-xl bg-white text-indigo-600 shadow-xs transition flex items-center justify-center gap-1.5";
         btnReg.className = "flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5";
-        gradeBox.classList.add('hidden');
+        curricBox.classList.add('hidden');
         submitBtn.innerHTML = `<span>로그인하고 내 학습터 입장</span> <i class="fa-solid fa-right-to-bracket"></i>`;
-        pinLabel.innerText = "2. 빠칭코 4자리 그림 비밀번호 입력";
       }
     }
 
@@ -586,153 +651,129 @@
 
       if (currentAuthTab === 'register') {
         const grade = document.getElementById('auth-grade').value;
+        const subject = document.getElementById('auth-subject').value;
+        let standard = document.getElementById('auth-standard').value;
+        if (standard === 'CUSTOM') {
+          standard = document.getElementById('auth-custom-standard').value.trim();
+          if (!standard) {
+            alert("성취기준을 직접 작성해주세요!");
+            return;
+          }
+        }
+
         if (LocalDB.findUser(nickname)) {
           alert("이미 존재하는 닉네임입니다. 다른 닉네임을 사용하거나 [로그인] 탭을 이용하세요.");
           return;
         }
 
-        LocalDB.saveUser(nickname, selectedPin, grade);
+        LocalDB.saveUser(nickname, selectedPin, grade, subject, standard);
 
-        try {
-          await fetch(`${BACKEND_URL}/api/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nickname, slot_pin: selectedPin, grade_level: grade })
-          });
-        } catch (e) {}
+        state.user.nickname = nickname;
+        state.user.grade = grade;
+        state.user.subject = subject;
+        state.user.standard = standard;
+        state.user.pin = selectedPin;
 
-        alert(`'${nickname}' 학생(${grade})의 회원가입이 완료되었습니다!`);
-        completeLogin(nickname, grade, selectedPin);
+        localStorage.setItem('current_user_nickname', nickname);
+        localStorage.setItem('current_user_grade', grade);
+        localStorage.setItem('current_user_subject', subject);
+        localStorage.setItem('current_user_standard', standard);
+
+        updateHeaderUserInfo();
+        document.getElementById('auth-modal').classList.add('hidden');
+        startAITutoring();
+
       } else {
         const user = LocalDB.findUser(nickname);
         if (!user) {
-          alert("가입되지 않은 닉네임입니다. 먼저 [새 계정 만들기(회원가입)]를 진행해주세요!");
+          alert("가입되지 않은 닉네임입니다. [회원가입]을 먼저 진행해주세요!");
           return;
         }
-
         if (JSON.stringify(user.pin) !== JSON.stringify(selectedPin)) {
-          alert("그림 비밀번호가 일치하지 않습니다! 4자리 그림을 다시 확인해주세요.");
+          alert("그림 비밀번호가 일치하지 않습니다!");
           return;
         }
 
-        completeLogin(nickname, user.grade, selectedPin);
+        state.user.nickname = user.nickname;
+        state.user.grade = user.grade;
+        state.user.subject = user.subject || "과학";
+        state.user.standard = user.standard || "";
+
+        localStorage.setItem('current_user_nickname', user.nickname);
+        localStorage.setItem('current_user_grade', user.grade);
+        localStorage.setItem('current_user_subject', state.user.subject);
+        localStorage.setItem('current_user_standard', state.user.standard);
+
+        updateHeaderUserInfo();
+        document.getElementById('auth-modal').classList.add('hidden');
+        startAITutoring();
       }
-    }
-
-    function completeLogin(nickname, grade, pin) {
-      state.user.nickname = nickname;
-      state.user.grade = grade;
-      state.user.pin = pin;
-
-      localStorage.setItem('current_user_nickname', nickname);
-      localStorage.setItem('current_user_grade', grade);
-
-      document.getElementById('user-display-name').innerText = nickname;
-      document.getElementById('user-display-grade').innerText = grade;
-      document.getElementById('auth-modal').classList.add('hidden');
-
-      startAITutoring();
     }
 
     function openAuthModal() {
       document.getElementById('auth-modal').classList.remove('hidden');
     }
 
-    // --- Step by Step 단일 질문 발문 엔진 ---
+    // --- 대화 시작 (선택된 성취기준 기반) ---
     function startAITutoring() {
       state.messages = [];
-      state.currentStep = STEP_STATES.STEP_1_GOAL;
-      updateStepUI();
+      state.stage = WORKFLOW_STAGES.PREP_STEP_1_CONFIRM;
+      updateWorkflowUI();
 
-      const grade = state.user.grade || "초등 5~6학년";
-      let welcomeIntro = "";
+      const grade = state.user.grade;
+      const subject = state.user.subject;
+      const standard = state.user.standard;
 
-      if (grade === "초등 3~4학년") {
-        welcomeIntro = `안녕, **${state.user.nickname}** 친구! ✨\n오늘 어떤 과목의 어떤 주제를 공부해볼까요? 그리고 오늘 꼭 알고 싶은 목표가 무엇인지 편하게 들려주세요! (원리 4: 학습 목표 및 맥락 설정)`;
-      } else if (grade === "초등 5~6학년") {
-        welcomeIntro = `반가워요, **${state.user.nickname}** 학생! 🦉\n오늘 어떤 과목의 어떤 단원을 함께 탐구해볼까요? 그리고 오늘 스스로 달성하고 싶은 **학습 목표**가 무엇인지 말해줄래요? (원리 4: 학습 목표 및 교과 맥락 설정)`;
-      } else if (grade === "중학교 1~3학년") {
-        welcomeIntro = `안녕하세요, **${state.user.nickname}** 학생! 🎓\n오늘 학습할 과목과 단원, 그리고 오늘 반드시 해결하고 싶은 **구체적인 학습 과제와 목표**를 제시해 주세요. (원리 4: 학습 목표 및 교과 맥락 설정)`;
-      } else {
-        welcomeIntro = `반갑습니다, **${state.user.nickname}** 님! 🏛️\n오늘 탐구할 교과 영역과 핵심 단원, 그리고 오늘 규명하고자 하는 **심화 학습 목표 및 탐구 과제**를 설정해 주시기 바랍니다. (원리 4: 학습 목표 및 교과 맥락 설정)`;
-      }
-
-      pushAIMessage(welcomeIntro);
+      pushAIMessage(
+        `반가워요, **${state.user.nickname}** 학생! 🦉\n` +
+        `오늘 우리는 **${grade} [${subject}]** 교과의 다음 성취기준을 탐구할 거예요.\n\n` +
+        `📌 **[선택된 성취기준]**\n> **${standard}**\n\n` +
+        `이 성취기준을 바탕으로, 오늘 여러분이 꼭 달성하고 싶은 **구체적인 나만의 학습 목표**는 무엇인가요? (원리 4: 학습 목표 명료화)`
+      );
     }
 
-    function updateStepUI() {
-      const bPrep = document.getElementById('step-badge-prep');
+    function updateWorkflowUI() {
       const bDia = document.getElementById('step-badge-dialogue');
       const bRef = document.getElementById('step-badge-reflect');
-      const indicator = document.getElementById('dialogue-step-indicator');
-      const btnToggle = document.getElementById('btn-phase-toggle-label');
+      const statusText = document.getElementById('dialogue-status-text');
+      const btnTerm = document.getElementById('btn-terminate-dialogue');
 
-      [bPrep, bDia, bRef].forEach(el => el.className = "px-3 py-1 rounded-full bg-slate-100 text-slate-400 transition");
-
-      const s = state.currentStep;
-      if (s === STEP_STATES.STEP_1_GOAL) {
-        bPrep.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
-        indicator.innerText = "[Step 1/5: 학습 목표 및 주제 설정 (원리 4)]";
-        btnToggle.innerText = "본 탐구 대화로 전환";
-      } else if (s === STEP_STATES.STEP_2_ROLE) {
-        bPrep.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
-        indicator.innerText = "[Step 2/5: AI 과업 분담 설정 (원리 5)]";
-        btnToggle.innerText = "본 탐구 대화로 전환";
-      } else if (s === STEP_STATES.STEP_3_PRIOR) {
-        bPrep.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
-        indicator.innerText = "[Step 3/5: 사전지식 및 이해도 점검 (원리 6)]";
-        btnToggle.innerText = "본 탐구 대화로 전환";
-      } else if (s === STEP_STATES.STEP_4_METACOG) {
-        bPrep.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
-        indicator.innerText = "[Step 4/5: 메타인지 질문 점검 (원리 7)]";
-        btnToggle.innerText = "본 탐구 대화로 전환";
-      } else if (s === STEP_STATES.STEP_5_STRATEGY) {
-        bPrep.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
-        indicator.innerText = "[Step 5/5: 인지 전략 최종 선택 (원리 8)]";
-        btnToggle.innerText = "본 탐구 대화로 전환";
-      } else if (s === STEP_STATES.STEP_IN_DIALOGUE) {
-        bDia.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
-        indicator.innerText = "[2단계: 본 탐구 대화] 핑퐁형 소크라테스 대화 진행 중";
-        btnToggle.innerText = "대화 마치고 3단계 성찰로 이동";
-      } else if (s === STEP_STATES.STEP_REFL_ROLE) {
+      if (state.stage.startsWith("REFL_")) {
+        // 대화 종결 후 성찰 국면
+        bDia.className = "px-3 py-1 rounded-full bg-slate-100 text-slate-400 transition";
         bRef.className = "px-3 py-1 rounded-full bg-amber-600 text-white shadow-xs transition";
-        indicator.innerText = "[성찰 Step 1/4: 주도권 vs AI 위임 성찰 (원리 11)]";
-        btnToggle.innerText = "새로운 학습 시작하기";
-      } else if (s === STEP_STATES.STEP_REFL_PROMPT) {
-        bRef.className = "px-3 py-1 rounded-full bg-amber-600 text-white shadow-xs transition";
-        indicator.innerText = "[성찰 Step 2/4: 질문 궤적 및 프롬프트 성찰 (원리 12)]";
-        btnToggle.innerText = "새로운 학습 시작하기";
-      } else if (s === STEP_STATES.STEP_REFL_TRANSFER) {
-        bRef.className = "px-3 py-1 rounded-full bg-amber-600 text-white shadow-xs transition";
-        indicator.innerText = "[성찰 Step 3/4: AI 소거 전이 과업 자가 해결 (원리 13)]";
-        btnToggle.innerText = "새로운 학습 시작하기";
+        statusText.innerText = "[2단계: 대화 종결 후 성찰 국면 진행 중]";
+        btnTerm.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> <span>새로운 학습 시작</span>`;
+        btnTerm.className = "px-4 py-1.5 text-xs font-bold rounded-xl bg-slate-700 hover:bg-slate-800 text-white transition flex items-center gap-1.5 shadow-xs";
       } else {
-        bRef.className = "px-3 py-1 rounded-full bg-amber-600 text-white shadow-xs transition";
-        indicator.innerText = "[성찰 Step 4/4: 이해도 성장 및 인지전략 종합 성찰 (원리 13)]";
-        btnToggle.innerText = "새로운 학습 시작하기";
+        // 문답 탐구 대화 국면
+        bDia.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
+        bRef.className = "px-3 py-1 rounded-full bg-slate-100 text-slate-400 transition";
+        statusText.innerText = `[1단계: 성취기준 기반 탐구 대화 진행 중]`;
+        btnTerm.innerHTML = `<i class="fa-solid fa-flag-checkered"></i> <span>대화 종결 및 성찰 시작</span>`;
+        btnTerm.className = "px-4 py-1.5 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition flex items-center gap-1.5 shadow-xs";
       }
     }
 
-    function transitionToNextMajorPhase() {
-      if (state.currentStep.startsWith("STEP_1") || state.currentStep.startsWith("STEP_2") || state.currentStep.startsWith("STEP_3") || state.currentStep.startsWith("STEP_4") || state.currentStep.startsWith("STEP_5")) {
-        state.currentStep = STEP_STATES.STEP_IN_DIALOGUE;
-        updateStepUI();
-        pushAIMessage(
-          `준비를 마쳤으니 이제 **[본 탐구 대화]**를 시작해볼까요? 🎉\n` +
-          `현재 인지 전략은 **[${state.currentStrategy}]**입니다. 첫 번째 호기심이나 여러분의 생각을 저에게 들려주세요!`
-        );
-      } else if (state.currentStep === STEP_STATES.STEP_IN_DIALOGUE) {
-        state.currentStep = STEP_STATES.STEP_REFL_ROLE;
-        updateStepUI();
-        pushAIMessage(
-          `오늘의 탐구 대화를 마쳤습니다! 👏 이제 **[3단계: 종결 및 성찰]**을 차례차례 진행해볼게요.\n\n` +
-          `**[원리 11: 주도권 성찰]**\n` +
-          `오늘 대화에서 스스로 주도권을 쥐고 생각했던 순간과, 저에게 단순히 정답을 위임해버렸던 순간은 각각 언제였나요? 우측의 원형 차트를 보며 들려주세요.`
-        );
-      } else {
-        if (confirm("새로운 주제로 학습을 시작하시겠습니까?")) {
-          startAITutoring();
+    // 핵심: 대화 종결 버튼을 눌렀을 때만 성찰 국면으로 진입
+    function terminateDialogueAndStartReflection() {
+      if (state.stage.startsWith("REFL_")) {
+        if (confirm("새로운 성취기준으로 학습을 시작하시겠습니까?")) {
+          openAuthModal();
         }
+        return;
+      }
+
+      if (confirm("AI 튜터와의 탐구 대화를 마치고 '대화 종결 및 성찰 단계'로 이동하시겠습니까?")) {
+        state.stage = WORKFLOW_STAGES.REFL_STEP_1_ROLE;
+        updateWorkflowUI();
+
+        pushAIMessage(
+          `오늘 성취기준에 대한 탐구 대화를 성공적으로 마쳤습니다! 👏\n` +
+          `이제 대화를 종결하고 **[대화 종결 및 성찰 단계]**를 차례차례 진행하겠습니다.\n\n` +
+          `**[원리 11: 주도권 및 AI 위임 성찰]**\n` +
+          `오늘 나눈 대화 전체를 돌아보았을 때, 여러분이 **스스로 주도권을 쥐고 생각했던 순간**과 저에게 **단순히 정답을 위임해버렸던 순간**은 각각 언제였나요? 우측의 [주도권 비율 원형 차트]를 보며 솔직한 생각을 들려주세요.`
+        );
       }
     }
 
@@ -749,7 +790,7 @@
         role: "user",
         content: anonText,
         delegationType: qType,
-        stepAtTime: state.currentStep,
+        stageAtTime: state.stage,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
 
@@ -774,102 +815,90 @@
         content: content,
         scaffolding: state.scaffolding,
         verification: { status: "미검증", comment: "" },
-        stepAtTime: state.currentStep,
+        stageAtTime: state.stage,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
       renderMessages();
     }
 
-    // Step-by-Step 프롬프트 규칙 주입 (한 번에 1개의 질문만 단일 제시)
+    // Step by Step 단일 질문 프롬프트 제어
     async function generateAIResponse(userText) {
-      const grade = state.user.grade || "초등 5~6학년";
-      const pedagogy = GRADE_PEDAGOGY[grade] || GRADE_PEDAGOGY["초등 5~6학년"];
+      const grade = state.user.grade;
+      const pedagogy = GRADE_PEDAGOGY[grade] || GRADE_PEDAGOGY["초등학교 6학년"];
+      let promptInstruction = "";
 
-      let singleStepInstruction = "";
-
-      if (state.currentStep === STEP_STATES.STEP_1_GOAL) {
-        state.currentStep = STEP_STATES.STEP_2_ROLE;
-        singleStepInstruction = `[Step 2: 원리 5 AI 과업 분담 딱 1개만 질문]
-학습자가 설정한 주제와 목표에 대해 한 문장으로 격려하세요.
-그런 다음, 오늘 대화에서 AI에게 어떤 역할을 기대하는지 **오직 그 질문 1가지만** 간결하게 던지세요.
-(선택지 제시: ① 힌트 질문자, ② 동료 탐구자, ③ 설명 점검자 중 하나를 고르도록 권유).
-*절대 사전지식이나 메타인지 질문 등 다음 단계 질문을 미리 섞지 마세요!*`;
+      // 1. 대화 준비 단계 (원리 4 -> 5 -> 6 -> 7 -> 본 대화)
+      if (state.stage === WORKFLOW_STAGES.PREP_STEP_1_CONFIRM) {
+        state.stage = WORKFLOW_STAGES.PREP_STEP_2_ROLE;
+        promptInstruction = `학습자가 성취기준에 대한 자신의 학습 목표를 말했습니다.
+한 문장으로 격려한 뒤, [원리 5: AI 과업 분담] "오늘 저에게 어떤 역할을 기대하나요? (① 힌트 질문자, ② 동료 탐구자, ③ 설명 점검자 중 하나 선택)"를 **단 1개의 질문으로만** 간결하게 물어보세요.`;
       }
-      else if (state.currentStep === STEP_STATES.STEP_2_ROLE) {
-        state.currentStep = STEP_STATES.STEP_3_PRIOR;
-        singleStepInstruction = `[Step 3: 원리 6 사전지식 활성화 딱 1개만 질문]
-학습자가 선택한 AI의 역할을 확인하고 지지하세요.
-그런 다음, 이 주제에 대해 이미 알고 있는 지식이나 일상 경험이 무엇인지, 그리고 5점 만점 중 스스로 몇 점이라고 생각하는지 **사전지식 관련 질문 딱 1가지만** 던지세요.
-*절대 이해/전략/연결 질문 등 다음 단계 질문을 미리 섞지 마세요!*`;
+      else if (state.stage === WORKFLOW_STAGES.PREP_STEP_2_ROLE) {
+        state.stage = WORKFLOW_STAGES.PREP_STEP_3_PRIOR;
+        promptInstruction = `학습자가 선택한 역할을 확인하고 지지하세요.
+그런 다음, [원리 6: 사전지식 활성화] "이 성취기준 주제에 대해 이미 알고 있는 지식이나 일상 경험이 무엇인지, 그리고 5점 만점 중 스스로 몇 점이라고 생각하나요?"를 **단 1개의 질문으로만** 물어보세요.`;
       }
-      else if (state.currentStep === STEP_STATES.STEP_3_PRIOR) {
-        state.currentStep = STEP_STATES.STEP_4_METACOG;
+      else if (state.stage === WORKFLOW_STAGES.PREP_STEP_3_PRIOR) {
+        state.stage = WORKFLOW_STAGES.PREP_STEP_4_METACOG;
         const matchScore = userText.match(/[1-5]/);
         if (matchScore) {
           state.context.priorScore = parseInt(matchScore[0]);
           document.getElementById('pre-score-text').innerText = `${state.context.priorScore}점`;
           updateScoreChart();
         }
-        singleStepInstruction = `[Step 4: 원리 7 메타인지 점검 질문]
-학습자의 사전 지식 답변을 칭찬하세요.
-그런 다음, 메타인지 질문(이해 질문: "이 주제에서 가장 핵심이 되는 원리는 무엇일까요?" 혹은 전략/연결 질문) 중 **가장 중요한 1가지 질문만** 골라서 던지세요. 한꺼번에 여러 개 묻지 마세요.`;
+        promptInstruction = `학습자의 사전지식 답변을 격려하세요.
+그런 다음, [원리 7: 메타인지 질문] "이 성취기준을 완벽히 이해하기 위해 가장 핵심이 되는 중심 개념은 무엇이라고 생각하나요?" **딱 1가지 질문만** 물어보세요.`;
       }
-      else if (state.currentStep === STEP_STATES.STEP_4_METACOG) {
-        state.currentStep = STEP_STATES.STEP_5_STRATEGY;
-        singleStepInstruction = `[Step 5: 원리 8 인지전략 선택 확인]
-학습자의 생각에 공감하세요.
-이제 대화 준비의 마지막으로, 오늘 사용할 주 인지전략([${state.currentStrategy}])을 실천해볼 것을 제안하며 "첫 번째로 저에게 물어보거나 탐구해보고 싶은 질문을 시작해볼까요?"라고 본 대화 시작을 유도하세요.`;
+      else if (state.stage === WORKFLOW_STAGES.PREP_STEP_4_METACOG) {
+        state.stage = WORKFLOW_STAGES.DIALOGUE_ACTIVE;
+        promptInstruction = `학습자의 메타인지적 생각에 공감하세요.
+이제 대화 준비를 마치고 [본 탐구 대화]를 시작함을 알리며, 현재 선택된 인지 전략([${state.currentStrategy}])을 활용하여 첫 번째 질문이나 호기심을 던져보도록 유도하세요.`;
       }
-      else if (state.currentStep === STEP_STATES.STEP_5_STRATEGY) {
-        state.currentStep = STEP_STATES.STEP_IN_DIALOGUE;
-        singleStepInstruction = `[2단계: 본 탐구 대화 시작]
-학습자의 첫 질문에 답하되, 절대로 강의하듯 길게 늘어놓지 마세요.
-- 정답을 바로 주지 말고 소크라테스식으로 한두 문장의 핵심 힌트와, 학습자가 생각할 발문 1개만 던지세요.
-- ${pedagogy.scaffoldingGuide}`;
-      }
-      else if (state.currentStep === STEP_STATES.STEP_IN_DIALOGUE) {
-        singleStepInstruction = `[2단계: 본 탐구 대화 진행]
-- 비계 수준: [${state.scaffolding}]
-- 적용 전략: [${state.currentStrategy}]
+      // 2. 본 탐구 대화 단계 (지속적 소크라테스 핑퐁 문답 - 성찰 발문 절대 끼어들지 않음)
+      else if (state.stage === WORKFLOW_STAGES.DIALOGUE_ACTIVE) {
+        promptInstruction = `[본 탐구 대화 진행]
+- 성취기준: [${state.user.standard}]
 - 학년 수준: [${grade}] (${pedagogy.tone})
-- 규칙: 설명은 3~5문장 이내로 핵심만 전달하고, 마지막에 학습자의 주도적 생각을 자극하는 발문 딱 1개를 던져 핑퐁식 대화를 이어가세요. 절대 한 번에 모든 해설을 끝내지 마세요.`;
+- 비계 수준: [${state.scaffolding}] (${pedagogy.guide})
+- 핵심 원칙: 절대로 강의하듯 길게 늘어놓지 말고, 3~5문장의 명쾌한 힌트/설명과 함께 학습자의 생각을 이끌어내는 소크라테스식 발문 딱 1개를 던져 핑퐁식 대화를 이어가세요.
+- 주의: 학생이 [대화 종결 및 성찰 시작] 버튼을 누르기 전까지는 절대로 성찰 질문을 먼저 꺼내지 말고 오직 교과 내용 탐구에만 집중하세요.`;
       }
-      else if (state.currentStep === STEP_STATES.STEP_REFL_ROLE) {
-        state.currentStep = STEP_STATES.STEP_REFL_PROMPT;
-        singleStepInstruction = `[성찰 Step 2: 원리 12 질문 궤적 성찰]
-학습자의 주도권 성찰에 따뜻하게 피드백을 주세요.
-그런 다음, 오늘 입력했던 질문들을 돌아보며 **어떤 질문이 가장 효과적이었는지, 질문 프롬프트를 어떻게 개선하고 싶은지** 성찰 질문 딱 1개만 던지세요.`;
+      // 3. 대화 종결 후 성찰 단계 (종결 버튼 누른 후 순차 진행)
+      else if (state.stage === WORKFLOW_STAGES.REFL_STEP_1_ROLE) {
+        state.stage = WORKFLOW_STAGES.REFL_STEP_2_PROMPT;
+        promptInstruction = `학습자의 주도권 성찰(원리 11)에 따뜻하게 공감하세요.
+그런 다음, [원리 12: 질문 궤적 및 프롬프트 성찰] "오늘 나에게 입력했던 질문들 중 어떤 질문이 가장 효과적인 배움을 이끌어냈나요? 다음번에 더 명확하게 질문하려면 프롬프트를 어떻게 개선해볼 수 있을까요?" **딱 1개의 질문만** 던지세요.`;
       }
-      else if (state.currentStep === STEP_STATES.STEP_REFL_PROMPT) {
-        state.currentStep = STEP_STATES.STEP_REFL_TRANSFER;
-        singleStepInstruction = `[성찰 Step 3: 원리 13 AI 소거 전이 과업 출제]
-학습자의 성찰을 격려하세요.
-그런 다음, "이제 AI의 힌트 없이 스스로 풀어보는 유사 전이 과제입니다!"라며 ${grade} 수준에 맞는 ${pedagogy.transferDifficulty}를 **딱 1문제만 출제**하고 정답 없이 학습자의 풀이를 기다리세요.`;
+      else if (state.stage === WORKFLOW_STAGES.REFL_STEP_2_PROMPT) {
+        state.stage = WORKFLOW_STAGES.REFL_STEP_3_TRANSFER;
+        promptInstruction = `학습자의 프롬프트 성찰을 칭찬하세요.
+그런 다음, [원리 13: AI 소거 전이 과업] 오늘 성취기준([${state.user.standard}])과 관련하여 AI의 도움 없이 스스로 풀어볼 수 있는 **새로운 유사 적용 문제 1개만** 출제하고 정답 없이 학습자의 풀이를 기다리세요.`;
       }
       else {
-        // STEP_REFL_GROWTH
+        // REFL_STEP_4_GROWTH
         const matchPost = userText.match(/[1-5]/);
         if (matchPost) {
           state.context.postScore = parseInt(matchPost[0]);
           document.getElementById('post-score-text').innerText = `${state.context.postScore}점`;
           updateScoreChart();
         }
-        singleStepInstruction = `[성찰 Step 4: 원리 13 종합 성장 성찰 및 마무리]
-학습자의 풀이 노력을 크게 칭찬하세요.
-학습 전과 비교하여 이해도가 5점 만점 중 몇 점으로 올랐는지 확인하고, 오늘 배운 인지전략([${state.currentStrategy}])으로 성장한 점을 짚어주며 따뜻한 격려로 대화를 마무리하세요.`;
+        promptInstruction = `학습자의 전이 과제 자가 풀이를 격려하세요.
+그런 다음, [원리 13: 종합 성장 성찰] 학습 전과 비교해 이해도가 5점 만점 중 몇 점으로 향상되었는지 묻고, 오늘 적용한 인지전략([${state.currentStrategy}])으로 성장한 점을 칭찬하며 전체 성찰을 따뜻하게 마무리하세요.`;
       }
 
-      updateStepUI();
+      updateWorkflowUI();
 
-      const systemPrompt = `당신은 초·중·고 학습자의 메타인지와 AI 성찰을 돕는 소크라테스 AI 튜터 '소크라-봇'입니다.
-[학습자 정보] 닉네임: ${state.user.nickname}, 학년: ${grade}
-[필수 대원칙 - Step by Step]:
-1. 절대로 한 번에 여러 단계의 질문이나 2개 이상의 과제를 쏟아내지 마세요.
-2. 아래 [이번 응답 지침]에 지정된 **단 1개의 발문/질문만 간결하게** 제시하고 학습자의 답변을 기다리세요.
-3. 시험지처럼 번호(1, 2, 3...)를 매겨 장황하게 나열하지 말고, 친절한 대화체로 대화하세요.
-
+      const systemPrompt = `당신은 대한민국 교육과정 성취기준 기반의 초·중·고 메타인지 AI 튜터 '소크라-봇'입니다.
+[학습자 정보]
+- 닉네임: ${state.user.nickname}
+- 학년: ${grade}
+- 교과목: ${state.user.subject}
+- 성취기준: ${state.user.standard}
+[교수법 원칙]:
+1. Step-by-Step 원칙: 한 번에 단 1개의 질문만 제시하고 학습자의 대답을 기다리세요.
+2. 성찰 분리 원칙: 대화 종결 전까지는 성찰 질문을 일절 하지 말고 오직 성취기준 내용 탐구에만 집중하세요.
 [이번 응답 지침]:
-${singleStepInstruction}`;
+${promptInstruction}`;
 
       const apiMsgs = [
         { role: "system", content: systemPrompt },
@@ -897,7 +926,6 @@ ${singleStepInstruction}`;
       return data.choices[0].message.content;
     }
 
-    // 대화 메시지 렌더링 (원리 10 검증 패널을 인라인에서 제거하고 팝업 호출 버튼으로 전환)
     function renderMessages() {
       const container = document.getElementById('chat-messages');
       container.innerHTML = '';
@@ -932,13 +960,11 @@ ${singleStepInstruction}`;
             <div class="space-y-1.5 max-w-[85%]">
               <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
                 <span>${msg.timestamp} • 소크라-봇</span>
-                <!-- 원리 10: 팝업 검증 열기 뱃지 버튼 -->
                 <button onclick="openVerificationModal(${msg.id})" class="px-2 py-0.5 rounded-full border text-[10px] font-bold transition flex items-center gap-1 ${badgeColor}" title="클릭하여 AI 응답을 비판적으로 검증하고 의견을 남기세요">
                   <i class="fa-solid fa-shield-check text-[10px]"></i> 원리 10 비판적 검토: <b>${verStatus}</b>
                 </button>
               </div>
               
-              <!-- 말풍선 클릭 시에도 검증 팝업 열기 지원 -->
               <div onclick="openVerificationModal(${msg.id})" class="chat-bubble-ai p-4 rounded-2xl shadow-xs text-sm text-slate-800 leading-relaxed whitespace-pre-line" title="클릭하여 비판적 검증 팝업 열기">
                 ${msg.content}
               </div>
@@ -958,7 +984,7 @@ ${singleStepInstruction}`;
       container.scrollTop = container.scrollHeight;
     }
 
-    // --- 원리 10 전용 팝업 모달 제어 로직 ---
+    // --- 원리 10 전용 팝업 모달 제어 ---
     function openVerificationModal(msgId) {
       const msg = state.messages.find(m => m.id === msgId);
       if (!msg || msg.role !== 'assistant') return;
@@ -967,7 +993,6 @@ ${singleStepInstruction}`;
       activeVerStatus = msg.verification?.status || '수용';
       if (activeVerStatus === '미검증') activeVerStatus = '수용';
 
-      // 발췌 텍스트 표시
       document.getElementById('modal-target-ai-text').innerText = msg.content;
       document.getElementById('modal-ver-comment').value = msg.verification?.comment || '';
 
@@ -1131,7 +1156,9 @@ ${singleStepInstruction}`;
           system: "초중고 메타인지 & 인간-AI 성찰 챗봇 시스템",
           user_nickname: state.user.nickname,
           user_grade: state.user.grade,
-          principles: "13대 설계원리 완벽 구현 (Step-by-Step 및 팝업 검증 아키텍처)",
+          user_subject: state.user.subject,
+          achievement_standard: state.user.standard,
+          principles: "13대 설계원리 완벽 구현 (성취기준 연동 및 대화 종결 후 성찰 분리)",
           exported_at: new Date().toISOString()
         },
         messages: state.messages,
@@ -1143,7 +1170,7 @@ ${singleStepInstruction}`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `metacognition_chat_${state.user.nickname || 'session'}_${Date.now()}.json`;
+      a.download = `metacognition_${state.user.nickname}_${Date.now()}.json`;
       a.click();
       URL.revokeObjectURL(url);
     }
