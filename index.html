@@ -13,7 +13,8 @@
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
     body { font-family: 'Pretendard', sans-serif; }
     .chat-bubble-user { background: linear-gradient(135deg, #4f46e5, #6366f1); }
-    .chat-bubble-ai { background: #ffffff; border: 1px solid #e2e8f0; }
+    .chat-bubble-ai { background: #ffffff; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.2s ease; }
+    .chat-bubble-ai:hover { border-color: #cbd5e1; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
     .slot-item { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
     .slot-item:hover { transform: scale(1.15); }
     .slot-box { transition: all 0.3s ease; }
@@ -33,7 +34,6 @@
   <div id="auth-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5">
       
-      <!-- 상단 로고 및 안내 -->
       <div class="text-center space-y-1.5">
         <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white text-xl flex items-center justify-center mx-auto shadow-md shadow-indigo-200">
           <i class="fa-solid fa-graduation-cap"></i>
@@ -47,7 +47,6 @@
         </p>
       </div>
 
-      <!-- 회원가입 vs 로그인 탭 전환 -->
       <div class="flex bg-slate-100 p-1 rounded-2xl text-xs font-bold">
         <button id="tab-btn-register" onclick="switchAuthTab('register')" class="flex-1 py-2.5 rounded-xl bg-white text-indigo-600 shadow-xs transition flex items-center justify-center gap-1.5">
           <i class="fa-solid fa-user-plus"></i> 새 계정 만들기 (회원가입)
@@ -57,13 +56,11 @@
         </button>
       </div>
 
-      <!-- 공통: 닉네임 입력 (더미데이터 완전 제거) -->
       <div class="space-y-1.5">
         <label class="block text-xs font-bold text-slate-700">1. 학습자 닉네임</label>
         <input id="auth-nickname" type="text" placeholder="사용할 닉네임을 입력하세요" class="w-full text-sm border border-slate-300 rounded-xl px-4 py-2.5 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
       </div>
 
-      <!-- 회원가입 전용: 학년 수준 선택 -->
       <div id="register-grade-box" class="space-y-1.5">
         <label class="block text-xs font-bold text-slate-700">2. 학교급 및 학년 선택</label>
         <select id="auth-grade" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50 focus:outline-none">
@@ -74,7 +71,6 @@
         </select>
       </div>
 
-      <!-- 빠칭코 4자리 그림 비밀번호 영역 (초기 빈 슬롯) -->
       <div class="space-y-2">
         <div class="flex justify-between items-center">
           <label class="text-xs font-bold text-slate-700" id="pin-label">3. 빠칭코 4자리 그림 비밀번호 설정</label>
@@ -83,7 +79,6 @@
           </button>
         </div>
 
-        <!-- 4자리 슬롯 디스플레이 (초기 빈 ❓ 상태) -->
         <div class="grid grid-cols-4 gap-2 bg-slate-100 p-2.5 rounded-2xl border border-slate-200 text-center">
           <div id="slot-0" class="slot-box bg-white h-12 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
           <div id="slot-1" class="slot-box bg-white h-12 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
@@ -93,13 +88,9 @@
 
         <p class="text-[11px] text-slate-400 text-center">아래 15개 그림 중 4개를 순서대로 터치하거나 [룰렛 돌리기]를 누르세요.</p>
 
-        <!-- 15종류 아이콘 팔레트 -->
-        <div id="emoji-palette" class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 rounded-2xl border border-slate-200">
-          <!-- 동적 생성됨 -->
-        </div>
+        <div id="emoji-palette" class="grid grid-cols-5 gap-1.5 p-2 bg-slate-50 rounded-2xl border border-slate-200"></div>
       </div>
 
-      <!-- 제출 버튼 -->
       <div class="space-y-2 pt-1">
         <button id="auth-submit-btn" onclick="submitAuth()" class="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-200 transition flex items-center justify-center gap-2">
           <span>회원가입 완료하고 학습 시작</span> <i class="fa-solid fa-arrow-right"></i>
@@ -109,7 +100,6 @@
         </button>
       </div>
 
-      <!-- 백엔드 연결 상태 안내 배지 -->
       <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
         <span>백엔드 저장소:</span>
         <span id="backend-status-badge" class="font-semibold text-indigo-600 flex items-center gap-1">
@@ -121,12 +111,67 @@
   </div>
 
   <!-- ================================================================= -->
-  <!-- 2. 상단 네비게이션 헤더 -->
+  <!-- 2. 원리 10: AI 답변 비판적 검증 전용 팝업 모달 -->
+  <!-- ================================================================= -->
+  <div id="verification-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">
+            <i class="fa-solid fa-shield-check"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-slate-900">원리 10: AI 응답 비판적 검증 &amp; 판단</h3>
+            <p class="text-[11px] text-slate-500">AI의 산출물을 맹신하지 않고 주도적으로 검증합니다.</p>
+          </div>
+        </div>
+        <button onclick="closeVerificationModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- 검증 대상 AI 메시지 미리보기 -->
+      <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-700 max-h-32 overflow-y-auto leading-relaxed">
+        <span class="font-bold text-slate-500 block mb-1">검토 중인 AI 답변 발췌:</span>
+        <div id="modal-target-ai-text" class="whitespace-pre-line text-slate-800"></div>
+      </div>
+
+      <!-- 1. 판단 라디오 선택 -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-bold text-slate-700">1. 나의 비판적 수용 여부 판단</label>
+        <div class="grid grid-cols-3 gap-2 text-xs">
+          <button type="button" onclick="selectModalStatus('수용')" id="modal-btn-accept" class="py-2.5 px-2 rounded-xl border border-slate-200 hover:border-emerald-500 font-bold flex items-center justify-center gap-1 transition">
+            👍 수용 (타당함)
+          </button>
+          <button type="button" onclick="selectModalStatus('의문')" id="modal-btn-question" class="py-2.5 px-2 rounded-xl border border-slate-200 hover:border-amber-500 font-bold flex items-center justify-center gap-1 transition">
+            ❓ 의문 (확인필요)
+          </button>
+          <button type="button" onclick="selectModalStatus('수정필요')" id="modal-btn-reject" class="py-2.5 px-2 rounded-xl border border-slate-200 hover:border-rose-500 font-bold flex items-center justify-center gap-1 transition">
+            ✏️ 수정필요 (오류)
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. 비판적 코멘트 작성 -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-bold text-slate-700">2. 나의 비판적 코멘트 및 근거</label>
+        <textarea id="modal-ver-comment" rows="3" class="w-full text-xs border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="예: 설명의 결론은 맞으나, 왜 그런 현상이 발생하는지에 대한 구체적 과학적 근거가 빠져 있습니다."></textarea>
+      </div>
+
+      <!-- 모달 하단 버튼 -->
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button onclick="closeVerificationModal()" class="px-4 py-2 text-xs font-bold rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 transition">취소</button>
+        <button onclick="saveModalVerification()" class="px-5 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition shadow-xs">검증 완료 및 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- 3. 상단 네비게이션 헤더 -->
   <!-- ================================================================= -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
     <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
       
-      <!-- 서비스 로고 & 사용자 정보 -->
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-xl shadow-md">
           <i class="fa-solid fa-brain"></i>
@@ -138,14 +183,14 @@
               <i class="fa-solid fa-user-graduate"></i> <span id="user-display-name">-</span> • <span id="user-display-grade" class="text-indigo-600 font-bold">-</span>
             </span>
           </div>
-          <p class="text-xs text-slate-500">초·중·고 학년 맞춤형 13대 설계원리 대화형 튜터 (Upstage Solar Pro)</p>
+          <p class="text-xs text-slate-500">13대 설계원리 Step-by-Step 단계별 순차 문답 대화 시스템 (Upstage Solar Pro)</p>
         </div>
       </div>
 
-      <!-- 대화 상태 머신 진행 단계 표시 -->
+      <!-- Step by Step 진행 단계 표시 -->
       <div class="flex items-center gap-2 text-xs font-bold">
         <span id="step-badge-prep" class="px-3 py-1 rounded-full bg-indigo-600 text-white transition">
-          1단계: 맥락 &amp; 사전지식
+          1단계: 대화 준비
         </span>
         <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
         <span id="step-badge-dialogue" class="px-3 py-1 rounded-full bg-slate-100 text-slate-400 transition">
@@ -157,7 +202,6 @@
         </span>
       </div>
 
-      <!-- 계정 전환 및 API 설정 -->
       <div class="flex items-center gap-2">
         <button onclick="openAuthModal()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1">
           <i class="fa-solid fa-arrow-right-from-bracket"></i> 계정 전환
@@ -171,7 +215,7 @@
   </header>
 
   <!-- ================================================================= -->
-  <!-- 3. 메인 인터페이스 (대화 중심 아키텍처 + 실시간 메타인지 대시보드) -->
+  <!-- 4. 메인 인터페이스 -->
   <!-- ================================================================= -->
   <div class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
 
@@ -184,7 +228,7 @@
           <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
           <span class="font-bold text-slate-800">소크라-봇</span>
           <span class="text-slate-300">•</span>
-          <span id="dialogue-architecture-status" class="text-indigo-600 font-semibold">[1단계: 대화 준비 국면]</span>
+          <span id="dialogue-step-indicator" class="text-indigo-600 font-bold">[Step 1: 학습 목표 및 주제 설정]</span>
         </div>
 
         <button id="btn-phase-toggle" onclick="transitionToNextMajorPhase()" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition flex items-center gap-1.5">
@@ -193,14 +237,11 @@
       </div>
 
       <!-- 대화 메시지 영역 -->
-      <div id="chat-messages" class="flex-1 p-6 space-y-6 overflow-y-auto max-h-[540px]">
-        <!-- 메시지가 동적으로 추가됨 -->
-      </div>
+      <div id="chat-messages" class="flex-1 p-6 space-y-6 overflow-y-auto max-h-[540px]"></div>
 
       <!-- 메시지 입력 영역 -->
       <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
         
-        <!-- 원리 11: 질문 성향 선택 칩 -->
         <div class="flex items-center justify-between text-xs px-1">
           <div class="flex items-center gap-3">
             <span class="font-bold text-slate-700 flex items-center gap-1">
@@ -215,12 +256,11 @@
               <span>🤖 AI 단순 위임 (정답만 질문)</span>
             </label>
           </div>
-          <span class="text-[11px] text-slate-400">Enter로 전송</span>
+          <span class="text-[11px] text-slate-400">말풍선을 누르면 비판적 검토(원리 10) 팝업이 뜹니다</span>
         </div>
 
-        <!-- 텍스트 입력창 -->
         <div class="flex gap-2">
-          <input id="user-input" type="text" onkeydown="if(event.key==='Enter') sendMessage()" class="flex-1 text-sm border border-slate-300 rounded-2xl px-4 py-3 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs" placeholder="AI 튜터의 질문에 답하거나 호기심을 적어보세요..." />
+          <input id="user-input" type="text" onkeydown="if(event.key==='Enter') sendMessage()" class="flex-1 text-sm border border-slate-300 rounded-2xl px-4 py-3 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs" placeholder="AI 튜터의 질문에 답하거나 생각을 들려주세요..." />
           <button id="btn-send" onclick="sendMessage()" class="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-200 transition flex items-center gap-2 shrink-0">
             <span>전송</span> <i class="fa-solid fa-paper-plane"></i>
           </button>
@@ -268,7 +308,7 @@
         </div>
       </div>
 
-      <!-- 3. 원리 11: 주도권 비율 실시간 원형 차트 (더미데이터 제거: 초기 0/0) -->
+      <!-- 3. 원리 11: 주도권 비율 실시간 원형 차트 -->
       <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
         <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
           <i class="fa-solid fa-chart-pie"></i> 원리 11: 주도권 vs AI 위임 비율
@@ -278,7 +318,7 @@
         </div>
       </div>
 
-      <!-- 4. 원리 13: 사전 vs 사후 이해도 성장 비교 막대 차트 (더미데이터 제거: 초기 미평가) -->
+      <!-- 4. 원리 13: 사전 vs 사후 이해도 성장 비교 막대 차트 -->
       <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
         <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
           <i class="fa-solid fa-chart-simple"></i> 원리 13: 이해도 성장 변화
@@ -302,7 +342,7 @@
   </div>
 
   <!-- ================================================================= -->
-  <!-- 4. API 설정 모달 창 -->
+  <!-- 5. API 설정 모달 창 -->
   <!-- ================================================================= -->
   <div id="config-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
@@ -330,7 +370,7 @@
   </div>
 
   <!-- ================================================================= -->
-  <!-- 5. 프론트엔드 자바스크립트 엔진 (더미데이터 완전 제거 및 순수 상태 관리) -->
+  <!-- 6. 프론트엔드 자바스크립트 엔진 (Step-by-Step 순차 문답 & 팝업형 원리 10) -->
   <!-- ================================================================= -->
   <script>
     const EMOJI_LIST = [
@@ -355,46 +395,43 @@
     let selectedPin = [];
     const BACKEND_URL = "http://localhost:8000";
 
-    const DIALOGUE_STATES = {
-      PREP_GOAL: "PREP_GOAL",
-      PREP_ROLE_PRIOR: "PREP_ROLE_PRIOR",
-      PREP_METACOG: "PREP_METACOG",
-      PREP_STRATEGY: "PREP_STRATEGY",
-      IN_DIALOGUE: "IN_DIALOGUE",
-      REFL_ROLE: "REFL_ROLE",
-      REFL_PROMPT: "REFL_PROMPT",
-      REFL_TRANSFER: "REFL_TRANSFER",
-      REFL_GROWTH: "REFL_GROWTH"
+    // 13대 설계원리 Step-by-Step 세부 순차 상태 정의 (한 번에 하나씩만 문답)
+    const STEP_STATES = {
+      STEP_1_GOAL: "STEP_1_GOAL",           // 원리 4: 학습 목표 및 주제 1개 질문
+      STEP_2_ROLE: "STEP_2_ROLE",           // 원리 5: AI 과업 분담 1개 질문
+      STEP_3_PRIOR: "STEP_3_PRIOR",         // 원리 6: 사전지식 & 1~5점 점수 1개 질문
+      STEP_4_METACOG: "STEP_4_METACOG",     // 원리 7: 메타인지 질문 1개
+      STEP_5_STRATEGY: "STEP_5_STRATEGY",   // 원리 8: 인지 전략 선택 확인
+      STEP_IN_DIALOGUE: "STEP_IN_DIALOGUE", // 원리 1, 2, 8, 9, 10: 본 탐구 대화
+      STEP_REFL_ROLE: "STEP_REFL_ROLE",     // 원리 11: 주도권 성찰 1개 질문
+      STEP_REFL_PROMPT: "STEP_REFL_PROMPT", // 원리 12: 질문 궤적 성찰 1개 질문
+      STEP_REFL_TRANSFER: "STEP_REFL_TRANSFER", // 원리 13: AI 소거 유사 전이 과업 1문제
+      STEP_REFL_GROWTH: "STEP_REFL_GROWTH"  // 원리 13: 사후 점수 및 종합 성장 성찰
     };
 
     const GRADE_PEDAGOGY = {
       "초등 3~4학년": {
         tone: "매우 다정하고 친근하며 재미있는 어조, 이모지 적극 사용",
-        scaffoldingGuide: "복잡한 학술 용어 대신 친숙한 일상 비유와 만화 같은 묘사로 질문. 한 번에 하나씩 쉽게 질문.",
-        strategyPrompt: "머릿속으로 상상해서 그림 그려보기, 내 방식으로 재미있는 이야기 만들어보기",
-        transferDifficulty: "직관적이고 일상에서 볼 수 있는 간단한 관찰 상황 출제"
+        scaffoldingGuide: "친숙한 일상 비유 사용. 한 번에 단 1개의 쉬운 질문만 할 것.",
+        transferDifficulty: "직관적인 일상 관찰 상황 문제"
       },
       "초등 5~6학년": {
-        tone: "다정하고 격려하는 어조, 호기심을 북돋우는 존댓말",
-        scaffoldingGuide: "원인과 결과의 인과관계를 스스로 짚어보도록 유도. 일상적 경험과 기초 과학 개념 연결.",
-        strategyPrompt: "새로운 내용을 내 일상 경험에 빗대어 설명(정교화)하거나 표로 정리(조직화)",
-        transferDifficulty: "기본 개념을 새로운 일상 상황 1가지에 적용해 원인을 설명해보는 문제"
+        tone: "다정하고 호기심을 북돋우는 존댓말",
+        scaffoldingGuide: "인과관계 탐색 유도. 한 번에 단 1개의 질문만 할 것.",
+        transferDifficulty: "기본 개념을 일상 상황에 적용해보는 문제"
       },
       "중학교 1~3학년": {
-        tone: "논리적이고 존중하는 어조, 체계적인 탐구 동료 톤",
-        scaffoldingGuide: "교과 핵심 개념 용어를 바르게 사용하도록 유도. 논리적 반례 질문과 자기설명(Self-Explanation) 유도.",
-        strategyPrompt: "핵심 개념 간의 관계를 계층도나 표로 구조화(조직화)하거나, AI 설명의 빈틈을 찾아보는 비판적 사고",
-        transferDifficulty: "조건이 약간 바뀐 심화 적용 상황에서 인과관계를 단계적으로 서술하는 문제"
+        tone: "논리적이고 존중하는 동료 탐구자 톤",
+        scaffoldingGuide: "교과 핵심 개념 용어 정착 및 반례 유도. 한 번에 단 1개의 질문만 할 것.",
+        transferDifficulty: "조건이 일부 변경된 심화 적용 문제"
       },
       "고등학교 1~3학년": {
-        tone: "지적이고 학술적인 상호작용, 자기주도적 연구자 톤",
-        scaffoldingGuide: "고차원적 비판적 사고, 수학적·물리적 모델링, 개념의 정밀한 정의 및 한계점 검토 유도. AI 의존성을 철저히 지양하고 독립적 문제해결력 자극.",
-        strategyPrompt: "다양한 변인 간의 상관관계 분석(조직화), AI의 가설이나 증명에 대한 비판적 반례 검증(Critical Thinking), 메타인지적 모니터링",
-        transferDifficulty: "교과 복합 원리가 융합된 실생활/학술 응용 문제를 스스로 공식화하고 해결하는 심화 전이 과제"
+        tone: "지적이고 깊이 있는 학술 연구자 톤",
+        scaffoldingGuide: "심화 이론 모델링 및 정밀한 개념 정의 검토. 한 번에 단 1개의 질문만 간결하게 할 것.",
+        transferDifficulty: "교과 복합 원리가 융합된 심화 응용 과제"
       }
     };
 
-    // 더미데이터가 완전히 배제된 순수 상태 객체
     const state = {
       user: {
         nickname: localStorage.getItem('current_user_nickname') || '',
@@ -405,12 +442,11 @@
       model: localStorage.getItem("UPSTAGE_MODEL") || "solar-pro",
       baseUrl: "https://api.upstage.ai/v1",
       
-      currentState: DIALOGUE_STATES.PREP_GOAL,
+      currentStep: STEP_STATES.STEP_1_GOAL,
       scaffolding: "High",
       currentStrategy: "정교화(Elaboration)",
       messages: [],
       
-      // 순수 사용자 입력 컨텍스트 (더미 문자열 제거)
       context: {
         subject: "",
         unit: "",
@@ -419,6 +455,10 @@
         postScore: null
       }
     };
+
+    // 검증 모달 상태 관리용 변수
+    let activeVerMsgId = null;
+    let activeVerStatus = '수용';
 
     let chartDelInstance = null;
     let chartScoreInstance = null;
@@ -455,9 +495,7 @@
         document.getElementById('backend-status-badge').innerHTML = `
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> FastAPI 서버 연결됨 (:8000)
         `;
-      } catch (e) {
-        // 브라우저 내장 DB 모드 유지
-      }
+      } catch (e) {}
     }
 
     function switchAuthTab(tab) {
@@ -600,70 +638,96 @@
       document.getElementById('auth-modal').classList.remove('hidden');
     }
 
-    // --- 대화 상태 머신 기반 AI 튜터 발문 엔진 (순수 발문) ---
+    // --- Step by Step 단일 질문 발문 엔진 ---
     function startAITutoring() {
       state.messages = [];
-      state.currentState = DIALOGUE_STATES.PREP_GOAL;
-      updateStateArchitectureUI();
+      state.currentStep = STEP_STATES.STEP_1_GOAL;
+      updateStepUI();
 
       const grade = state.user.grade || "초등 5~6학년";
       let welcomeIntro = "";
 
       if (grade === "초등 3~4학년") {
-        welcomeIntro = `안녕, **${state.user.nickname}** 친구! ✨\n저는 여러분이 스스로 생각하는 힘을 키워줄 친구 AI 튜터 **'소크라-봇'**이에요.\n\n오늘 어떤 과목의 어떤 주제를 공부해볼까요? 그리고 오늘 꼭 알고 싶은 목표가 무엇인지 들려주세요! (원리 4: 학습 목표 설정)`;
+        welcomeIntro = `안녕, **${state.user.nickname}** 친구! ✨\n오늘 어떤 과목의 어떤 주제를 공부해볼까요? 그리고 오늘 꼭 알고 싶은 목표가 무엇인지 편하게 들려주세요! (원리 4: 학습 목표 및 맥락 설정)`;
       } else if (grade === "초등 5~6학년") {
-        welcomeIntro = `반가워요, **${state.user.nickname}** 학생! 🦉\n저는 배움의 주도권을 여러분이 쥐고 성장하도록 돕는 교육 AI 튜터 **'소크라-봇'**이에요.\n\n오늘 어떤 과목의 어떤 단원을 함께 탐구해볼까요? 그리고 오늘 스스로 달성하고 싶은 **학습 목표**는 무엇인지 말해줄래요? (원리 4: 학습 목표 및 교과 맥락 설정)`;
+        welcomeIntro = `반가워요, **${state.user.nickname}** 학생! 🦉\n오늘 어떤 과목의 어떤 단원을 함께 탐구해볼까요? 그리고 오늘 스스로 달성하고 싶은 **학습 목표**가 무엇인지 말해줄래요? (원리 4: 학습 목표 및 교과 맥락 설정)`;
       } else if (grade === "중학교 1~3학년") {
-        welcomeIntro = `안녕하세요, **${state.user.nickname}** 학생! 🎓\n메타인지적 자기조절학습을 돕는 교육 AI 튜터 **'소크라-봇'**입니다.\n\n오늘 학습할 과목과 단원, 그리고 오늘 반드시 해결하고 싶은 **구체적인 학습 과제와 목표**를 제시해 주세요. (원리 4: 학습 목표 및 교과 맥락 설정)`;
+        welcomeIntro = `안녕하세요, **${state.user.nickname}** 학생! 🎓\n오늘 학습할 과목과 단원, 그리고 오늘 반드시 해결하고 싶은 **구체적인 학습 과제와 목표**를 제시해 주세요. (원리 4: 학습 목표 및 교과 맥락 설정)`;
       } else {
-        // 고등학교 1~3학년
-        welcomeIntro = `반갑습니다, **${state.user.nickname}** 님! 🏛️\n비판적 AI 협력과 고차원 메타인지 조절을 지원하는 학술 AI 튜터 **'소크라-봇'**입니다.\n\n오늘 탐구할 교과 영역과 핵심 단원, 그리고 오늘 규명하고자 하는 **심화 학습 목표 및 탐구 과제**를 설정해 주시기 바랍니다. (원리 4: 학습 목표 및 교과 맥락 설정)`;
+        welcomeIntro = `반갑습니다, **${state.user.nickname}** 님! 🏛️\n오늘 탐구할 교과 영역과 핵심 단원, 그리고 오늘 규명하고자 하는 **심화 학습 목표 및 탐구 과제**를 설정해 주시기 바랍니다. (원리 4: 학습 목표 및 교과 맥락 설정)`;
       }
 
       pushAIMessage(welcomeIntro);
     }
 
-    function updateStateArchitectureUI() {
+    function updateStepUI() {
       const bPrep = document.getElementById('step-badge-prep');
       const bDia = document.getElementById('step-badge-dialogue');
       const bRef = document.getElementById('step-badge-reflect');
-      const statusText = document.getElementById('dialogue-architecture-status');
+      const indicator = document.getElementById('dialogue-step-indicator');
       const btnToggle = document.getElementById('btn-phase-toggle-label');
 
       [bPrep, bDia, bRef].forEach(el => el.className = "px-3 py-1 rounded-full bg-slate-100 text-slate-400 transition");
 
-      const curr = state.currentState;
-      if ([DIALOGUE_STATES.PREP_GOAL, DIALOGUE_STATES.PREP_ROLE_PRIOR, DIALOGUE_STATES.PREP_METACOG, DIALOGUE_STATES.PREP_STRATEGY].includes(curr)) {
+      const s = state.currentStep;
+      if (s === STEP_STATES.STEP_1_GOAL) {
         bPrep.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
-        statusText.innerText = `[1단계: 대화 준비 국면]`;
+        indicator.innerText = "[Step 1/5: 학습 목표 및 주제 설정 (원리 4)]";
         btnToggle.innerText = "본 탐구 대화로 전환";
-      } else if (curr === DIALOGUE_STATES.IN_DIALOGUE) {
+      } else if (s === STEP_STATES.STEP_2_ROLE) {
+        bPrep.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
+        indicator.innerText = "[Step 2/5: AI 과업 분담 설정 (원리 5)]";
+        btnToggle.innerText = "본 탐구 대화로 전환";
+      } else if (s === STEP_STATES.STEP_3_PRIOR) {
+        bPrep.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
+        indicator.innerText = "[Step 3/5: 사전지식 및 이해도 점검 (원리 6)]";
+        btnToggle.innerText = "본 탐구 대화로 전환";
+      } else if (s === STEP_STATES.STEP_4_METACOG) {
+        bPrep.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
+        indicator.innerText = "[Step 4/5: 메타인지 질문 점검 (원리 7)]";
+        btnToggle.innerText = "본 탐구 대화로 전환";
+      } else if (s === STEP_STATES.STEP_5_STRATEGY) {
+        bPrep.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
+        indicator.innerText = "[Step 5/5: 인지 전략 최종 선택 (원리 8)]";
+        btnToggle.innerText = "본 탐구 대화로 전환";
+      } else if (s === STEP_STATES.STEP_IN_DIALOGUE) {
         bDia.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
-        statusText.innerText = `[2단계: 본 탐구 대화 국면] 학년 맞춤형 스캐폴딩 & 인지전략 조절 중`;
+        indicator.innerText = "[2단계: 본 탐구 대화] 핑퐁형 소크라테스 대화 진행 중";
         btnToggle.innerText = "대화 마치고 3단계 성찰로 이동";
+      } else if (s === STEP_STATES.STEP_REFL_ROLE) {
+        bRef.className = "px-3 py-1 rounded-full bg-amber-600 text-white shadow-xs transition";
+        indicator.innerText = "[성찰 Step 1/4: 주도권 vs AI 위임 성찰 (원리 11)]";
+        btnToggle.innerText = "새로운 학습 시작하기";
+      } else if (s === STEP_STATES.STEP_REFL_PROMPT) {
+        bRef.className = "px-3 py-1 rounded-full bg-amber-600 text-white shadow-xs transition";
+        indicator.innerText = "[성찰 Step 2/4: 질문 궤적 및 프롬프트 성찰 (원리 12)]";
+        btnToggle.innerText = "새로운 학습 시작하기";
+      } else if (s === STEP_STATES.STEP_REFL_TRANSFER) {
+        bRef.className = "px-3 py-1 rounded-full bg-amber-600 text-white shadow-xs transition";
+        indicator.innerText = "[성찰 Step 3/4: AI 소거 전이 과업 자가 해결 (원리 13)]";
+        btnToggle.innerText = "새로운 학습 시작하기";
       } else {
         bRef.className = "px-3 py-1 rounded-full bg-amber-600 text-white shadow-xs transition";
-        statusText.innerText = `[3단계: 종결 및 성찰 국면] 주도권·질문궤적 성찰 및 전이 과업`;
+        indicator.innerText = "[성찰 Step 4/4: 이해도 성장 및 인지전략 종합 성찰 (원리 13)]";
         btnToggle.innerText = "새로운 학습 시작하기";
       }
     }
 
     function transitionToNextMajorPhase() {
-      if (state.currentState.startsWith("PREP_")) {
-        state.currentState = DIALOGUE_STATES.IN_DIALOGUE;
-        updateStateArchitectureUI();
+      if (state.currentStep.startsWith("STEP_1") || state.currentStep.startsWith("STEP_2") || state.currentStep.startsWith("STEP_3") || state.currentStep.startsWith("STEP_4") || state.currentStep.startsWith("STEP_5")) {
+        state.currentStep = STEP_STATES.STEP_IN_DIALOGUE;
+        updateStepUI();
         pushAIMessage(
-          `대화 준비 과정을 마쳤습니다! 🎉\n` +
-          `이제 **[2단계: 본 탐구 대화]**로 진입합니다.\n\n` +
-          `현재 활성화된 인지 전략은 **[${state.currentStrategy}]**입니다. ${state.user.grade} 수준에 맞추어 저에게 단순히 답을 묻기보다 여러분의 생각과 가설을 먼저 들려주세요. 첫 질문을 시작해볼까요?`
+          `준비를 마쳤으니 이제 **[본 탐구 대화]**를 시작해볼까요? 🎉\n` +
+          `현재 인지 전략은 **[${state.currentStrategy}]**입니다. 첫 번째 호기심이나 여러분의 생각을 저에게 들려주세요!`
         );
-      } else if (state.currentState === DIALOGUE_STATES.IN_DIALOGUE) {
-        state.currentState = DIALOGUE_STATES.REFL_ROLE;
-        updateStateArchitectureUI();
+      } else if (state.currentStep === STEP_STATES.STEP_IN_DIALOGUE) {
+        state.currentStep = STEP_STATES.STEP_REFL_ROLE;
+        updateStepUI();
         pushAIMessage(
-          `오늘의 탐구 대화를 마쳤습니다! 👏 이제 **[3단계: 종결 및 성찰]**로 들어갑니다.\n\n` +
-          `**[원리 11: 주도권 및 AI 위임 성찰]**\n` +
-          `오늘 나눈 대화를 돌아보았을 때, 여러분이 **스스로 주도권을 쥐고 생각했던 순간**과 저에게 **단순히 정답을 위임해버렸던 순간**은 각각 언제였나요? 우측의 [주도권 vs AI 위임 비율 원형 차트]를 확인하며 여러분의 생각을 들려주세요.`
+          `오늘의 탐구 대화를 마쳤습니다! 👏 이제 **[3단계: 종결 및 성찰]**을 차례차례 진행해볼게요.\n\n` +
+          `**[원리 11: 주도권 성찰]**\n` +
+          `오늘 대화에서 스스로 주도권을 쥐고 생각했던 순간과, 저에게 단순히 정답을 위임해버렸던 순간은 각각 언제였나요? 우측의 원형 차트를 보며 들려주세요.`
         );
       } else {
         if (confirm("새로운 주제로 학습을 시작하시겠습니까?")) {
@@ -685,7 +749,7 @@
         role: "user",
         content: anonText,
         delegationType: qType,
-        stateAtTime: state.currentState,
+        stepAtTime: state.currentStep,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
 
@@ -710,91 +774,102 @@
         content: content,
         scaffolding: state.scaffolding,
         verification: { status: "미검증", comment: "" },
-        stateAtTime: state.currentState,
+        stepAtTime: state.currentStep,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
       renderMessages();
     }
 
+    // Step-by-Step 프롬프트 규칙 주입 (한 번에 1개의 질문만 단일 제시)
     async function generateAIResponse(userText) {
       const grade = state.user.grade || "초등 5~6학년";
       const pedagogy = GRADE_PEDAGOGY[grade] || GRADE_PEDAGOGY["초등 5~6학년"];
 
-      let stateInstruction = "";
+      let singleStepInstruction = "";
 
-      if (state.currentState === DIALOGUE_STATES.PREP_GOAL) {
-        state.currentState = DIALOGUE_STATES.PREP_ROLE_PRIOR;
-        stateInstruction = `학습자가 학습 목표와 주제를 설정했습니다. 격려한 뒤:
-1. [원리 5: AI 과업 분담] 오늘 저(AI)에게 어떤 역할을 기대하는지 (힌트 질문자 / 동료 탐구자 / 설명 점검자 중 선택) 질문하세요.
-2. [원리 6: 사전지식 활성화] 이 주제에 대해 이미 알고 있는 지식이나 일상 경험이 무엇인지, 그리고 5점 만점 중 스스로 몇 점이라고 생각하는지 질문하세요.`;
+      if (state.currentStep === STEP_STATES.STEP_1_GOAL) {
+        state.currentStep = STEP_STATES.STEP_2_ROLE;
+        singleStepInstruction = `[Step 2: 원리 5 AI 과업 분담 딱 1개만 질문]
+학습자가 설정한 주제와 목표에 대해 한 문장으로 격려하세요.
+그런 다음, 오늘 대화에서 AI에게 어떤 역할을 기대하는지 **오직 그 질문 1가지만** 간결하게 던지세요.
+(선택지 제시: ① 힌트 질문자, ② 동료 탐구자, ③ 설명 점검자 중 하나를 고르도록 권유).
+*절대 사전지식이나 메타인지 질문 등 다음 단계 질문을 미리 섞지 마세요!*`;
       }
-      else if (state.currentState === DIALOGUE_STATES.PREP_ROLE_PRIOR) {
-        state.currentState = DIALOGUE_STATES.PREP_METACOG;
-        // 숫자가 감지되면 사전 점수 저장
+      else if (state.currentStep === STEP_STATES.STEP_2_ROLE) {
+        state.currentStep = STEP_STATES.STEP_3_PRIOR;
+        singleStepInstruction = `[Step 3: 원리 6 사전지식 활성화 딱 1개만 질문]
+학습자가 선택한 AI의 역할을 확인하고 지지하세요.
+그런 다음, 이 주제에 대해 이미 알고 있는 지식이나 일상 경험이 무엇인지, 그리고 5점 만점 중 스스로 몇 점이라고 생각하는지 **사전지식 관련 질문 딱 1가지만** 던지세요.
+*절대 이해/전략/연결 질문 등 다음 단계 질문을 미리 섞지 마세요!*`;
+      }
+      else if (state.currentStep === STEP_STATES.STEP_3_PRIOR) {
+        state.currentStep = STEP_STATES.STEP_4_METACOG;
         const matchScore = userText.match(/[1-5]/);
         if (matchScore) {
           state.context.priorScore = parseInt(matchScore[0]);
           document.getElementById('pre-score-text').innerText = `${state.context.priorScore}점`;
           updateScoreChart();
         }
-        stateInstruction = `학습자가 과업 분담과 사전지식을 답했습니다. [원리 7: 메타인지 3대 사전 점검 질문(Kramarski 이론)]을 ${grade} 난이도에 맞추어 던지세요:
-1. 이해 질문: 이 주제에서 가장 핵심이 되는 중심 개념은 무엇일까요?
-2. 전략 질문: 이 과제를 잘 해결하기 위해 오늘 어떤 인지 전략이나 방법을 쓸 생각인가요?
-3. 연결 질문: 이전에 배운 내용이나 일상생활과 어떻게 연결될 수 있을까요?`;
+        singleStepInstruction = `[Step 4: 원리 7 메타인지 점검 질문]
+학습자의 사전 지식 답변을 칭찬하세요.
+그런 다음, 메타인지 질문(이해 질문: "이 주제에서 가장 핵심이 되는 원리는 무엇일까요?" 혹은 전략/연결 질문) 중 **가장 중요한 1가지 질문만** 골라서 던지세요. 한꺼번에 여러 개 묻지 마세요.`;
       }
-      else if (state.currentState === DIALOGUE_STATES.PREP_METACOG) {
-        state.currentState = DIALOGUE_STATES.PREP_STRATEGY;
-        stateInstruction = `학습자가 메타인지 질문에 답했습니다. [원리 8: 인지 전략 계획 수립]을 안내하며,
-"오늘 사용할 주 인지전략으로 [${state.currentStrategy}]을 추천해요. (${pedagogy.strategyPrompt}). 이 전략을 선택한 이유를 짧게 말해보고, 첫 번째 탐구 질문을 저에게 던져보세요!"라고 안내하며 본 대화로 이끄세요.`;
+      else if (state.currentStep === STEP_STATES.STEP_4_METACOG) {
+        state.currentStep = STEP_STATES.STEP_5_STRATEGY;
+        singleStepInstruction = `[Step 5: 원리 8 인지전략 선택 확인]
+학습자의 생각에 공감하세요.
+이제 대화 준비의 마지막으로, 오늘 사용할 주 인지전략([${state.currentStrategy}])을 실천해볼 것을 제안하며 "첫 번째로 저에게 물어보거나 탐구해보고 싶은 질문을 시작해볼까요?"라고 본 대화 시작을 유도하세요.`;
       }
-      else if (state.currentState === DIALOGUE_STATES.PREP_STRATEGY) {
-        state.currentState = DIALOGUE_STATES.IN_DIALOGUE;
-        stateInstruction = `학습자가 전략 선택 이유를 밝히고 질문을 던졌습니다. 이제 본격적인 [2단계: 본 탐구 대화]입니다. 
-- [원리 1: 비계 수준 ${state.scaffolding}]에 맞추어 ${pedagogy.scaffoldingGuide}
-- [원리 2: 학습자 최종판단 보존] 정답을 직접 규정하지 말고 선택권과 질문을 반문하세요.
-- [원리 8: 인지전략 실천] 선택된 전략을 실천할 수 있도록 유도하세요.
-- [원리 10: 비판적 검증] 설명 끝에 자신의 설명에 보완할 점은 없는지 질문하세요.`;
+      else if (state.currentStep === STEP_STATES.STEP_5_STRATEGY) {
+        state.currentStep = STEP_STATES.STEP_IN_DIALOGUE;
+        singleStepInstruction = `[2단계: 본 탐구 대화 시작]
+학습자의 첫 질문에 답하되, 절대로 강의하듯 길게 늘어놓지 마세요.
+- 정답을 바로 주지 말고 소크라테스식으로 한두 문장의 핵심 힌트와, 학습자가 생각할 발문 1개만 던지세요.
+- ${pedagogy.scaffoldingGuide}`;
       }
-      else if (state.currentState === DIALOGUE_STATES.IN_DIALOGUE) {
-        stateInstruction = `[2단계: 본 탐구 대화 진행]
+      else if (state.currentStep === STEP_STATES.STEP_IN_DIALOGUE) {
+        singleStepInstruction = `[2단계: 본 탐구 대화 진행]
 - 비계 수준: [${state.scaffolding}]
 - 적용 전략: [${state.currentStrategy}]
-- 학년 수준: [${grade}] (${pedagogy.tone}, ${pedagogy.scaffoldingGuide})
-- 정답을 바로 주지 말고 소크라테스식으로 학습자의 자기설명과 검증을 이끌어내세요.`;
+- 학년 수준: [${grade}] (${pedagogy.tone})
+- 규칙: 설명은 3~5문장 이내로 핵심만 전달하고, 마지막에 학습자의 주도적 생각을 자극하는 발문 딱 1개를 던져 핑퐁식 대화를 이어가세요. 절대 한 번에 모든 해설을 끝내지 마세요.`;
       }
-      else if (state.currentState === DIALOGUE_STATES.REFL_ROLE) {
-        state.currentState = DIALOGUE_STATES.REFL_PROMPT;
-        stateInstruction = `학습자가 주도권 성찰(원리 11)을 작성했습니다. 공감한 뒤, [원리 12: 질문 궤적 및 프롬프트 적절성 성찰]을 이끌어내세요:
-"오늘 저에게 입력했던 질문들을 돌아보면, 어떤 질문이 가장 효과적이었나요? 다음번에 더 명확하게 질문하려면 어떻게 프롬프트를 다듬어볼 수 있을까요?"`;
+      else if (state.currentStep === STEP_STATES.STEP_REFL_ROLE) {
+        state.currentStep = STEP_STATES.STEP_REFL_PROMPT;
+        singleStepInstruction = `[성찰 Step 2: 원리 12 질문 궤적 성찰]
+학습자의 주도권 성찰에 따뜻하게 피드백을 주세요.
+그런 다음, 오늘 입력했던 질문들을 돌아보며 **어떤 질문이 가장 효과적이었는지, 질문 프롬프트를 어떻게 개선하고 싶은지** 성찰 질문 딱 1개만 던지세요.`;
       }
-      else if (state.currentState === DIALOGUE_STATES.REFL_PROMPT) {
-        state.currentState = DIALOGUE_STATES.REFL_TRANSFER;
-        stateInstruction = `학습자가 프롬프트 성찰을 마쳤습니다. 이제 [원리 13: AI 소거 유사 전이 과업]을 출제하세요:
-- ${grade} 수준에 맞는 ${pedagogy.transferDifficulty}를 1문제 출제하세요.
-- "이제 AI의 힌트 없이, 오직 여러분의 힘으로만 아래 유사 문제를 해결해보세요! 정답은 주지 않을 테니 자유롭게 나만의 풀이를 적어보세요."라고 안내하세요.`;
+      else if (state.currentStep === STEP_STATES.STEP_REFL_PROMPT) {
+        state.currentStep = STEP_STATES.STEP_REFL_TRANSFER;
+        singleStepInstruction = `[성찰 Step 3: 원리 13 AI 소거 전이 과업 출제]
+학습자의 성찰을 격려하세요.
+그런 다음, "이제 AI의 힌트 없이 스스로 풀어보는 유사 전이 과제입니다!"라며 ${grade} 수준에 맞는 ${pedagogy.transferDifficulty}를 **딱 1문제만 출제**하고 정답 없이 학습자의 풀이를 기다리세요.`;
       }
       else {
-        // REFL_GROWTH
-        const matchPostScore = userText.match(/[1-5]/);
-        if (matchPostScore) {
-          state.context.postScore = parseInt(matchPostScore[0]);
+        // STEP_REFL_GROWTH
+        const matchPost = userText.match(/[1-5]/);
+        if (matchPost) {
+          state.context.postScore = parseInt(matchPost[0]);
           document.getElementById('post-score-text').innerText = `${state.context.postScore}점`;
           updateScoreChart();
         }
-        stateInstruction = `학습자가 전이 문제를 풀었습니다! 풀이 노력을 격려하고, [원리 13: 이해도 성장 및 인지전략 종합 성찰]을 진행하세요:
-학습 전과 비교하여 이해도가 5점 만점 중 몇 점으로 향상되었는지, 그리고 인지전략([${state.currentStrategy}])을 쓰면서 어떤 점이 성장했는지 묻고 전체 배움을 칭찬하며 성찰을 마무리하세요.`;
+        singleStepInstruction = `[성찰 Step 4: 원리 13 종합 성장 성찰 및 마무리]
+학습자의 풀이 노력을 크게 칭찬하세요.
+학습 전과 비교하여 이해도가 5점 만점 중 몇 점으로 올랐는지 확인하고, 오늘 배운 인지전략([${state.currentStrategy}])으로 성장한 점을 짚어주며 따뜻한 격려로 대화를 마무리하세요.`;
       }
 
-      updateStateArchitectureUI();
+      updateStepUI();
 
-      const systemPrompt = `당신은 초·중·고 학습자의 메타인지와 인간-AI 상호작용 성찰을 촉진하는 소크라테스 교육 전문 AI 튜터 '소크라-봇'입니다.
-[학습자 정보]
-- 닉네임: ${state.user.nickname}
-- 학교급 및 학년: ${grade}
-- 학년별 응대 지침: 어조(${pedagogy.tone}), 스캐폴딩(${pedagogy.scaffoldingGuide})
-[현재 아키텍처 진행 상태]: ${state.currentState}
-[이번 응답 시 필수 지침]:
-${stateInstruction}`;
+      const systemPrompt = `당신은 초·중·고 학습자의 메타인지와 AI 성찰을 돕는 소크라테스 AI 튜터 '소크라-봇'입니다.
+[학습자 정보] 닉네임: ${state.user.nickname}, 학년: ${grade}
+[필수 대원칙 - Step by Step]:
+1. 절대로 한 번에 여러 단계의 질문이나 2개 이상의 과제를 쏟아내지 마세요.
+2. 아래 [이번 응답 지침]에 지정된 **단 1개의 발문/질문만 간결하게** 제시하고 학습자의 답변을 기다리세요.
+3. 시험지처럼 번호(1, 2, 3...)를 매겨 장황하게 나열하지 말고, 친절한 대화체로 대화하세요.
+
+[이번 응답 지침]:
+${singleStepInstruction}`;
 
       const apiMsgs = [
         { role: "system", content: systemPrompt },
@@ -822,6 +897,7 @@ ${stateInstruction}`;
       return data.choices[0].message.content;
     }
 
+    // 대화 메시지 렌더링 (원리 10 검증 패널을 인라인에서 제거하고 팝업 호출 버튼으로 전환)
     function renderMessages() {
       const container = document.getElementById('chat-messages');
       container.innerHTML = '';
@@ -845,29 +921,34 @@ ${stateInstruction}`;
           const div = document.createElement("div");
           div.className = "flex items-start gap-3";
           const verStatus = msg.verification?.status || "미검증";
+          
+          let badgeColor = "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200";
+          if (verStatus === '수용') badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-300";
+          else if (verStatus === '의문') badgeColor = "bg-amber-50 text-amber-700 border-amber-300";
+          else if (verStatus === '수정필요') badgeColor = "bg-rose-50 text-rose-700 border-rose-300";
+
           div.innerHTML = `
             <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">🦉</div>
-            <div class="space-y-2 max-w-[85%]">
-              <div class="text-[11px] text-slate-400 font-medium">${msg.timestamp} • 소크라-봇 (${state.user.grade || ''})</div>
-              <div class="chat-bubble-ai p-4 rounded-2xl shadow-xs text-sm text-slate-800 leading-relaxed whitespace-pre-line">
-                ${msg.content}
+            <div class="space-y-1.5 max-w-[85%]">
+              <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                <span>${msg.timestamp} • 소크라-봇</span>
+                <!-- 원리 10: 팝업 검증 열기 뱃지 버튼 -->
+                <button onclick="openVerificationModal(${msg.id})" class="px-2 py-0.5 rounded-full border text-[10px] font-bold transition flex items-center gap-1 ${badgeColor}" title="클릭하여 AI 응답을 비판적으로 검증하고 의견을 남기세요">
+                  <i class="fa-solid fa-shield-check text-[10px]"></i> 원리 10 비판적 검토: <b>${verStatus}</b>
+                </button>
               </div>
               
-              <!-- 원리 10: AI 산출물 비판적 검증 패널 -->
-              <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="font-bold text-slate-700 flex items-center gap-1">
-                    <i class="fa-solid fa-shield-check text-indigo-600"></i> 원리 10: AI 답변 비판적 검증
-                  </span>
-                  <span class="font-semibold ${verStatus === '수용' ? 'text-emerald-600' : verStatus === '미검증' ? 'text-slate-400' : 'text-amber-600'}">[${verStatus}]</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <button onclick="updateVerification(${msg.id}, '수용')" class="px-2.5 py-1 rounded-lg border text-xs font-semibold ${verStatus === '수용' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-300'}">👍 수용 (타당함)</button>
-                  <button onclick="updateVerification(${msg.id}, '의문')" class="px-2.5 py-1 rounded-lg border text-xs font-semibold ${verStatus === '의문' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-300'}">❓ 의문 (확인필요)</button>
-                  <button onclick="updateVerification(${msg.id}, '수정필요')" class="px-2.5 py-1 rounded-lg border text-xs font-semibold ${verStatus === '수정필요' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-600 border-slate-300'}">✏️ 수정필요 (오류)</button>
-                </div>
-                <input type="text" onchange="updateVerificationComment(${msg.id}, this.value)" value="${escapeHTML(msg.verification?.comment || '')}" placeholder="비판적 코멘트 입력 (의견이나 보완점)" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              <!-- 말풍선 클릭 시에도 검증 팝업 열기 지원 -->
+              <div onclick="openVerificationModal(${msg.id})" class="chat-bubble-ai p-4 rounded-2xl shadow-xs text-sm text-slate-800 leading-relaxed whitespace-pre-line" title="클릭하여 비판적 검증 팝업 열기">
+                ${msg.content}
               </div>
+
+              ${msg.verification?.comment ? `
+                <div class="text-[11px] text-indigo-700 bg-indigo-50/70 px-3 py-1.5 rounded-xl border border-indigo-100 flex items-center gap-1.5">
+                  <i class="fa-solid fa-comment-dots text-indigo-500"></i>
+                  <span><b>나의 비판 의견:</b> ${escapeHTML(msg.verification.comment)}</span>
+                </div>
+              ` : ''}
             </div>
           `;
           container.appendChild(div);
@@ -875,6 +956,60 @@ ${stateInstruction}`;
       });
 
       container.scrollTop = container.scrollHeight;
+    }
+
+    // --- 원리 10 전용 팝업 모달 제어 로직 ---
+    function openVerificationModal(msgId) {
+      const msg = state.messages.find(m => m.id === msgId);
+      if (!msg || msg.role !== 'assistant') return;
+
+      activeVerMsgId = msgId;
+      activeVerStatus = msg.verification?.status || '수용';
+      if (activeVerStatus === '미검증') activeVerStatus = '수용';
+
+      // 발췌 텍스트 표시
+      document.getElementById('modal-target-ai-text').innerText = msg.content;
+      document.getElementById('modal-ver-comment').value = msg.verification?.comment || '';
+
+      selectModalStatus(activeVerStatus);
+      document.getElementById('verification-modal').classList.remove('hidden');
+    }
+
+    function closeVerificationModal() {
+      document.getElementById('verification-modal').classList.add('hidden');
+      activeVerMsgId = null;
+    }
+
+    function selectModalStatus(status) {
+      activeVerStatus = status;
+      const btnAcc = document.getElementById('modal-btn-accept');
+      const btnQue = document.getElementById('modal-btn-question');
+      const btnRej = document.getElementById('modal-btn-reject');
+
+      [btnAcc, btnQue, btnRej].forEach(b => b.className = "py-2.5 px-2 rounded-xl border border-slate-200 hover:border-slate-300 font-bold flex items-center justify-center gap-1 transition bg-white text-slate-600");
+
+      if (status === '수용') {
+        btnAcc.className = "py-2.5 px-2 rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center gap-1 transition";
+      } else if (status === '의문') {
+        btnQue.className = "py-2.5 px-2 rounded-xl border border-amber-500 bg-amber-50 text-amber-700 font-bold flex items-center justify-center gap-1 transition";
+      } else {
+        btnRej.className = "py-2.5 px-2 rounded-xl border border-rose-500 bg-rose-50 text-rose-700 font-bold flex items-center justify-center gap-1 transition";
+      }
+    }
+
+    function saveModalVerification() {
+      if (activeVerMsgId === null) return;
+      const msg = state.messages.find(m => m.id === activeVerMsgId);
+      if (msg) {
+        const comment = document.getElementById('modal-ver-comment').value.trim();
+        msg.verification = {
+          status: activeVerStatus,
+          comment: comment,
+          verifiedAt: new Date().toISOString()
+        };
+        renderMessages();
+      }
+      closeVerificationModal();
     }
 
     function renderLoadingBubble() {
@@ -895,21 +1030,6 @@ ${stateInstruction}`;
     function removeLoadingBubble() {
       const b = document.getElementById('loading-bubble');
       if (b) b.remove();
-    }
-
-    function updateVerification(msgId, status) {
-      const msg = state.messages.find(m => m.id === msgId);
-      if (msg) {
-        msg.verification.status = status;
-        renderMessages();
-      }
-    }
-
-    function updateVerificationComment(msgId, comment) {
-      const msg = state.messages.find(m => m.id === msgId);
-      if (msg) {
-        msg.verification.comment = comment;
-      }
     }
 
     function changeStrategy(val) {
@@ -938,7 +1058,6 @@ ${stateInstruction}`;
       });
     }
 
-    // --- 차트 초기화 (초기 더미데이터 0/0으로 시작) ---
     function initCharts() {
       const ctxDel = document.getElementById('chart-delegation').getContext('2d');
       chartDelInstance = new Chart(ctxDel, {
@@ -1012,7 +1131,7 @@ ${stateInstruction}`;
           system: "초중고 메타인지 & 인간-AI 성찰 챗봇 시스템",
           user_nickname: state.user.nickname,
           user_grade: state.user.grade,
-          principles: "13대 설계원리 완벽 구현 (상태 머신 아키텍처)",
+          principles: "13대 설계원리 완벽 구현 (Step-by-Step 및 팝업 검증 아키텍처)",
           exported_at: new Date().toISOString()
         },
         messages: state.messages,
