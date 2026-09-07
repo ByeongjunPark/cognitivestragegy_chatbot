@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>메타인지 & 인간-AI 성찰 챗봇 시스템</title>
+  <!-- Tailwind CSS & FontAwesome CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    body { font-family: 'Pretendard', sans-serif; }
+    .chat-bubble-user { background: linear-gradient(135deg, #4f46e5, #6366f1); }
+    .chat-bubble-ai { background: #ffffff; border: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- 상단 네비게이션 헤더 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-xl shadow-md">
+          <i class="fa-solid fa-brain"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight">메타인지 & 인간-AI 협력 성찰 챗봇</h1>
+          <p class="text-xs text-slate-500">초중등 13대 교육공학 설계원리 기반 자기조절학습 시스템 (Upstage Solar Pro 연동)</p>
+        </div>
+      </div>
+
+      <!-- 상단 단계 네비게이션 탭 -->
+      <nav class="flex bg-slate-100 p-1 rounded-xl text-sm font-semibold">
+        <button id="nav-step1" onclick="switchStep(1)" class="px-4 py-2 rounded-lg transition-all bg-white text-indigo-600 shadow-sm flex items-center gap-2">
+          <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs flex items-center justify-center font-bold">1</span> 대화 준비
+        </button>
+        <button id="nav-step2" onclick="switchStep(2)" class="px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center gap-2">
+          <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-xs flex items-center justify-center font-bold">2</span> 대화 과정
+        </button>
+        <button id="nav-step3" onclick="switchStep(3)" class="px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center gap-2">
+          <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-xs flex items-center justify-center font-bold">3</span> 종결 및 성찰
+        </button>
+      </nav>
+
+      <!-- API 설정 모달 버튼 & 상태 -->
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Upstage Solar Pro
+        </span>
+        <button onclick="toggleConfigModal()" class="p-2 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition" title="API 설정">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 레이아웃 -->
+  <div class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+    <!-- 좌측 사이드바: 인지 전략 및 비계(Scaffolding) 제어 패널 -->
+    <aside class="lg:col-span-1 space-y-6">
+      
+      <!-- 비계(스캐폴딩) 레벨 카드 (원리 1) -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
+            <i class="fa-solid fa-stairs"></i> 원리 1: 비계 수준 (Fading)
+          </h2>
+          <span id="scaffold-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-800">High (비계 높음)</span>
+        </div>
+        <p class="text-xs text-slate-500 mb-3">대화가 진행될수록 AI의 직접적 힌트가 줄어들고 학습자 스스로 해결하도록 유도합니다.</p>
+        <div class="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold text-center">
+          <button onclick="setScaffold('High')" id="scaffold-high" class="py-1.5 rounded-lg bg-white text-indigo-600 shadow-xs">높음</button>
+          <button onclick="setScaffold('Medium')" id="scaffold-medium" class="py-1.5 rounded-lg text-slate-500">중간</button>
+          <button onclick="setScaffold('Low')" id="scaffold-low" class="py-1.5 rounded-lg text-slate-500">낮음(소거)</button>
+        </div>
+      </div>
+
+      <!-- 인지 전략 선택 및 변경 카드 (원리 8, 9) -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
+            <i class="fa-solid fa-bullseye"></i> 원리 8/9: 인지 전략 조절
+          </h2>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">현재 적용 중인 전략</label>
+          <select id="current-strategy" onchange="onStrategyChange()" class="w-full text-sm font-medium border border-slate-300 rounded-xl px-3 py-2 bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <option value="정교화(Elaboration)">정교화: 나만의 언어와 일상 비유로 설명</option>
+            <option value="조직화(Organization)">조직화: 핵심 개념 구조화 및 표/마인드맵 정리</option>
+            <option value="비판적 사고(Critical Thinking)">비판적 사고: 근거 검토 및 반례 찾기</option>
+            <option value="시연(Rehearsal)">시연: 핵심 용어 반복 암기 및 복기</option>
+            <option value="이해 점검(Monitoring)">이해 점검: 알고 모르는 부분 스스로 점검</option>
+          </select>
+        </div>
+        <div id="strategy-desc" class="p-3 bg-indigo-50/60 rounded-xl text-xs text-indigo-900 border border-indigo-100/80 leading-relaxed">
+          새로운 지식을 이미 알고 있는 경험에 빗대어 설명하고 비유를 만들어보는 전략입니다.
+        </div>
+      </div>
+
+      <!-- 학습 데이터 다운로드 (원리 3) -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
+          <i class="fa-solid fa-shield-halved"></i> 원리 3: 데이터 비식별화 & 기록
+        </h2>
+        <p class="text-xs text-slate-500">개인정보(이름, 연락처 등)를 자동으로 비식별화하여 안전하게 저장합니다.</p>
+        <button onclick="exportSessionJSON()" class="w-full py-2 px-3 text-xs font-bold rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 flex items-center justify-center gap-2 transition shadow-xs">
+          <i class="fa-solid fa-download"></i> 전체 학습 데이터(JSON) 저장
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- 우측 메인 콘텐츠 영역 (3단계 순환) -->
+    <main class="lg:col-span-3 space-y-6">
+
+      <!-- ================================================================= -->
+      <!-- 1단계: 대화 준비 탭 (원리 4, 5, 6, 7) -->
+      <!-- ================================================================= -->
+      <section id="step-1-content" class="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-600 mb-2">
+            <i class="fa-solid fa-compass"></i> 1단계: 학습 맥락 구성 및 사전 지식 점검
+          </div>
+          <h2 class="text-xl font-bold text-slate-900">AI와 대화하기 전, 배움의 목표와 생각을 정리해 볼까요?</h2>
+          <p class="text-sm text-slate-500 mt-1">이 단계는 여러분이 주도적으로 학습 방향을 설계하도록 돕는 준비 국면입니다.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+          <!-- 원리 4: 학습 목표 및 맥락 -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <span class="w-6 h-6 rounded bg-indigo-600 text-white text-xs flex items-center justify-center font-bold">4</span>
+              학습 목표 및 과제 설정 (원리 4)
+            </h3>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">과목 및 단원</label>
+              <div class="grid grid-cols-2 gap-2">
+                <input id="input-subject" type="text" value="과학" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="과목 (예: 과학)" />
+                <input id="input-unit" type="text" value="빛과 렌즈" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="단원 (예: 빛과 렌즈)" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">오늘 달성하고 싶은 학습 목표</label>
+              <textarea id="input-goal" rows="2" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">볼록렌즈와 오목렌즈를 통과할 때 빛이 어떻게 굴절하는지 원리를 이해하고 설명하기</textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">해결할 구체적 과제</label>
+              <textarea id="input-task" rows="2" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">돋보기로 글씨를 볼 때 거리에 따라 크기와 모양이 달라지는 까닭 밝히기</textarea>
+            </div>
+          </div>
+
+          <!-- 원리 5 & 6: 역할 분담 및 사전지식 -->
+          <div class="space-y-4">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <span class="w-6 h-6 rounded bg-indigo-600 text-white text-xs flex items-center justify-center font-bold">5·6</span>
+              과업 분담 & 사전지식 점검 (원리 5·6)
+            </h3>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">AI의 역할 분담 선택 (원리 5)</label>
+              <select id="input-ai-role" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <option value="소크라테스식 질문자">소크라테스식 질문자 (정답 대신 생각할 질문과 힌트 제공)</option>
+                <option value="동료 탐구자">동료 탐구자 (의견을 주고받으며 반론 제기)</option>
+                <option value="설명 점검자">설명 점검자 (내가 설명한 내용을 듣고 부족한 부분 짚어주기)</option>
+              </select>
+            </div>
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-xs font-semibold text-slate-600">이 주제에 대한 사전 이해도 (원리 6)</label>
+                <span id="score-val" class="text-xs font-bold text-indigo-600">3점 / 5점</span>
+              </div>
+              <input id="input-prior-score" type="range" min="1" max="5" value="3" oninput="document.getElementById('score-val').innerText = this.value + '점 / 5점'" class="w-full accent-indigo-600" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">이미 알고 있는 관련 개념이나 경험 (원리 6)</label>
+              <textarea id="input-prior-know" rows="2" class="w-full text-sm border border-slate-300 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">돋보기로 햇빛을 모아 종이를 태워본 적이 있고, 안경을 쓰면 글씨가 또렷하게 보인다는 점을 압니다.</textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- 원리 7: 메타인지 3대 질문 -->
+        <div class="pt-4 border-t border-slate-100 space-y-3">
+          <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <span class="w-6 h-6 rounded bg-indigo-600 text-white text-xs flex items-center justify-center font-bold">7</span>
+            메타인지 3대 사전 질문 점검 (원리 7: Kramarski & Mevarech 이론)
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              <label class="block text-xs font-bold text-indigo-700 mb-1">💡 이해 질문</label>
+              <p class="text-xs text-slate-500 mb-2">이 주제에서 가장 핵심이 되는 개념은?</p>
+              <input id="input-q-under" type="text" value="빛이 물질을 통과할 때 꺾이는 '굴절' 현상" class="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+            </div>
+            <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              <label class="block text-xs font-bold text-indigo-700 mb-1">🎯 전략 질문</label>
+              <p class="text-xs text-slate-500 mb-2">이 과제를 잘 해결하기 위한 내 공부 방법은?</p>
+              <input id="input-q-strat" type="text" value="빛이 꺾이는 경로를 그림으로 직접 그려보기" class="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+            </div>
+            <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+              <label class="block text-xs font-bold text-indigo-700 mb-1">🔗 연결 질문</label>
+              <p class="text-xs text-slate-500 mb-2">이전 지식이나 일상과 어떻게 연결될까?</p>
+              <input id="input-q-conn" type="text" value="거울의 '반사' 현상과 렌즈의 '굴절' 현상 비교하기" class="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 flex justify-end">
+          <button onclick="finishStep1()" class="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md flex items-center gap-2 transition">
+            대화 준비 완료하고 2단계 대화 시작하기 <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- 2단계: 대화 과정 탭 (원리 1, 2, 8, 9, 10) -->
+      <!-- ================================================================= -->
+      <section id="step-2-content" class="hidden flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" style="min-height: 640px;">
+        
+        <!-- 대화창 상단 상태바 -->
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+            <div>
+              <span id="chat-topic-badge" class="text-xs font-bold text-slate-700">과학 &gt; 빛과 렌즈</span>
+              <div class="text-xs text-slate-500 flex items-center gap-2">
+                <span>적용 전략: <b id="chat-strategy-badge" class="text-indigo-600">정교화</b></span>
+                <span>•</span>
+                <span>비계: <b id="chat-scaffold-badge" class="text-amber-600">High</b></span>
+              </div>
+            </div>
+          </div>
+          <button onclick="switchStep(3)" class="px-4 py-2 text-xs font-bold rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-flag-checkered"></i> 대화 마치고 3단계 성찰로 이동
+          </button>
+        </div>
+
+        <!-- 채팅 메시지 스크롤 영역 -->
+        <div id="chat-messages" class="flex-1 p-6 space-y-6 overflow-y-auto max-h-[500px]">
+          <!-- 기본 환영 메시지 -->
+          <div class="flex items-start gap-3">
+            <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">
+              🦉
+            </div>
+            <div class="space-y-1 max-w-[85%]">
+              <div class="text-xs text-slate-400 font-medium">소크라-봇 • 교육 AI 튜터</div>
+              <div class="chat-bubble-ai p-4 rounded-2xl shadow-xs text-sm text-slate-800 leading-relaxed">
+                반가워요! 오늘 <b class="text-indigo-600">빛과 렌즈</b>에 대해 함께 탐구해보게 되어 기쁩니다. 😊<br><br>
+                우리는 정답을 단순히 주고받는 것이 아니라, <b>여러분이 스스로 생각하고 인지 전략을 실천</b>할 수 있도록 대화할 거예요. 
+                선택하신 <b>[정교화]</b> 전략을 활용해서, 궁금한 점이나 여러분의 생각을 들려주세요!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 입력 영역 (원리 10 비판적 검증 & 원리 11 질문 성향 선택) -->
+        <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
+          <!-- 질문 성향 선택 (원리 11 데이터 수집) -->
+          <div class="flex items-center gap-4 text-xs">
+            <span class="font-bold text-slate-700 flex items-center gap-1">
+              <i class="fa-solid fa-user-gear text-indigo-600"></i> 원리 11 질문 성향:
+            </span>
+            <label class="flex items-center gap-1.5 cursor-pointer text-slate-600">
+              <input type="radio" name="question_type" value="learner_directed" checked class="accent-indigo-600" />
+              <span>🌟 주도적 탐구 (내 생각/가설 포함)</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer text-slate-600">
+              <input type="radio" name="question_type" value="ai_delegated" class="accent-indigo-600" />
+              <span>🤖 AI 단순 위임 (정답만 요구)</span>
+            </label>
+          </div>
+
+          <div class="flex gap-2">
+            <input id="user-input" type="text" onkeydown="if(event.key==='Enter') sendMessage()" class="flex-1 text-sm border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white" placeholder="선택한 인지 전략을 떠올리며 질문이나 내 생각을 입력하세요..." />
+            <button id="btn-send" onclick="sendMessage()" class="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md transition flex items-center gap-2">
+              <span>전송</span> <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- 3단계: 종결 및 성찰 탭 (원리 11, 12, 13) -->
+      <!-- ================================================================= -->
+      <section id="step-3-content" class="hidden bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-8">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 mb-2">
+            <i class="fa-solid fa-award"></i> 3단계: 대화 종결 및 인간-AI 협력 성찰
+          </div>
+          <h2 class="text-xl font-bold text-slate-900">배움을 마무리하며: 나의 메타인지와 AI 상호작용 돌아보기</h2>
+          <p class="text-sm text-slate-500 mt-1">대화가 끝난 후, AI와 어떻게 협력했는지와 나의 배움 성장을 다각도로 분석합니다.</p>
+        </div>
+
+        <!-- 1. 원리 11: 주도성 vs 위임 성찰 -->
+        <div class="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+          <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <span class="w-6 h-6 rounded bg-indigo-600 text-white text-xs flex items-center justify-center font-bold">11</span>
+            학습자-AI 역할 및 위임 성찰 (원리 11)
+          </h3>
+          <p class="text-xs text-slate-500">내가 주도적으로 탐구한 질문과 AI에게 무비판적으로 위임한 질문의 비율을 확인합니다.</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <div class="h-56 flex items-center justify-center">
+              <canvas id="chart-delegation"></canvas>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-xs font-bold text-slate-700">📝 주도권 성찰 작성</label>
+              <textarea id="refl-role" rows="4" class="w-full text-sm border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="예: 초반에는 정답을 바로 알려달라고 위임했으나, 중반부터는 내가 렌즈의 원리를 일상 비유로 설명하며 확인받는 주도적인 질문을 던졌다."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 원리 12: 질문 궤적 및 프롬프트 성찰 -->
+        <div class="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+          <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <span class="w-6 h-6 rounded bg-indigo-600 text-white text-xs flex items-center justify-center font-bold">12</span>
+            질문 궤적 및 프롬프트 적절성 성찰 (원리 12)
+          </h3>
+          <div id="prompt-trajectory-table" class="bg-white rounded-xl border border-slate-200 overflow-hidden text-xs">
+            <!-- 동적 프롬프트 테이블 삽입 -->
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">📝 프롬프트 개선점 성찰 작성</label>
+            <textarea id="refl-prompt" rows="3" class="w-full text-sm border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="예: 질문이 너무 짧았던 1번째 질문보다, 구체적인 조건과 내 생각을 밝힌 3번째 질문에서 훨씬 질 높은 피드백을 얻을 수 있었다."></textarea>
+          </div>
+        </div>
+
+        <!-- 3. 원리 13: AI 소거 유사 과업 및 사전/사후 이해도 비교 -->
+        <div class="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-6">
+          <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <span class="w-6 h-6 rounded bg-indigo-600 text-white text-xs flex items-center justify-center font-bold">13</span>
+            AI 도움 없는 유사 과업(전이 과제) 수행 및 전후 변화 성찰 (원리 13)
+          </h3>
+          
+          <!-- AI 소거 전이 과제 출제 영역 -->
+          <div class="bg-amber-50/80 p-5 rounded-xl border border-amber-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-amber-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-lock"></i> [AI 소거 모드] 오직 내 힘으로만 해결하는 유사 과제
+              </span>
+              <button onclick="generateTransferTask()" id="btn-gen-task" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition">
+                새로운 유사 과제 출제받기
+              </button>
+            </div>
+            <div id="transfer-task-box" class="text-sm text-slate-800 font-medium leading-relaxed bg-white p-4 rounded-xl border border-amber-100">
+              버튼을 누르면 오늘 학습한 내용을 바탕으로 AI 없이 해결해볼 유사 문제가 출제됩니다.
+            </div>
+            <textarea id="transfer-task-answer" rows="3" class="w-full text-sm border border-amber-300 rounded-xl p-3 bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none" placeholder="AI의 도움 없이, 오늘 배운 지식과 인지 전략을 활용하여 나만의 답을 적어보세요."></textarea>
+          </div>
+
+          <!-- 사전 vs 사후 이해도 점수 비교 차트 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <div class="space-y-4">
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="text-xs font-bold text-slate-700">학습 후 최종 자가 이해도 (사후 평가)</label>
+                  <span id="post-score-val" class="text-xs font-bold text-emerald-600">5점 / 5점</span>
+                </div>
+                <input id="input-post-score" type="range" min="1" max="5" value="5" oninput="updatePostScore(this.value)" class="w-full accent-emerald-600" />
+              </div>
+              <div class="text-xs text-slate-500 space-y-1">
+                <p>• 사전 이해도: <b id="pre-score-display">3점</b></p>
+                <p>• 사후 이해도: <b id="post-score-display">5점</b></p>
+              </div>
+            </div>
+            <div class="h-48">
+              <canvas id="chart-scores"></canvas>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">📝 인지 전략 발전 및 종합 배움 성찰</label>
+            <textarea id="refl-growth" rows="3" class="w-full text-sm border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="예: 정교화 전략으로 내 안경 렌즈와 돋보기의 차이를 일상에서 찾아본 것이 개념 이해에 큰 도움이 되었다. 다음에는 조직화 전략도 함께 활용해보고 싶다."></textarea>
+          </div>
+        </div>
+
+        <div class="pt-4 flex justify-end gap-3">
+          <button onclick="exportSessionJSON()" class="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm shadow-md flex items-center gap-2 transition">
+            <i class="fa-solid fa-file-arrow-down"></i> 최종 성찰 결과 보고서 다운로드 (JSON)
+          </button>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- API 설정 모달 창 -->
+  <div id="config-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-200">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-slate-900 flex items-center gap-2">
+          <i class="fa-solid fa-key text-indigo-600"></i> Upstage Solar API 설정
+        </h3>
+        <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Upstage API Key</label>
+          <input id="cfg-api-key" type="password" value="up_8n84t1USbP93gILYJ4x7w7QRHkhYX" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+          <p class="text-slate-400 mt-1">브라우저 로컬 저장소에 안전하게 보관됩니다.</p>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Model</label>
+          <input id="cfg-model" type="text" value="solar-pro" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="toggleConfigModal()" class="px-4 py-2 text-xs font-bold rounded-xl border border-slate-300 text-slate-600">취소</button>
+        <button onclick="saveConfigModal()" class="px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 메인 자바스크립트 로직 (13대 설계원리 완전 구현) -->
+  <script>
+    // 상태 관리 객체
+    const state = {
+      apiKey: localStorage.getItem("UPSTAGE_API_KEY") || "up_8n84t1USbP93gILYJ4x7w7QRHkhYX",
+      model: localStorage.getItem("UPSTAGE_MODEL") || "solar-pro",
+      baseUrl: "https://api.upstage.ai/v1",
+      scaffolding: "High",
+      currentStrategy: "정교화(Elaboration)",
+      strategyHistory: [],
+      messages: [],
+      context: {},
+      transferTask: "",
+      postScore: 5
+    };
+
+    const strategyDescriptions = {
+      "정교화(Elaboration)": "새로운 지식을 이미 알고 있는 경험에 빗대어 설명하고 비유를 만들어보는 전략입니다.",
+      "조직화(Organization)": "개념들 간의 관계를 표, 계층도, 마인드맵 형태로 일목요연하게 구조화하는 전략입니다.",
+      "비판적 사고(Critical Thinking)": "AI의 답변이나 정보에 대해 근거를 따져보고 반례를 찾으며 스스로 검증하는 전략입니다.",
+      "시연(Rehearsal)": "핵심 개념, 용어, 공식을 소리 내어 읽거나 반복 암기하며 각인하는 전략입니다.",
+      "이해 점검(Monitoring)": "자신이 어디까지 이해했고 어느 부분에서 막혔는지 질문을 던져 점검하는 전략입니다."
+    };
+
+    let chartDelegationInstance = null;
+    let chartScoresInstance = null;
+
+    // 단계 전환
+    function switchStep(stepNum) {
+      [1, 2, 3].forEach(n => {
+        document.getElementById(`step-${n}-content`).classList.add("hidden");
+        const navBtn = document.getElementById(`nav-step${n}`);
+        navBtn.className = "px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center gap-2";
+        navBtn.querySelector("span").className = "w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-xs flex items-center justify-center font-bold";
+      });
+
+      document.getElementById(`step-${stepNum}-content`).classList.remove("hidden");
+      const activeNav = document.getElementById(`nav-step${stepNum}`);
+      activeNav.className = "px-4 py-2 rounded-lg transition-all bg-white text-indigo-600 shadow-sm flex items-center gap-2";
+      activeNav.querySelector("span").className = "w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs flex items-center justify-center font-bold";
+
+      if (stepNum === 3) {
+        renderStep3Analytics();
+      }
+    }
+
+    // 1단계 완료 처리
+    function finishStep1() {
+      state.context = {
+        subject: document.getElementById("input-subject").value,
+        unit: document.getElementById("input-unit").value,
+        goal: document.getElementById("input-goal").value,
+        task: document.getElementById("input-task").value,
+        aiRole: document.getElementById("input-ai-role").value,
+        priorScore: parseInt(document.getElementById("input-prior-score").value),
+        priorKnow: document.getElementById("input-prior-know").value,
+        qUnder: document.getElementById("input-q-under").value,
+        qStrat: document.getElementById("input-q-strat").value,
+        qConn: document.getElementById("input-q-conn").value
+      };
+
+      document.getElementById("chat-topic-badge").innerText = `${state.context.subject} > ${state.context.unit}`;
+      document.getElementById("chat-strategy-badge").innerText = state.currentStrategy.split("(")[0];
+      switchStep(2);
+    }
+
+    // 비계 수준 변경 (원리 1)
+    function setScaffold(level) {
+      state.scaffolding = level;
+      const badge = document.getElementById("scaffold-badge");
+      badge.innerText = `${level} (비계 ${level === 'High' ? '높음' : level === 'Medium' ? '중간' : '소거'})`;
+      document.getElementById("chat-scaffold-badge").innerText = level;
+
+      ["high", "medium", "low"].forEach(l => {
+        const btn = document.getElementById(`scaffold-${l}`);
+        if (l.toLowerCase() === level.toLowerCase()) {
+          btn.className = "py-1.5 rounded-lg bg-white text-indigo-600 shadow-xs";
+        } else {
+          btn.className = "py-1.5 rounded-lg text-slate-500";
+        }
+      });
+    }
+
+    // 인지 전략 변경 (원리 8, 9)
+    function onStrategyChange() {
+      const select = document.getElementById("current-strategy");
+      state.currentStrategy = select.value;
+      document.getElementById("strategy-desc").innerText = strategyDescriptions[state.currentStrategy];
+      document.getElementById("chat-strategy-badge").innerText = state.currentStrategy.split("(")[0];
+    }
+
+    // 메시지 전송 및 Upstage API 호출
+    async function sendMessage() {
+      const inputEl = document.getElementById("user-input");
+      const text = inputEl.value.trim();
+      if (!text) return;
+
+      const qType = document.querySelector("input[name='question_type']:checked").value;
+      const userMsgId = state.messages.length;
+
+      // 사용자 메시지 저장 (원리 3 비식별화 처리)
+      const anonText = anonymize(text);
+      state.messages.push({
+        id: userMsgId,
+        role: "user",
+        content: anonText,
+        delegationType: qType,
+        timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+      });
+
+      inputEl.value = "";
+      renderMessages();
+
+      // 스캐폴딩 자동 페이딩 (원리 1)
+      const userMsgCount = state.messages.filter(m => m.role === 'user').length;
+      if (userMsgCount >= 4 && state.scaffolding === 'High') setScaffold('Medium');
+      if (userMsgCount >= 8 && state.scaffolding === 'Medium') setScaffold('Low');
+
+      // AI 로딩 버블 추가
+      const aiMsgId = state.messages.length;
+      renderLoadingBubble();
+
+      try {
+        const reply = await callUpstageAPI(anonText);
+        state.messages.push({
+          id: aiMsgId,
+          role: "assistant",
+          content: reply,
+          scaffolding: state.scaffolding,
+          verification: { status: "미검증", comment: "" },
+          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        });
+      } catch (err) {
+        state.messages.push({
+          id: aiMsgId,
+          role: "assistant",
+          content: `⚠️ API 통신 중 문제가 발생했습니다: ${err.message}`,
+          scaffolding: state.scaffolding,
+          verification: { status: "미검증", comment: "" },
+          timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        });
+      }
+
+      renderMessages();
+    }
+
+    // Upstage API 비동기 호출
+    async function callUpstageAPI(latestUserText) {
+      const systemPrompt = `당신은 초·중등 학습자의 메타인지와 인간-AI 성찰을 지원하는 소크라테스식 교육 AI 튜터입니다.
+[현재 맥락]
+- 과목/단원: ${state.context.subject || '과학'} / ${state.context.unit || '빛과 렌즈'}
+- 학습목표: ${state.context.goal || '스스로 개념 탐구'}
+- 현재 인지 전략: [${state.currentStrategy}]
+- 비계 수준: [${state.scaffolding}] (High: 친절한 힌트와 예시 질문 / Medium: 자기설명 유도 / Low: 독립적 검증 질문만 제시)
+[행동 수칙]
+1. 정답을 대신 바로 알려주지 마세요.
+2. 학습자가 선택한 [${state.currentStrategy}] 전략을 직접 실천할 수 있도록 유도 질문을 던지세요.
+3. 결정권은 항상 학습자에게 있음을 질문으로 확인하세요.
+4. 초중등 학생 눈높이에 맞추어 친절한 존댓말로 간결하게 답변하세요.`;
+
+      const apiMsgs = [
+        { role: "system", content: systemPrompt },
+        ...state.messages.map(m => ({ role: m.role, content: m.content }))
+      ];
+
+      const res = await fetch(`${state.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${state.apiKey}`
+        },
+        body: JSON.stringify({
+          model: state.model,
+          messages: apiMsgs
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      return data.choices[0].message.content;
+    }
+
+    // 개인정보 자동 비식별화 (원리 3)
+    function anonymize(str) {
+      return str
+        .replace(/01[016789]-?\d{3,4}-?\d{4}/g, '[전화번호 보호]')
+        .replace(/[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g, '[이메일 보호]');
+    }
+
+    // 대화 메시지 렌더링 (원리 10 비판적 검증 패널 포함)
+    function renderMessages() {
+      const container = document.getElementById("chat-messages");
+      container.innerHTML = `
+        <div class="flex items-start gap-3">
+          <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">🦉</div>
+          <div class="space-y-1 max-w-[85%]">
+            <div class="text-xs text-slate-400 font-medium">소크라-봇 • 교육 AI 튜터</div>
+            <div class="chat-bubble-ai p-4 rounded-2xl shadow-xs text-sm text-slate-800 leading-relaxed">
+              반가워요! 오늘 <b class="text-indigo-600">${state.context.subject || '빛과 렌즈'}</b>에 대해 함께 탐구해보게 되어 기쁩니다. 😊<br><br>
+              선택하신 <b>[${state.currentStrategy}]</b> 전략을 활용해서, 궁금한 점이나 여러분의 생각을 들려주세요!
+            </div>
+          </div>
+        </div>
+      `;
+
+      state.messages.forEach(msg => {
+        if (msg.role === 'user') {
+          const badge = msg.delegationType === 'learner_directed' ? '🌟 주도적 탐구' : '🤖 AI 위임 질문';
+          const div = document.createElement("div");
+          div.className = "flex items-start justify-end gap-3";
+          div.innerHTML = `
+            <div class="space-y-1 max-w-[80%] text-right">
+              <div class="text-xs text-slate-400 font-medium">${msg.timestamp} • ${badge}</div>
+              <div class="chat-bubble-user text-white p-4 rounded-2xl shadow-sm text-sm text-left leading-relaxed">
+                ${escapeHTML(msg.content)}
+              </div>
+            </div>
+            <div class="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shrink-0">🧑‍🎓</div>
+          `;
+          container.appendChild(div);
+        } else {
+          const div = document.createElement("div");
+          div.className = "flex items-start gap-3";
+          const verStatus = msg.verification?.status || "미검증";
+          div.innerHTML = `
+            <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">🦉</div>
+            <div class="space-y-2 max-w-[85%]">
+              <div class="text-xs text-slate-400 font-medium">${msg.timestamp} • 비계 수준: ${msg.scaffolding}</div>
+              <div class="chat-bubble-ai p-4 rounded-2xl shadow-xs text-sm text-slate-800 leading-relaxed whitespace-pre-line">
+                ${escapeHTML(msg.content)}
+              </div>
+              
+              <!-- 원리 10: AI 산출물 비판적 검증 패널 -->
+              <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-slate-700 flex items-center gap-1">
+                    <i class="fa-solid fa-shield-check text-indigo-600"></i> 원리 10: AI 답변 비판적 검증
+                  </span>
+                  <span class="font-semibold ${verStatus === '수용' ? 'text-emerald-600' : verStatus === '미검증' ? 'text-slate-400' : 'text-amber-600'}">[${verStatus}]</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="updateVerification(${msg.id}, '수용')" class="px-2.5 py-1 rounded-lg border text-xs font-semibold ${verStatus === '수용' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-300'}">👍 수용 (타당함)</button>
+                  <button onclick="updateVerification(${msg.id}, '의문')" class="px-2.5 py-1 rounded-lg border text-xs font-semibold ${verStatus === '의문' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-300'}">❓ 의문 (확인필요)</button>
+                  <button onclick="updateVerification(${msg.id}, '수정필요')" class="px-2.5 py-1 rounded-lg border text-xs font-semibold ${verStatus === '수정필요' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-600 border-slate-300'}">✏️ 수정필요 (오류)</button>
+                </div>
+                <input type="text" onchange="updateVerificationComment(${msg.id}, this.value)" value="${escapeHTML(msg.verification?.comment || '')}" placeholder="비판적 코멘트 입력 (예: 설명은 맞으나 초점 위치 설명이 부족함)" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+              </div>
+            </div>
+          `;
+          container.appendChild(div);
+        }
+      });
+
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function renderLoadingBubble() {
+      const container = document.getElementById("chat-messages");
+      const div = document.createElement("div");
+      div.id = "loading-bubble";
+      div.className = "flex items-start gap-3";
+      div.innerHTML = `
+        <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">🦉</div>
+        <div class="chat-bubble-ai p-4 rounded-2xl shadow-xs text-sm text-slate-400 flex items-center gap-2">
+          <i class="fa-solid fa-spinner animate-spin text-indigo-600"></i> 소크라-봇이 메타인지 발문을 고민하고 있습니다...
+        </div>
+      `;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function updateVerification(msgId, status) {
+      const msg = state.messages.find(m => m.id === msgId);
+      if (msg) {
+        msg.verification.status = status;
+        renderMessages();
+      }
+    }
+
+    function updateVerificationComment(msgId, comment) {
+      const msg = state.messages.find(m => m.id === msgId);
+      if (msg) {
+        msg.verification.comment = comment;
+      }
+    }
+
+    // 3단계 통계 및 차트 시각화 (원리 11, 12, 13)
+    function renderStep3Analytics() {
+      // 1. 주도권 비율 도넛 차트 (원리 11)
+      const userMsgs = state.messages.filter(m => m.role === 'user');
+      const learnerDirected = userMsgs.filter(m => m.delegationType === 'learner_directed').length;
+      const aiDelegated = userMsgs.length - learnerDirected;
+
+      const ctxDel = document.getElementById("chart-delegation").getContext("2d");
+      if (chartDelegationInstance) chartDelegationInstance.destroy();
+      chartDelegationInstance = new Chart(ctxDel, {
+        type: 'doughnut',
+        data: {
+          labels: ['학습자 주도 탐구', 'AI 단순 위임'],
+          datasets: [{
+            data: [learnerDirected || 1, aiDelegated || 0],
+            backgroundColor: ['#4f46e5', '#f97316']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+
+      // 2. 질문 궤적 테이블 (원리 12)
+      const tableBox = document.getElementById("prompt-trajectory-table");
+      if (userMsgs.length === 0) {
+        tableBox.innerHTML = `<div class="p-4 text-center text-slate-400">아직 대화 내역이 없습니다.</div>`;
+      } else {
+        let rows = userMsgs.map((m, idx) => `
+          <tr class="border-b border-slate-100">
+            <td class="p-2.5 font-bold text-slate-600">${idx+1}</td>
+            <td class="p-2.5 text-slate-500">${m.timestamp}</td>
+            <td class="p-2.5 text-slate-800">${escapeHTML(m.content)}</td>
+            <td class="p-2.5"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${m.delegationType==='learner_directed'?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'}">${m.delegationType==='learner_directed'?'주도적':'위임'}</span></td>
+          </tr>
+        `).join("");
+        tableBox.innerHTML = `
+          <table class="w-full text-left">
+            <thead class="bg-slate-100 font-semibold text-slate-600 border-b border-slate-200">
+              <tr>
+                <th class="p-2.5 w-12">순번</th>
+                <th class="p-2.5 w-20">시간</th>
+                <th class="p-2.5">입력 질문(프롬프트) 내용</th>
+                <th class="p-2.5 w-20">유형</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+      }
+
+      // 3. 사전 vs 사후 점수 비교 막대 차트 (원리 13)
+      renderScoresChart();
+    }
+
+    function updatePostScore(val) {
+      state.postScore = parseInt(val);
+      document.getElementById("post-score-val").innerText = val + "점 / 5점";
+      document.getElementById("post-score-display").innerText = val + "점";
+      renderScoresChart();
+    }
+
+    function renderScoresChart() {
+      const pre = state.context.priorScore || 3;
+      const post = state.postScore;
+      document.getElementById("pre-score-display").innerText = pre + "점";
+      document.getElementById("post-score-display").innerText = post + "점";
+
+      const ctxScore = document.getElementById("chart-scores").getContext("2d");
+      if (chartScoresInstance) chartScoresInstance.destroy();
+      chartScoresInstance = new Chart(ctxScore, {
+        type: 'bar',
+        data: {
+          labels: ['학습 전 (사전)', '학습 후 (사후)'],
+          datasets: [{
+            label: '이해도 점수 (5점 만점)',
+            data: [pre, post],
+            backgroundColor: ['#94a3b8', '#10b981'],
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { min: 0, max: 5, ticks: { stepSize: 1 } } }
+        }
+      });
+    }
+
+    // AI 소거 전이 과업 자동 생성 (원리 13)
+    async function generateTransferTask() {
+      const btn = document.getElementById("btn-gen-task");
+      const box = document.getElementById("transfer-task-box");
+      btn.innerText = "과제 생성 중...";
+      btn.disabled = true;
+
+      const prompt = `학습자가 오늘 공부한 주제: [${state.context.subject}] [${state.context.unit}] (목표: ${state.context.goal}).
+학습자가 AI의 도움 없이 스스로 배운 원리를 적용해볼 수 있는 '유사한 수준의 새로운 적용 과제(문제) 1개'와 착안점을 제시해주세요. 정답은 적지 마세요.`;
+
+      try {
+        const res = await fetch(`${state.baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${state.apiKey}`
+          },
+          body: JSON.stringify({
+            model: state.model,
+            messages: [{ role: "user", content: prompt }]
+          })
+        });
+        const data = await res.json();
+        const content = data.choices[0].message.content;
+        box.innerText = content;
+        state.transferTask = content;
+      } catch (e) {
+        box.innerText = "오늘 배운 볼록렌즈와 오목렌즈의 원리를 떠올리며, 일상생활에서 이 원리가 적용된 새로운 도구 1가지를 찾고 왜 그런 렌즈를 사용하는지 이유를 설명해보세요.";
+      } finally {
+        btn.innerText = "새로운 유사 과제 출제받기";
+        btn.disabled = false;
+      }
+    }
+
+    // 전체 세션 JSON 내보내기 (원리 3)
+    function exportSessionJSON() {
+      const exportData = {
+        metadata: {
+          system: "초중등 메타인지 & 인간-AI 성찰 챗봇 시스템",
+          timestamp: new Date().toISOString(),
+          principles_applied: "1~13 전 원리 구현"
+        },
+        context: state.context,
+        scaffolding_history: state.scaffolding,
+        current_strategy: state.currentStrategy,
+        dialogue_messages: state.messages,
+        reflection: {
+          role_reflection: document.getElementById("refl-role")?.value || "",
+          prompt_reflection: document.getElementById("refl-prompt")?.value || "",
+          transfer_task: state.transferTask,
+          transfer_answer: document.getElementById("transfer-task-answer")?.value || "",
+          prior_score: state.context.priorScore,
+          post_score: state.postScore,
+          growth_reflection: document.getElementById("refl-growth")?.value || ""
+        }
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `metacognition_chatbot_session_${new Date().getTime()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // 모달 제어
+    function toggleConfigModal() {
+      const modal = document.getElementById("config-modal");
+      modal.classList.toggle("hidden");
+    }
+
+    function saveConfigModal() {
+      const key = document.getElementById("cfg-api-key").value.trim();
+      const model = document.getElementById("cfg-model").value.trim();
+      if (key) {
+        state.apiKey = key;
+        localStorage.setItem("UPSTAGE_API_KEY", key);
+      }
+      if (model) {
+        state.model = model;
+        localStorage.setItem("UPSTAGE_MODEL", model);
+      }
+      toggleConfigModal();
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
+    }
+  </script>
+</body>
+</html>
