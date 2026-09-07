@@ -10,11 +10,23 @@ if ENV_PATH.exists():
 else:
     load_dotenv()
 
+def get_config(key: str, default: str = "") -> str:
+    """로컬 .env 및 Streamlit Cloud Secrets에서 환경변수 로드"""
+    # 1. Streamlit Secrets 우선 확인 (클라우드 배포 시)
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and key in st.secrets:
+            return str(st.secrets[key])
+    except Exception:
+        pass
+    # 2. 로컬 .env 환경변수 확인
+    return os.getenv(key, default)
+
 # Upstage Solar API 설정
-UPSTAGE_API_KEY = os.getenv("UPSTAGE_API_KEY", "")
-UPSTAGE_BASE_URL = os.getenv("UPSTAGE_BASE_URL", "https://api.upstage.ai/v1")
-UPSTAGE_MODEL = os.getenv("UPSTAGE_MODEL", "solar-pro")
-UPSTAGE_REASONING_EFFORT = os.getenv("UPSTAGE_REASONING_EFFORT", "medium")
+UPSTAGE_API_KEY = get_config("UPSTAGE_API_KEY", "")
+UPSTAGE_BASE_URL = get_config("UPSTAGE_BASE_URL", "https://api.upstage.ai/v1")
+UPSTAGE_MODEL = get_config("UPSTAGE_MODEL", "solar-pro")
+UPSTAGE_REASONING_EFFORT = get_config("UPSTAGE_REASONING_EFFORT", "medium")
 
 # 메타인지 챗봇 기본 설정
 APP_TITLE = "메타인지 & 인간-AI 성찰 촉진 챗봇"
