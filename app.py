@@ -122,10 +122,10 @@ with tab_prep:
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("#### 🎯 원리 4: 학습 목표 및 과제 설정")
-        subject = st.text_input("과목명", value=session_data["context"]["subject"] or "과학", placeholder="예: 과학, 사회, 수학")
-        unit = st.text_input("단원명 / 주제", value=session_data["context"]["unit"] or "빛과 렌즈", placeholder="예: 빛과 렌즈, 시장경제의 이해")
-        learning_goal = st.text_area("오늘의 학습 목표", value=session_data["context"]["learning_goal"] or "볼록렌즈와 오목렌즈를 통과하는 빛의 굴절 원리를 이해하고 일상생활 쓰임새를 설명할 수 있다.", height=80)
-        task_desc = st.text_area("해결할 구체적 과제", value=session_data["context"]["task_description"] or "볼록렌즈로 돋보기를 만들 때 물체가 왜 거꾸로 보이다가 똑바로 보이는지 원리 파악하기", height=80)
+        subject = st.text_input("과목명", value=session_data["context"]["subject"] or "", placeholder="예: 과학, 사회, 수학 등")
+        unit = st.text_input("단원명 / 주제", value=session_data["context"]["unit"] or "", placeholder="예: 시장경제의 이해, 빛과 렌즈 등")
+        learning_goal = st.text_area("오늘의 학습 목표", value=session_data["context"]["learning_goal"] or "", placeholder="오늘 달성하고 싶은 학습 목표를 적어보세요.", height=80)
+        task_desc = st.text_area("해결할 구체적 과제", value=session_data["context"]["task_description"] or "", placeholder="오늘 해결해볼 문제나 과제를 적어보세요.", height=80)
 
     with col2:
         st.markdown("#### 🤝 원리 5: 학습자-AI 역할 분담")
@@ -139,25 +139,25 @@ with tab_prep:
             index=0
         )
         st.markdown("#### 🔍 원리 6: 사전 내용지식 활성화")
-        prior_score = st.slider("이 주제에 대해 내가 이미 알고 있는 수준 (사전 이해도)", 1, 5, session_data["context"]["prior_understanding_score"])
-        prior_know = st.text_area("이미 알고 있는 관련 개념이나 경험", value=session_data["context"]["prior_knowledge"] or "돋보기로 햇빛을 모아 종이를 태워본 적이 있고, 안경을 쓰면 글씨가 잘 보인다는 것을 안다.", height=80)
+        prior_score = st.slider("이 주제에 대해 내가 이미 알고 있는 수준 (사전 이해도)", 1, 5, session_data["context"]["prior_understanding_score"] or 3)
+        prior_know = st.text_area("이미 알고 있는 관련 개념이나 경험", value=session_data["context"]["prior_knowledge"] or "", placeholder="이 주제에 대해 이미 알고 있거나 경험한 것을 적어보세요.", height=80)
 
     st.markdown("---")
     st.markdown("#### 🧠 원리 7: 메타인지적 지식 사전 점검")
     col_a, col_b, col_c = st.columns(3)
     with col_a:
-        q_under = st.text_area("이해 질문: 이 주제에서 가장 중요한 핵심 개념은 무엇일까?", value=session_data["context"]["metacog_understanding"], height=90, placeholder="예: 빛이 서로 다른 물질을 통과할 때 꺾이는 '굴절' 현상")
+        q_under = st.text_area("이해 질문: 이 주제에서 가장 중요한 핵심 개념은 무엇일까?", value=session_data["context"]["metacog_understanding"] or "", height=90, placeholder="가장 중요하다고 생각하는 핵심 개념을 적어보세요.")
     with col_b:
-        q_strat = st.text_area("전략 질문: 이 내용을 잘 배우기 위해 어떤 인지 전략을 쓸까?", value=session_data["context"]["metacog_strategy"], height=90, placeholder="예: 빛의 경로를 그림으로 직접 그려보며 조직화하기")
+        q_strat = st.text_area("전략 질문: 이 내용을 잘 배우기 위해 어떤 인지 전략을 쓸까?", value=session_data["context"]["metacog_strategy"] or "", height=90, placeholder="어떤 방법이나 전략으로 학습할지 적어보세요.")
     with col_c:
-        q_conn = st.text_area("연결 질문: 지난 시간에 배운 지식이나 내 경험과 어떻게 연결될까?", value=session_data["context"]["metacog_connection"], height=90, placeholder="예: 거울에서 빛이 반사되던 현상과 렌즈의 굴절 현상 비교")
+        q_conn = st.text_area("연결 질문: 지난 시간에 배운 지식이나 내 경험과 어떻게 연결될까?", value=session_data["context"]["metacog_connection"] or "", height=90, placeholder="이전 지식이나 일상과 연결되는 점을 적어보세요.")
 
     st.markdown("#### 🎯 원리 8: 인지 전략 계획 수립")
     col_s1, col_s2 = st.columns([1, 2])
     with col_s1:
-        selected_strat = st.selectbox("시작할 인지 전략 선택", list(config.COGNITIVE_STRATEGIES.keys()), index=1)
+        selected_strat = st.selectbox("시작할 인지 전략 선택", list(config.COGNITIVE_STRATEGIES.keys()), index=0)
     with col_s2:
-        strat_reason = st.text_input("이 인지 전략을 선택한 이유", value=session_data.get("strategy_reason") or "나만의 말로 바꾸어 설명해보면 진짜 이해했는지 알 수 있을 것 같아서")
+        strat_reason = st.text_input("이 인지 전략을 선택한 이유", value=session_data.get("strategy_reason") or "", placeholder="이 전략을 선택한 이유를 적어보세요.")
 
     if st.button("🚀 대화 준비 완료하고 2단계 대화 시작하기", type="primary", use_container_width=True):
         session_data["context"]["subject"] = subject

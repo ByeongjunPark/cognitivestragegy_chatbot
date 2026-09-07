@@ -23,9 +23,9 @@ class SessionManager:
                 "unit": "",                   # 단원
                 "learning_goal": "",          # 원리 4: 학습 목표
                 "task_description": "",       # 원리 4: 학습 과제
-                "ai_role_mode": "조력자 및 소크라테스식 질문자",  # 원리 5: AI 과업 분담
+                "ai_role_mode": "",           # 원리 5: AI 과업 분담
                 "prior_knowledge": "",        # 원리 6: 교과 내용 사전지식 활성화
-                "prior_understanding_score": 3, # 원리 6: 사전 이해도 (1~5점)
+                "prior_understanding_score": None, # 원리 6: 사전 이해도 (1~5점)
                 "metacog_understanding": "",  # 원리 7: 이해 질문 응답
                 "metacog_strategy": "",       # 원리 7: 전략 질문 응답
                 "metacog_connection": "",     # 원리 7: 연결 질문 응답
@@ -43,7 +43,7 @@ class SessionManager:
                 "prompt_trajectory_notes": "",    # 원리 12: 프롬프트 궤적 및 개선점 성찰
                 "transfer_task_prompt": "",       # 원리 13: AI 소거 유사 과업 문제
                 "transfer_task_answer": "",       # 원리 13: 학습자 직접 해결 답변
-                "post_understanding_score": 4,    # 원리 13: 사후 이해도 (1~5점)
+                "post_understanding_score": None, # 원리 13: 사후 이해도 (1~5점)
                 "cognitive_growth_notes": "",     # 원리 13: 인지 전략 발전도 성찰
             }
         }

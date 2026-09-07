@@ -33,7 +33,7 @@
   <div id="auth-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5">
       
-      <!-- 상단 로고 및 설명 -->
+      <!-- 상단 로고 및 안내 -->
       <div class="text-center space-y-1.5">
         <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white text-xl flex items-center justify-center mx-auto shadow-md shadow-indigo-200">
           <i class="fa-solid fa-graduation-cap"></i>
@@ -41,9 +41,9 @@
         <h2 class="text-xl font-bold text-slate-900">메타인지 AI 학습터</h2>
         <p class="text-xs text-slate-500">
           <span class="inline-flex items-center gap-1 text-emerald-600 font-semibold">
-            <i class="fa-solid fa-shield-check"></i> 개인정보 완벽 보호:
+            <i class="fa-solid fa-shield-check"></i> 개인정보 보호:
           </span>
-          실명·전화번호 없이 <b>닉네임</b>과 <b>4자리 그림 비밀번호</b>로 안전하게 관리됩니다.
+          실명·연락처 없이 <b>닉네임</b>과 <b>4자리 그림 비밀번호</b>로 관리됩니다.
         </p>
       </div>
 
@@ -57,32 +57,24 @@
         </button>
       </div>
 
-      <!-- 공통: 닉네임 입력 -->
+      <!-- 공통: 닉네임 입력 (더미데이터 완전 제거) -->
       <div class="space-y-1.5">
         <label class="block text-xs font-bold text-slate-700">1. 학습자 닉네임</label>
-        <div class="flex gap-2">
-          <input id="auth-nickname" type="text" placeholder="예: 탐구왕민우, 생각하는판다" class="flex-1 text-sm border border-slate-300 rounded-xl px-4 py-2 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-          <button onclick="generateRandomNickname()" class="px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition flex items-center gap-1 shrink-0">
-            <i class="fa-solid fa-dice"></i> 자동생성
-          </button>
-        </div>
+        <input id="auth-nickname" type="text" placeholder="사용할 닉네임을 입력하세요" class="w-full text-sm border border-slate-300 rounded-xl px-4 py-2.5 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
       </div>
 
-      <!-- 회원가입 전용: 학년 수준 선택 (초등 3~4 / 초등 5~6 / 중학교 / 고등학교) -->
+      <!-- 회원가입 전용: 학년 수준 선택 -->
       <div id="register-grade-box" class="space-y-1.5">
-        <div class="flex justify-between items-center">
-          <label class="text-xs font-bold text-slate-700">2. 학교급 및 학년 (응대 수준 맞춤화)</label>
-          <span class="text-[10px] text-indigo-600 font-semibold">눈높이 맞춤 발문 제공</span>
-        </div>
+        <label class="block text-xs font-bold text-slate-700">2. 학교급 및 학년 선택</label>
         <select id="auth-grade" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50 focus:outline-none">
-          <option value="초등 3~4학년">초등학교 3~4학년 (친근한 비유와 쉬운 안내 중심)</option>
-          <option value="초등 5~6학년" selected>초등학교 5~6학년 (인과관계 및 자기설명 탐구)</option>
-          <option value="중학교 1~3학년">중학교 1~3학년 (개념 논리 구조화 및 반례 탐색)</option>
-          <option value="고등학교 1~3학년">고등학교 1~3학년 (심화 이론 모델링 및 고차원 비판적 검증)</option>
+          <option value="초등 3~4학년">초등학교 3~4학년</option>
+          <option value="초등 5~6학년" selected>초등학교 5~6학년</option>
+          <option value="중학교 1~3학년">중학교 1~3학년</option>
+          <option value="고등학교 1~3학년">고등학교 1~3학년</option>
         </select>
       </div>
 
-      <!-- 빠칭코 4자리 그림 비밀번호 영역 -->
+      <!-- 빠칭코 4자리 그림 비밀번호 영역 (초기 빈 슬롯) -->
       <div class="space-y-2">
         <div class="flex justify-between items-center">
           <label class="text-xs font-bold text-slate-700" id="pin-label">3. 빠칭코 4자리 그림 비밀번호 설정</label>
@@ -91,7 +83,7 @@
           </button>
         </div>
 
-        <!-- 4자리 슬롯 디스플레이 -->
+        <!-- 4자리 슬롯 디스플레이 (초기 빈 ❓ 상태) -->
         <div class="grid grid-cols-4 gap-2 bg-slate-100 p-2.5 rounded-2xl border border-slate-200 text-center">
           <div id="slot-0" class="slot-box bg-white h-12 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
           <div id="slot-1" class="slot-box bg-white h-12 rounded-xl border border-slate-300 flex items-center justify-center text-2xl shadow-xs">❓</div>
@@ -119,7 +111,7 @@
 
       <!-- 백엔드 연결 상태 안내 배지 -->
       <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-        <span>백엔드 아키텍처:</span>
+        <span>백엔드 저장소:</span>
         <span id="backend-status-badge" class="font-semibold text-indigo-600 flex items-center gap-1">
           <i class="fa-solid fa-database"></i> 브라우저 내장 데이터베이스 (영구 보관)
         </span>
@@ -143,7 +135,7 @@
           <div class="flex items-center gap-2">
             <h1 class="text-base font-bold text-slate-900 leading-tight">메타인지 & AI 성찰 챗봇</h1>
             <span id="current-user-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
-              <i class="fa-solid fa-user-graduate"></i> <span id="user-display-name">게스트</span> • <span id="user-display-grade" class="text-indigo-600 font-bold">초등 5~6학년</span>
+              <i class="fa-solid fa-user-graduate"></i> <span id="user-display-name">-</span> • <span id="user-display-grade" class="text-indigo-600 font-bold">-</span>
             </span>
           </div>
           <p class="text-xs text-slate-500">초·중·고 학년 맞춤형 13대 설계원리 대화형 튜터 (Upstage Solar Pro)</p>
@@ -192,7 +184,7 @@
           <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
           <span class="font-bold text-slate-800">소크라-봇</span>
           <span class="text-slate-300">•</span>
-          <span id="dialogue-architecture-status" class="text-indigo-600 font-semibold">[원리 4·5·6·7 대화 준비 발문 중]</span>
+          <span id="dialogue-architecture-status" class="text-indigo-600 font-semibold">[1단계: 대화 준비 국면]</span>
         </div>
 
         <button id="btn-phase-toggle" onclick="transitionToNextMajorPhase()" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition flex items-center gap-1.5">
@@ -212,7 +204,7 @@
         <div class="flex items-center justify-between text-xs px-1">
           <div class="flex items-center gap-3">
             <span class="font-bold text-slate-700 flex items-center gap-1">
-              <i class="fa-solid fa-user-astronaut text-indigo-600"></i> 원리 11 질문 성향:
+              <i class="fa-solid fa-user-astronaut text-indigo-600"></i> 나의 질문 성향:
             </span>
             <label class="flex items-center gap-1 cursor-pointer text-slate-700 font-medium">
               <input type="radio" name="question_type" value="learner_directed" checked class="accent-indigo-600" />
@@ -276,7 +268,7 @@
         </div>
       </div>
 
-      <!-- 3. 원리 11: 주도권 비율 실시간 원형 차트 -->
+      <!-- 3. 원리 11: 주도권 비율 실시간 원형 차트 (더미데이터 제거: 초기 0/0) -->
       <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
         <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
           <i class="fa-solid fa-chart-pie"></i> 원리 11: 주도권 vs AI 위임 비율
@@ -286,7 +278,7 @@
         </div>
       </div>
 
-      <!-- 4. 원리 13: 사전 vs 사후 이해도 성장 비교 막대 차트 -->
+      <!-- 4. 원리 13: 사전 vs 사후 이해도 성장 비교 막대 차트 (더미데이터 제거: 초기 미평가) -->
       <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
         <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
           <i class="fa-solid fa-chart-simple"></i> 원리 13: 이해도 성장 변화
@@ -295,8 +287,8 @@
           <canvas id="chart-scores"></canvas>
         </div>
         <div class="flex justify-between text-xs text-slate-500">
-          <span>사전 이해도: <b id="pre-score-text">3점</b></span>
-          <span>사후 이해도: <b id="post-score-text">5점</b></span>
+          <span>사전 이해도: <b id="pre-score-text">-</b></span>
+          <span>사후 이해도: <b id="post-score-text">-</b></span>
         </div>
       </div>
 
@@ -338,7 +330,7 @@
   </div>
 
   <!-- ================================================================= -->
-  <!-- 5. 프론트엔드 자바스크립트 엔진 (학년별 맞춤형 대화 상태 머신 아키텍처) -->
+  <!-- 5. 프론트엔드 자바스크립트 엔진 (더미데이터 완전 제거 및 순수 상태 관리) -->
   <!-- ================================================================= -->
   <script>
     const EMOJI_LIST = [
@@ -359,45 +351,38 @@
       { id: 'icecream', icon: '🍦', name: '아이스크림' }
     ];
 
-    const RANDOM_NICKNAMES = [
-      '호기심많은토끼', '빛을탐구하는사자', '생각하는판다', '원리마스터강아지',
-      '질문쟁이고양이', '우주로켓탐구자', '달콤한지혜딸기', '번뜩이는사과', '지식탐험가'
-    ];
-
     let currentAuthTab = 'register';
     let selectedPin = [];
     const BACKEND_URL = "http://localhost:8000";
 
-    // 대화 상태 머신(State Machine) 단계 정의
     const DIALOGUE_STATES = {
-      PREP_GOAL: "PREP_GOAL",           // 원리 4: 목표 및 교과 맥락
-      PREP_ROLE_PRIOR: "PREP_ROLE_PRIOR", // 원리 5·6: 과업 분담 및 사전지식 인출
-      PREP_METACOG: "PREP_METACOG",       // 원리 7: 메타인지 3대 질문 (이해/전략/연결)
-      PREP_STRATEGY: "PREP_STRATEGY",     // 원리 8: 인지 전략 최종 선택
-      IN_DIALOGUE: "IN_DIALOGUE",         // 원리 1, 2, 8, 9, 10: 본 탐구 대화
-      REFL_ROLE: "REFL_ROLE",             // 원리 11: 주도권 성찰
-      REFL_PROMPT: "REFL_PROMPT",         // 원리 12: 질문 궤적 성찰
-      REFL_TRANSFER: "REFL_TRANSFER",     // 원리 13: AI 소거 유사 전이 과업
-      REFL_GROWTH: "REFL_GROWTH"          // 원리 13: 사전 vs 사후 이해도 성장 성찰
+      PREP_GOAL: "PREP_GOAL",
+      PREP_ROLE_PRIOR: "PREP_ROLE_PRIOR",
+      PREP_METACOG: "PREP_METACOG",
+      PREP_STRATEGY: "PREP_STRATEGY",
+      IN_DIALOGUE: "IN_DIALOGUE",
+      REFL_ROLE: "REFL_ROLE",
+      REFL_PROMPT: "REFL_PROMPT",
+      REFL_TRANSFER: "REFL_TRANSFER",
+      REFL_GROWTH: "REFL_GROWTH"
     };
 
-    // 학년별 응대 맞춤화 지침 정의
     const GRADE_PEDAGOGY = {
       "초등 3~4학년": {
         tone: "매우 다정하고 친근하며 재미있는 어조, 이모지 적극 사용",
         scaffoldingGuide: "복잡한 학술 용어 대신 친숙한 일상 비유와 만화 같은 묘사로 질문. 한 번에 하나씩 쉽게 질문.",
         strategyPrompt: "머릿속으로 상상해서 그림 그려보기, 내 방식으로 재미있는 이야기 만들어보기",
-        transferDifficulty: "아주 직관적이고 일상에서 볼 수 있는 간단한 관찰 상황 출제"
+        transferDifficulty: "직관적이고 일상에서 볼 수 있는 간단한 관찰 상황 출제"
       },
       "초등 5~6학년": {
         tone: "다정하고 격려하는 어조, 호기심을 북돋우는 존댓말",
         scaffoldingGuide: "원인과 결과의 인과관계를 스스로 짚어보도록 유도. 일상적 경험과 기초 과학 개념 연결.",
-        strategyPrompt: "새로운 내용을 내 안경이나 돋보기 경험에 빗대어 설명(정교화)하거나 표로 정리(조직화)",
+        strategyPrompt: "새로운 내용을 내 일상 경험에 빗대어 설명(정교화)하거나 표로 정리(조직화)",
         transferDifficulty: "기본 개념을 새로운 일상 상황 1가지에 적용해 원인을 설명해보는 문제"
       },
       "중학교 1~3학년": {
         tone: "논리적이고 존중하는 어조, 체계적인 탐구 동료 톤",
-        scaffoldingGuide: "교과 핵심 개념 용어(굴절률, 초점거리 등)를 바르게 사용하도록 유도. 논리적 반례 질문과 자기설명(Self-Explanation) 유도.",
+        scaffoldingGuide: "교과 핵심 개념 용어를 바르게 사용하도록 유도. 논리적 반례 질문과 자기설명(Self-Explanation) 유도.",
         strategyPrompt: "핵심 개념 간의 관계를 계층도나 표로 구조화(조직화)하거나, AI 설명의 빈틈을 찾아보는 비판적 사고",
         transferDifficulty: "조건이 약간 바뀐 심화 적용 상황에서 인과관계를 단계적으로 서술하는 문제"
       },
@@ -409,10 +394,11 @@
       }
     };
 
+    // 더미데이터가 완전히 배제된 순수 상태 객체
     const state = {
       user: {
         nickname: localStorage.getItem('current_user_nickname') || '',
-        grade: localStorage.getItem('current_user_grade') || '초등 5~6학년',
+        grade: localStorage.getItem('current_user_grade') || '',
         pin: []
       },
       apiKey: localStorage.getItem("UPSTAGE_API_KEY") || "up_8n84t1USbP93gILYJ4x7w7QRHkhYX",
@@ -424,19 +410,19 @@
       currentStrategy: "정교화(Elaboration)",
       messages: [],
       
+      // 순수 사용자 입력 컨텍스트 (더미 문자열 제거)
       context: {
-        subject: "과학",
-        unit: "빛과 렌즈",
-        goal: "볼록렌즈와 오목렌즈의 굴절 원리 탐구",
-        priorScore: 3,
-        postScore: 5
+        subject: "",
+        unit: "",
+        goal: "",
+        priorScore: null,
+        postScore: null
       }
     };
 
     let chartDelInstance = null;
     let chartScoreInstance = null;
 
-    // 로컬 스토리지 데이터베이스 엔진
     const LocalDB = {
       getUsers() { return JSON.parse(localStorage.getItem('registered_users_db') || '{}'); },
       saveUser(nickname, pin, grade) {
@@ -452,15 +438,14 @@
       initCharts();
       checkBackendHealth();
 
-      if (state.user.nickname) {
+      if (state.user.nickname && state.user.grade) {
         document.getElementById('auth-modal').classList.add('hidden');
         document.getElementById('user-display-name').innerText = state.user.nickname;
         document.getElementById('user-display-grade').innerText = state.user.grade;
         startAITutoring();
       } else {
         switchAuthTab('register');
-        generateRandomNickname();
-        spinSlots();
+        clearSlotPassword();
       }
     });
 
@@ -471,7 +456,7 @@
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> FastAPI 서버 연결됨 (:8000)
         `;
       } catch (e) {
-        // 브라우저 내장 DB 모드
+        // 브라우저 내장 DB 모드 유지
       }
     }
 
@@ -484,6 +469,7 @@
       const pinLabel = document.getElementById('pin-label');
 
       clearSlotPassword();
+      document.getElementById('auth-nickname').value = '';
 
       if (tab === 'register') {
         btnReg.className = "flex-1 py-2.5 rounded-xl bg-white text-indigo-600 shadow-xs transition flex items-center justify-center gap-1.5";
@@ -549,16 +535,10 @@
       renderSlots();
     }
 
-    function generateRandomNickname() {
-      const rand = RANDOM_NICKNAMES[Math.floor(Math.random() * RANDOM_NICKNAMES.length)];
-      const num = Math.floor(Math.random() * 90 + 10);
-      document.getElementById('auth-nickname').value = `${rand}_${num}`;
-    }
-
     async function submitAuth() {
       const nickname = document.getElementById('auth-nickname').value.trim();
       if (!nickname) {
-        alert("닉네임을 입력하거나 [자동생성]을 눌러주세요!");
+        alert("닉네임을 입력해주세요!");
         return;
       }
       if (selectedPin.length < 4) {
@@ -583,7 +563,7 @@
           });
         } catch (e) {}
 
-        alert(`🎉 '${nickname}' 학생(${grade})의 회원가입이 완료되었습니다!`);
+        alert(`'${nickname}' 학생(${grade})의 회원가입이 완료되었습니다!`);
         completeLogin(nickname, grade, selectedPin);
       } else {
         const user = LocalDB.findUser(nickname);
@@ -593,11 +573,10 @@
         }
 
         if (JSON.stringify(user.pin) !== JSON.stringify(selectedPin)) {
-          alert("❌ 그림 비밀번호가 일치하지 않습니다! 4자리 그림을 다시 확인해주세요.");
+          alert("그림 비밀번호가 일치하지 않습니다! 4자리 그림을 다시 확인해주세요.");
           return;
         }
 
-        alert(`환영합니다, ${nickname} 학생! 🌟`);
         completeLogin(nickname, user.grade, selectedPin);
       }
     }
@@ -621,17 +600,17 @@
       document.getElementById('auth-modal').classList.remove('hidden');
     }
 
-    // --- 대화 상태 머신 기반 AI 튜터 발문 엔진 ---
+    // --- 대화 상태 머신 기반 AI 튜터 발문 엔진 (순수 발문) ---
     function startAITutoring() {
       state.messages = [];
       state.currentState = DIALOGUE_STATES.PREP_GOAL;
       updateStateArchitectureUI();
 
-      const grade = state.user.grade;
+      const grade = state.user.grade || "초등 5~6학년";
       let welcomeIntro = "";
 
       if (grade === "초등 3~4학년") {
-        welcomeIntro = `안녕, **${state.user.nickname}** 친구! 🎒 함께하게 되어 정말 반가워요! ✨\n저는 여러분이 스스로 생각하는 힘을 쑥쑥 키워줄 친구 AI 튜터 **'소크라-봇'**이에요.\n\n오늘 어떤 과목의 어떤 재미있는 주제를 공부해볼까요? 그리고 오늘 꼭 알고 싶은 목표가 무엇인지 편하게 들려주세요! (원리 4: 학습 목표 설정)`;
+        welcomeIntro = `안녕, **${state.user.nickname}** 친구! ✨\n저는 여러분이 스스로 생각하는 힘을 키워줄 친구 AI 튜터 **'소크라-봇'**이에요.\n\n오늘 어떤 과목의 어떤 주제를 공부해볼까요? 그리고 오늘 꼭 알고 싶은 목표가 무엇인지 들려주세요! (원리 4: 학습 목표 설정)`;
       } else if (grade === "초등 5~6학년") {
         welcomeIntro = `반가워요, **${state.user.nickname}** 학생! 🦉\n저는 배움의 주도권을 여러분이 쥐고 성장하도록 돕는 교육 AI 튜터 **'소크라-봇'**이에요.\n\n오늘 어떤 과목의 어떤 단원을 함께 탐구해볼까요? 그리고 오늘 스스로 달성하고 싶은 **학습 목표**는 무엇인지 말해줄래요? (원리 4: 학습 목표 및 교과 맥락 설정)`;
       } else if (grade === "중학교 1~3학년") {
@@ -656,7 +635,7 @@
       const curr = state.currentState;
       if ([DIALOGUE_STATES.PREP_GOAL, DIALOGUE_STATES.PREP_ROLE_PRIOR, DIALOGUE_STATES.PREP_METACOG, DIALOGUE_STATES.PREP_STRATEGY].includes(curr)) {
         bPrep.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
-        statusText.innerText = `[1단계: 대화 준비 국면] ${curr} 진행 중`;
+        statusText.innerText = `[1단계: 대화 준비 국면]`;
         btnToggle.innerText = "본 탐구 대화로 전환";
       } else if (curr === DIALOGUE_STATES.IN_DIALOGUE) {
         bDia.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
@@ -664,7 +643,7 @@
         btnToggle.innerText = "대화 마치고 3단계 성찰로 이동";
       } else {
         bRef.className = "px-3 py-1 rounded-full bg-amber-600 text-white shadow-xs transition";
-        statusText.innerText = `[3단계: 종결 및 성찰 국면] 주도권·질문궤적 성찰 및 AI 소거 전이 과업`;
+        statusText.innerText = `[3단계: 종결 및 성찰 국면] 주도권·질문궤적 성찰 및 전이 과업`;
         btnToggle.innerText = "새로운 학습 시작하기";
       }
     }
@@ -674,7 +653,7 @@
         state.currentState = DIALOGUE_STATES.IN_DIALOGUE;
         updateStateArchitectureUI();
         pushAIMessage(
-          `대화 준비 과정을 훌륭하게 완수했습니다! 🎉\n` +
+          `대화 준비 과정을 마쳤습니다! 🎉\n` +
           `이제 **[2단계: 본 탐구 대화]**로 진입합니다.\n\n` +
           `현재 활성화된 인지 전략은 **[${state.currentStrategy}]**입니다. ${state.user.grade} 수준에 맞추어 저에게 단순히 답을 묻기보다 여러분의 생각과 가설을 먼저 들려주세요. 첫 질문을 시작해볼까요?`
         );
@@ -682,9 +661,9 @@
         state.currentState = DIALOGUE_STATES.REFL_ROLE;
         updateStateArchitectureUI();
         pushAIMessage(
-          `오늘의 탐구 대화를 성공적으로 마쳤습니다! 👏 이제 **[3단계: 종결 및 성찰]**로 들어갑니다.\n\n` +
+          `오늘의 탐구 대화를 마쳤습니다! 👏 이제 **[3단계: 종결 및 성찰]**로 들어갑니다.\n\n` +
           `**[원리 11: 주도권 및 AI 위임 성찰]**\n` +
-          `오늘 나눈 대화를 돌아보았을 때, 여러분이 **스스로 주도권을 쥐고 생각했던 순간**과 저에게 **단순히 정답을 위임해버렸던 순간**은 각각 언제였나요? 우측의 [주도권 vs AI 위임 비율 원형 차트]를 확인하며 여러분의 생각을 솔직하게 들려주세요.`
+          `오늘 나눈 대화를 돌아보았을 때, 여러분이 **스스로 주도권을 쥐고 생각했던 순간**과 저에게 **단순히 정답을 위임해버렸던 순간**은 각각 언제였나요? 우측의 [주도권 vs AI 위임 비율 원형 차트]를 확인하며 여러분의 생각을 들려주세요.`
         );
       } else {
         if (confirm("새로운 주제로 학습을 시작하시겠습니까?")) {
@@ -737,36 +716,40 @@
       renderMessages();
     }
 
-    // 학년 맞춤형 + 13대 설계원리 상태 머신 AI 응답 생성
     async function generateAIResponse(userText) {
-      const grade = state.user.grade;
+      const grade = state.user.grade || "초등 5~6학년";
       const pedagogy = GRADE_PEDAGOGY[grade] || GRADE_PEDAGOGY["초등 5~6학년"];
 
       let stateInstruction = "";
 
-      // 상태 머신 전이 및 지침
       if (state.currentState === DIALOGUE_STATES.PREP_GOAL) {
         state.currentState = DIALOGUE_STATES.PREP_ROLE_PRIOR;
         stateInstruction = `학습자가 학습 목표와 주제를 설정했습니다. 격려한 뒤:
-1. [원리 5: AI 과업 분담] "오늘 저(AI)에게 어떤 역할을 기대하나요? (힌트 질문자 / 동료 탐구자 / 설명 점검자 중 선택)"
-2. [원리 6: 사전지식 활성화] "이 주제에 대해 이미 알고 있는 지식이나 일상 경험은 무엇인가요? 5점 만점 중 스스로 몇 점이라고 생각하나요?"
-이 두 가지를 ${grade} 눈높이에 맞게 질문하세요.`;
+1. [원리 5: AI 과업 분담] 오늘 저(AI)에게 어떤 역할을 기대하는지 (힌트 질문자 / 동료 탐구자 / 설명 점검자 중 선택) 질문하세요.
+2. [원리 6: 사전지식 활성화] 이 주제에 대해 이미 알고 있는 지식이나 일상 경험이 무엇인지, 그리고 5점 만점 중 스스로 몇 점이라고 생각하는지 질문하세요.`;
       }
       else if (state.currentState === DIALOGUE_STATES.PREP_ROLE_PRIOR) {
         state.currentState = DIALOGUE_STATES.PREP_METACOG;
+        // 숫자가 감지되면 사전 점수 저장
+        const matchScore = userText.match(/[1-5]/);
+        if (matchScore) {
+          state.context.priorScore = parseInt(matchScore[0]);
+          document.getElementById('pre-score-text').innerText = `${state.context.priorScore}점`;
+          updateScoreChart();
+        }
         stateInstruction = `학습자가 과업 분담과 사전지식을 답했습니다. [원리 7: 메타인지 3대 사전 점검 질문(Kramarski 이론)]을 ${grade} 난이도에 맞추어 던지세요:
-1. 이해 질문: "이 주제에서 가장 핵심이 되는 중심 개념은 무엇일까요?"
-2. 전략 질문: "이 과제를 잘 해결하기 위해 오늘 어떤 인지 전략이나 방법을 쓸 생각인가요?"
-3. 연결 질문: "이전에 배운 내용이나 일상생활과 어떻게 연결될 수 있을까요?"`;
+1. 이해 질문: 이 주제에서 가장 핵심이 되는 중심 개념은 무엇일까요?
+2. 전략 질문: 이 과제를 잘 해결하기 위해 오늘 어떤 인지 전략이나 방법을 쓸 생각인가요?
+3. 연결 질문: 이전에 배운 내용이나 일상생활과 어떻게 연결될 수 있을까요?`;
       }
       else if (state.currentState === DIALOGUE_STATES.PREP_METACOG) {
         state.currentState = DIALOGUE_STATES.PREP_STRATEGY;
-        stateInstruction = `학습자가 메타인지 질문에 훌륭히 답했습니다. [원리 8: 인지 전략 계획 수립]을 안내하며,
-"오늘 사용할 주 인지전략으로 [${state.currentStrategy}]을 추천해요. (${pedagogy.strategyPrompt}). 이 전략을 선택한 이유를 짧게 말해보고, 첫 번째 탐구 질문을 저에게 던져보세요!"라고 안내하며 본 대화로 자연스럽게 이끄세요.`;
+        stateInstruction = `학습자가 메타인지 질문에 답했습니다. [원리 8: 인지 전략 계획 수립]을 안내하며,
+"오늘 사용할 주 인지전략으로 [${state.currentStrategy}]을 추천해요. (${pedagogy.strategyPrompt}). 이 전략을 선택한 이유를 짧게 말해보고, 첫 번째 탐구 질문을 저에게 던져보세요!"라고 안내하며 본 대화로 이끄세요.`;
       }
       else if (state.currentState === DIALOGUE_STATES.PREP_STRATEGY) {
         state.currentState = DIALOGUE_STATES.IN_DIALOGUE;
-        stateInstruction = `학습자가 전략 선택 이유를 밝히고 첫 질문을 던졌습니다. 이제 본격적인 [2단계: 본 탐구 대화]입니다. 
+        stateInstruction = `학습자가 전략 선택 이유를 밝히고 질문을 던졌습니다. 이제 본격적인 [2단계: 본 탐구 대화]입니다. 
 - [원리 1: 비계 수준 ${state.scaffolding}]에 맞추어 ${pedagogy.scaffoldingGuide}
 - [원리 2: 학습자 최종판단 보존] 정답을 직접 규정하지 말고 선택권과 질문을 반문하세요.
 - [원리 8: 인지전략 실천] 선택된 전략을 실천할 수 있도록 유도하세요.
@@ -781,19 +764,25 @@
       }
       else if (state.currentState === DIALOGUE_STATES.REFL_ROLE) {
         state.currentState = DIALOGUE_STATES.REFL_PROMPT;
-        stateInstruction = `학습자가 주도권 성찰(원리 11)을 작성했습니다. 공감과 피드백을 준 뒤, [원리 12: 질문 궤적 및 프롬프트 적절성 성찰]을 이끌어내세요:
-"오늘 저에게 입력했던 질문들을 돌아보면, 어떤 질문이 가장 질 높은 배움을 이끌어냈나요? 다음번에 더 명확하고 효과적으로 질문하려면 어떻게 프롬프트를 다듬어볼 수 있을까요?"`;
+        stateInstruction = `학습자가 주도권 성찰(원리 11)을 작성했습니다. 공감한 뒤, [원리 12: 질문 궤적 및 프롬프트 적절성 성찰]을 이끌어내세요:
+"오늘 저에게 입력했던 질문들을 돌아보면, 어떤 질문이 가장 효과적이었나요? 다음번에 더 명확하게 질문하려면 어떻게 프롬프트를 다듬어볼 수 있을까요?"`;
       }
       else if (state.currentState === DIALOGUE_STATES.REFL_PROMPT) {
         state.currentState = DIALOGUE_STATES.REFL_TRANSFER;
-        stateInstruction = `학습자가 프롬프트 성찰을 마쳤습니다. 이제 [원리 13: AI 소거 유사 전이 과업(Transfer Task)]을 출제하세요:
+        stateInstruction = `학습자가 프롬프트 성찰을 마쳤습니다. 이제 [원리 13: AI 소거 유사 전이 과업]을 출제하세요:
 - ${grade} 수준에 맞는 ${pedagogy.transferDifficulty}를 1문제 출제하세요.
 - "이제 AI의 힌트 없이, 오직 여러분의 힘으로만 아래 유사 문제를 해결해보세요! 정답은 주지 않을 테니 자유롭게 나만의 풀이를 적어보세요."라고 안내하세요.`;
       }
       else {
         // REFL_GROWTH
-        stateInstruction = `학습자가 전이 문제를 스스로 풀었습니다! 풀이 노력을 칭찬하고, [원리 13: 이해도 성장 및 인지전략 종합 성찰]을 진행하세요:
-"학습 전 ${state.context.priorScore}점이었던 이해도가 지금은 5점 만점 중 몇 점으로 향상되었나요? 선택했던 인지전략([${state.currentStrategy}])을 실천하면서 여러분의 사고력에 어떤 성장이 있었나요?"를 묻고 전체 배움을 감동적으로 칭찬하며 성찰을 마무리하세요.`;
+        const matchPostScore = userText.match(/[1-5]/);
+        if (matchPostScore) {
+          state.context.postScore = parseInt(matchPostScore[0]);
+          document.getElementById('post-score-text').innerText = `${state.context.postScore}점`;
+          updateScoreChart();
+        }
+        stateInstruction = `학습자가 전이 문제를 풀었습니다! 풀이 노력을 격려하고, [원리 13: 이해도 성장 및 인지전략 종합 성찰]을 진행하세요:
+학습 전과 비교하여 이해도가 5점 만점 중 몇 점으로 향상되었는지, 그리고 인지전략([${state.currentStrategy}])을 쓰면서 어떤 점이 성장했는지 묻고 전체 배움을 칭찬하며 성찰을 마무리하세요.`;
       }
 
       updateStateArchitectureUI();
@@ -859,7 +848,7 @@ ${stateInstruction}`;
           div.innerHTML = `
             <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">🦉</div>
             <div class="space-y-2 max-w-[85%]">
-              <div class="text-[11px] text-slate-400 font-medium">${msg.timestamp} • 소크라-봇 (${state.user.grade})</div>
+              <div class="text-[11px] text-slate-400 font-medium">${msg.timestamp} • 소크라-봇 (${state.user.grade || ''})</div>
               <div class="chat-bubble-ai p-4 rounded-2xl shadow-xs text-sm text-slate-800 leading-relaxed whitespace-pre-line">
                 ${msg.content}
               </div>
@@ -877,7 +866,7 @@ ${stateInstruction}`;
                   <button onclick="updateVerification(${msg.id}, '의문')" class="px-2.5 py-1 rounded-lg border text-xs font-semibold ${verStatus === '의문' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-300'}">❓ 의문 (확인필요)</button>
                   <button onclick="updateVerification(${msg.id}, '수정필요')" class="px-2.5 py-1 rounded-lg border text-xs font-semibold ${verStatus === '수정필요' ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-slate-600 border-slate-300'}">✏️ 수정필요 (오류)</button>
                 </div>
-                <input type="text" onchange="updateVerificationComment(${msg.id}, this.value)" value="${escapeHTML(msg.verification?.comment || '')}" placeholder="비판적 코멘트 입력 (예: 설명은 타당하나 구체적인 근거 제시가 부족함)" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <input type="text" onchange="updateVerificationComment(${msg.id}, this.value)" value="${escapeHTML(msg.verification?.comment || '')}" placeholder="비판적 코멘트 입력 (의견이나 보완점)" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </div>
             </div>
           `;
@@ -896,7 +885,7 @@ ${stateInstruction}`;
       div.innerHTML = `
         <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">🦉</div>
         <div class="chat-bubble-ai p-4 rounded-2xl shadow-xs text-sm text-slate-400 flex items-center gap-2">
-          <i class="fa-solid fa-spinner animate-spin text-indigo-600"></i> 소크라-봇이 ${state.user.grade} 맞춤형 메타인지 발문을 고민하고 있습니다...
+          <i class="fa-solid fa-spinner animate-spin text-indigo-600"></i> 소크라-봇이 사고하는 중입니다...
         </div>
       `;
       container.appendChild(div);
@@ -949,6 +938,7 @@ ${stateInstruction}`;
       });
     }
 
+    // --- 차트 초기화 (초기 더미데이터 0/0으로 시작) ---
     function initCharts() {
       const ctxDel = document.getElementById('chart-delegation').getContext('2d');
       chartDelInstance = new Chart(ctxDel, {
@@ -956,7 +946,7 @@ ${stateInstruction}`;
         data: {
           labels: ['학습자 주도 탐구', 'AI 단순 위임'],
           datasets: [{
-            data: [1, 0],
+            data: [0, 0],
             backgroundColor: ['#4f46e5', '#f97316']
           }]
         },
@@ -974,7 +964,7 @@ ${stateInstruction}`;
           labels: ['사전 이해도', '사후 이해도'],
           datasets: [{
             label: '이해도 점수',
-            data: [3, 5],
+            data: [0, 0],
             backgroundColor: ['#94a3b8', '#10b981'],
             borderRadius: 6
           }]
@@ -994,8 +984,18 @@ ${stateInstruction}`;
       const aiDelegated = userMsgs.length - learnerDirected;
 
       if (chartDelInstance) {
-        chartDelInstance.data.datasets[0].data = [learnerDirected || 1, aiDelegated || 0];
+        chartDelInstance.data.datasets[0].data = [learnerDirected, aiDelegated];
         chartDelInstance.update();
+      }
+    }
+
+    function updateScoreChart() {
+      if (chartScoreInstance) {
+        chartScoreInstance.data.datasets[0].data = [
+          state.context.priorScore || 0,
+          state.context.postScore || 0
+        ];
+        chartScoreInstance.update();
       }
     }
 
@@ -1024,7 +1024,7 @@ ${stateInstruction}`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `metacognition_chat_${state.user.nickname}_${Date.now()}.json`;
+      a.download = `metacognition_chat_${state.user.nickname || 'session'}_${Date.now()}.json`;
       a.click();
       URL.revokeObjectURL(url);
     }
