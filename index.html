@@ -191,6 +191,48 @@
   </div>
 
   <!-- ================================================================= -->
+  <!-- 2-1. 원리 11/12: 대화 로그 개별 성찰 팝업 모달 -->
+  <!-- ================================================================= -->
+  <div id="log-reflection-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-slate-900">원리 11·12: 이 질문 되돌아보기</h3>
+            <p class="text-[11px] text-slate-500">내가 입력한 질문 하나를 골라 역할·프롬프트 궤적을 성찰합니다.</p>
+          </div>
+        </div>
+        <button onclick="closeLogReflectionModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-700 max-h-24 overflow-y-auto leading-relaxed">
+        <span class="font-bold text-slate-500 block mb-1">돌아보는 나의 질문:</span>
+        <div id="log-modal-target-text" class="whitespace-pre-line text-slate-800"></div>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-xs font-bold text-slate-700">1. [원리 11] 이 순간, 나는 스스로 주도했나요, AI에게 위임했나요?</label>
+        <textarea id="log-modal-role-comment" rows="2" class="w-full text-xs border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="예: 내 나름의 가설을 먼저 세운 뒤 확인차 물어봤어요 / 그냥 정답만 물어봤어요."></textarea>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-xs font-bold text-slate-700">2. [원리 12] 이 프롬프트를 더 명확하게 바꾼다면?</label>
+        <textarea id="log-modal-prompt-comment" rows="2" class="w-full text-xs border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="예: 배경 정보를 더 주고, 원하는 답의 형식을 구체적으로 적었으면 좋았을 것 같아요."></textarea>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button onclick="closeLogReflectionModal()" class="px-4 py-2 text-xs font-bold rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 transition">취소</button>
+        <button onclick="saveLogReflection()" class="px-5 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition shadow-xs">성찰 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
   <!-- 3. 상단 네비게이션 헤더 -->
   <!-- ================================================================= -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
@@ -313,6 +355,15 @@
         <p id="strategy-explanation" class="text-xs text-slate-500 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
           새로운 지식을 이미 알고 있는 경험에 빗대어 설명하고 비유를 만들어보는 전략입니다.
         </p>
+        <button onclick="requestMonitoring()" class="w-full py-2 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-[11px] flex items-center justify-center gap-1.5 transition">
+          <i class="fa-solid fa-compass"></i> 지금 전략이 잘 안 통해요 (점검 요청)
+        </button>
+        <div>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">전략 선택·조정 사유 기록</p>
+          <div id="strategy-log" class="space-y-1.5 max-h-32 overflow-y-auto">
+            <p class="text-[11px] text-slate-400">아직 기록된 전략 선택/조정 사유가 없습니다.</p>
+          </div>
+        </div>
       </div>
 
       <!-- 2. 원리 1: 비계 수준 (Fading) 카드 -->
@@ -323,6 +374,7 @@
           </h2>
           <span id="scaffold-badge" class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800">High (비계 높음)</span>
         </div>
+        <p class="text-[10px] text-slate-400 leading-relaxed">AI 응답을 3회 연속 "수용"하면 자동으로 한 단계 낮아져요. 언제든 아래에서 직접 조절할 수도 있어요.</p>
         <div class="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold text-center">
           <button onclick="setScaffold('High')" id="scaffold-high" class="py-1.5 rounded-lg bg-white text-indigo-600 shadow-xs">높음</button>
           <button onclick="setScaffold('Medium')" id="scaffold-medium" class="py-1.5 rounded-lg text-slate-500">중간</button>
@@ -337,6 +389,19 @@
         </h2>
         <div class="h-44 flex items-center justify-center">
           <canvas id="chart-delegation"></canvas>
+        </div>
+      </div>
+
+      <!-- 3-1. 원리 11/12: 대화 로그 대시보드 (전체 질문 궤적 제시 & 개별 선택 성찰) -->
+      <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
+          <i class="fa-solid fa-table-list"></i> 원리 11·12: 대화 로그 대시보드
+        </h2>
+        <p class="text-[11px] text-slate-500 leading-relaxed">
+          내가 던진 질문 전체 궤적이에요. 하나를 눌러서 <b>주도권(원리11)</b>과 <b>프롬프트 개선(원리12)</b>을 성찰해보세요.
+        </p>
+        <div id="dialogue-log-list" class="space-y-1.5 max-h-56 overflow-y-auto">
+          <p class="text-[11px] text-slate-400">아직 대화 로그가 없습니다.</p>
         </div>
       </div>
 
@@ -374,15 +439,19 @@
         </h3>
         <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
       </div>
+      <div class="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 leading-relaxed">
+        <i class="fa-solid fa-shield-check"></i> 기본적으로는 서버(<code>/api/chat</code>)가 API 키를 안전하게 보관하고 대신 호출해주므로 아래 입력은 <b>선택사항</b>입니다. GitHub Pages 등 서버 프록시가 없는 정적 호스팅에서 사용하거나, 개인 키로 직접 호출하고 싶을 때만 입력하세요.
+      </div>
       <div class="space-y-3 text-xs">
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">Upstage API Key</label>
-          <input id="cfg-api-key" type="password" value="up_8n84t1USbP93gILYJ4x7w7QRHkhYX" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+          <label class="block font-semibold text-slate-700 mb-1">Upstage API Key (선택, 이 브라우저에만 저장)</label>
+          <input id="cfg-api-key" type="password" placeholder="up_xxxxxxxxxxxxxxxxxxxx (비워두면 서버 프록시 사용)" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
         </div>
         <div>
           <label class="block font-semibold text-slate-700 mb-1">Model</label>
           <input id="cfg-model" type="text" value="solar-pro" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
         </div>
+        <button type="button" onclick="clearConfigKey()" class="text-[11px] font-semibold text-slate-400 hover:text-rose-600">개인 키 지우고 서버 프록시로 되돌리기</button>
       </div>
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="toggleConfigModal()" class="px-4 py-2 text-xs font-bold rounded-xl border border-slate-300 text-slate-600">닫기</button>
@@ -420,11 +489,14 @@
     // 대화 진행 상태 머신 (대화 단계 vs 대화 종결 후 성찰 단계 엄격 분리)
     const WORKFLOW_STAGES = {
       // 1단계: 문답 탐구 대화 국면 (준비 -> 본 탐구 대화)
-      PREP_STEP_1_CONFIRM: "PREP_STEP_1_CONFIRM", // 성취기준 확인 & 나의 구체적 학습 목표
-      PREP_STEP_2_ROLE: "PREP_STEP_2_ROLE",       // AI 과업 분담 1개 질문
-      PREP_STEP_3_PRIOR: "PREP_STEP_3_PRIOR",     // 사전 지식 및 사전 점수 1개 질문
-      PREP_STEP_4_METACOG: "PREP_STEP_4_METACOG", // 메타인지 1개 질문
-      DIALOGUE_ACTIVE: "DIALOGUE_ACTIVE",         // 본 탐구 대화 (지속적 핑퐁 문답)
+      PREP_STEP_1_CONFIRM: "PREP_STEP_1_CONFIRM", // 성취기준 확인 & 나의 구체적 학습 목표 (원리4)
+      PREP_STEP_2_ROLE: "PREP_STEP_2_ROLE",       // AI 과업 분담 1개 질문 (원리5)
+      PREP_STEP_3_PRIOR: "PREP_STEP_3_PRIOR",     // 사전 지식 및 사전 점수 1개 질문 (원리6)
+      PREP_STEP_4_META_UNDERSTAND: "PREP_STEP_4_META_UNDERSTAND", // 메타인지: 이해질문 (원리7-①)
+      PREP_STEP_5_META_STRATEGY: "PREP_STEP_5_META_STRATEGY",     // 메타인지: 전략질문 (원리7-②)
+      PREP_STEP_6_META_CONNECT: "PREP_STEP_6_META_CONNECT",       // 메타인지: 연결질문 (원리7-③)
+      PREP_STEP_7_STRATEGY_PLAN: "PREP_STEP_7_STRATEGY_PLAN",     // 인지전략 최종 선택 근거 (원리8)
+      DIALOGUE_ACTIVE: "DIALOGUE_ACTIVE",         // 본 탐구 대화 (지속적 핑퐁 문답, 원리9 모니터링 포함)
 
       // 2단계: 대화 종결 후 성찰 국면 (대화 종결 버튼 누른 후 시작)
       REFL_STEP_1_ROLE: "REFL_STEP_1_ROLE",       // 주도권 vs AI 위임 성찰
@@ -454,15 +526,19 @@
         standard: localStorage.getItem('current_user_standard') || '',
         pin: []
       },
-      apiKey: localStorage.getItem("UPSTAGE_API_KEY") || "up_8n84t1USbP93gILYJ4x7w7QRHkhYX",
+      apiKey: localStorage.getItem("UPSTAGE_API_KEY") || "",
       model: localStorage.getItem("UPSTAGE_MODEL") || "solar-pro",
       baseUrl: "https://api.upstage.ai/v1",
-      
+
       stage: WORKFLOW_STAGES.PREP_STEP_1_CONFIRM,
       scaffolding: "High",
+      scaffoldLocked: false,
       currentStrategy: "정교화(Elaboration)",
+      strategyChangeLog: [],
+      adaptiveMetrics: { acceptStreak: 0 },
+      monitoringRequested: false,
       messages: [],
-      
+
       context: {
         priorScore: null,
         postScore: null
@@ -471,6 +547,7 @@
 
     let activeVerMsgId = null;
     let activeVerStatus = '수용';
+    let activeLogMsgId = null;
     let chartDelInstance = null;
     let chartScoreInstance = null;
 
@@ -718,6 +795,18 @@
     function startAITutoring() {
       state.messages = [];
       state.stage = WORKFLOW_STAGES.PREP_STEP_1_CONFIRM;
+      state.scaffoldLocked = false;
+      state.strategyChangeLog = [];
+      state.adaptiveMetrics = { acceptStreak: 0 };
+      state.monitoringRequested = false;
+      state.context = { priorScore: null, postScore: null };
+      document.getElementById('pre-score-text').innerText = '-';
+      document.getElementById('post-score-text').innerText = '-';
+      updateScoreChart();
+      updateCharts();
+      setScaffold('High', { system: true });
+      renderStrategyLog();
+      renderDialogueLog();
       updateWorkflowUI();
 
       const grade = state.user.grade;
@@ -797,6 +886,7 @@
       inputEl.value = '';
       renderMessages();
       updateCharts();
+      renderDialogueLog();
       renderLoadingBubble();
 
       try {
@@ -839,7 +929,7 @@
 그런 다음, [원리 6: 사전지식 활성화] "이 성취기준 주제에 대해 이미 알고 있는 지식이나 일상 경험이 무엇인지, 그리고 5점 만점 중 스스로 몇 점이라고 생각하나요?"를 **단 1개의 질문으로만** 물어보세요.`;
       }
       else if (state.stage === WORKFLOW_STAGES.PREP_STEP_3_PRIOR) {
-        state.stage = WORKFLOW_STAGES.PREP_STEP_4_METACOG;
+        state.stage = WORKFLOW_STAGES.PREP_STEP_4_META_UNDERSTAND;
         const matchScore = userText.match(/[1-5]/);
         if (matchScore) {
           state.context.priorScore = parseInt(matchScore[0]);
@@ -847,21 +937,53 @@
           updateScoreChart();
         }
         promptInstruction = `학습자의 사전지식 답변을 격려하세요.
-그런 다음, [원리 7: 메타인지 질문] "이 성취기준을 완벽히 이해하기 위해 가장 핵심이 되는 중심 개념은 무엇이라고 생각하나요?" **딱 1가지 질문만** 물어보세요.`;
+그런 다음, [원리 7-① 메타인지 이해질문] "이 성취기준의 내용을 지금 스스로 어느 정도까지 이해하고 있다고 생각하나요? 어떤 부분이 아직 헷갈리나요?" **딱 1가지 질문만** 물어보세요.`;
       }
-      else if (state.stage === WORKFLOW_STAGES.PREP_STEP_4_METACOG) {
+      else if (state.stage === WORKFLOW_STAGES.PREP_STEP_4_META_UNDERSTAND) {
+        state.stage = WORKFLOW_STAGES.PREP_STEP_5_META_STRATEGY;
+        promptInstruction = `학습자의 이해도 자가진단에 공감하세요.
+그런 다음, [원리 7-② 메타인지 전략질문] "이 내용을 공부할 때 나에게 가장 잘 맞는 공부 방법(전략)은 무엇이었나요? 그 방법이 왜 효과적이라고 생각하나요?" **딱 1가지 질문만** 물어보세요.`;
+      }
+      else if (state.stage === WORKFLOW_STAGES.PREP_STEP_5_META_STRATEGY) {
+        state.stage = WORKFLOW_STAGES.PREP_STEP_6_META_CONNECT;
+        promptInstruction = `학습자의 전략 인식에 공감하세요.
+그런 다음, [원리 7-③ 메타인지 연결질문] "이 성취기준의 내용은 이전에 배운 다른 개념이나 나의 일상 경험과 어떻게 연결되나요?" **딱 1가지 질문만** 물어보세요.`;
+      }
+      else if (state.stage === WORKFLOW_STAGES.PREP_STEP_6_META_CONNECT) {
+        state.stage = WORKFLOW_STAGES.PREP_STEP_7_STRATEGY_PLAN;
+        promptInstruction = `학습자가 찾은 연결고리를 칭찬하세요.
+그런 다음, [원리 8: 인지 전략 계획 수립] 우측 패널에서 학습자가 고른 인지 전략은 현재 [${state.currentStrategy}]입니다. "이 과업의 특성과 너의 현재 이해 수준을 생각했을 때, 오늘은 왜 이 전략이 가장 도움이 될 거라고 생각하나요? (다른 전략으로 바꾸고 싶다면 오른쪽에서 먼저 바꾼 후 이유를 말해줘도 좋아요)" **딱 1가지 질문만** 물어 최종 선택의 근거를 학습자 스스로 말하도록 하세요. 절대 대신 전략을 정해주지 마세요(원리2).`;
+      }
+      else if (state.stage === WORKFLOW_STAGES.PREP_STEP_7_STRATEGY_PLAN) {
         state.stage = WORKFLOW_STAGES.DIALOGUE_ACTIVE;
-        promptInstruction = `학습자의 메타인지적 생각에 공감하세요.
-이제 대화 준비를 마치고 [본 탐구 대화]를 시작함을 알리며, 현재 선택된 인지 전략([${state.currentStrategy}])을 활용하여 첫 번째 질문이나 호기심을 던져보도록 유도하세요.`;
+        state.strategyChangeLog.push({
+          type: "최초 계획",
+          strategy: state.currentStrategy,
+          reason: userText,
+          at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+        renderStrategyLog();
+        promptInstruction = `학습자가 밝힌 인지 전략 선택 근거를 존중하며 격려하세요(그 근거를 대신 평가하거나 옳고 그름을 판정하지 마세요, 원리2).
+이제 대화 준비를 마치고 [본 탐구 대화]를 시작함을 알리며, 선택된 인지 전략([${state.currentStrategy}])을 활용하여 첫 번째 질문이나 호기심을 던져보도록 유도하세요.`;
       }
       // 2. 본 탐구 대화 단계 (지속적 소크라테스 핑퐁 문답 - 성찰 발문 절대 끼어들지 않음)
       else if (state.stage === WORKFLOW_STAGES.DIALOGUE_ACTIVE) {
-        promptInstruction = `[본 탐구 대화 진행]
+        if (state.monitoringRequested) {
+          state.monitoringRequested = false;
+          promptInstruction = `[원리 9: 학습 과정 모니터링 기반 인지 전략 조정]
+학습자가 "이해가 잘 안 되거나 지금 전략이 안 통하는 것 같다"는 점검 요청을 보냈습니다.
+1) 어느 지점에서 이해가 막혔는지, 지금 전략([${state.currentStrategy}])의 어떤 점이 효과적이지 않았는지 점검하는 질문을 먼저 던지고,
+2) 다른 인지 전략(시연/정교화/조직화/비판적 사고/이해 점검) 중 대안이 될 만한 것을 1~2개 제안은 하되, 최종 전략 변경 여부와 선택은 반드시 학습자가 직접 우측 패널에서 고르도록 맡기세요(원리2).
+**딱 1개의 질문 또는 제안 메시지만** 간결하게 보내세요.`;
+        } else {
+          promptInstruction = `[본 탐구 대화 진행]
 - 성취기준: [${state.user.standard}]
 - 학년 수준: [${grade}] (${pedagogy.tone})
 - 비계 수준: [${state.scaffolding}] (${pedagogy.guide})
+- 현재 인지 전략: [${state.currentStrategy}]
 - 핵심 원칙: 절대로 강의하듯 길게 늘어놓지 말고, 3~5문장의 명쾌한 힌트/설명과 함께 학습자의 생각을 이끌어내는 소크라테스식 발문 딱 1개를 던져 핑퐁식 대화를 이어가세요.
 - 주의: 학생이 [대화 종결 및 성찰 시작] 버튼을 누르기 전까지는 절대로 성찰 질문을 먼저 꺼내지 말고 오직 교과 내용 탐구에만 집중하세요.`;
+        }
       }
       // 3. 대화 종결 후 성찰 단계 (종결 버튼 누른 후 순차 진행)
       else if (state.stage === WORKFLOW_STAGES.REFL_STEP_1_ROLE) {
@@ -871,8 +993,11 @@
       }
       else if (state.stage === WORKFLOW_STAGES.REFL_STEP_2_PROMPT) {
         state.stage = WORKFLOW_STAGES.REFL_STEP_3_TRANSFER;
+        // 원리 13: AI 도움을 실제로 소거하는 것을 시각적으로도 보장 (비계 Low 고정 + 수동조절 잠금)
+        setScaffold('Low', { system: true });
+        state.scaffoldLocked = true;
         promptInstruction = `학습자의 프롬프트 성찰을 칭찬하세요.
-그런 다음, [원리 13: AI 소거 전이 과업] 오늘 성취기준([${state.user.standard}])과 관련하여 AI의 도움 없이 스스로 풀어볼 수 있는 **새로운 유사 적용 문제 1개만** 출제하고 정답 없이 학습자의 풀이를 기다리세요.`;
+그런 다음, [원리 13: AI 소거 전이 과업] 오늘 성취기준([${state.user.standard}])과 관련하여 AI의 도움 없이 스스로 풀어볼 수 있는 **새로운 유사 적용 문제 1개만** 출제하고 정답 없이 학습자의 풀이를 기다리세요. 이 단계에서는 힌트나 풀이 방향을 절대 알려주지 말고 문제만 제시하세요.`;
       }
       else {
         // REFL_STEP_4_GROWTH
@@ -897,32 +1022,44 @@
 [교수법 원칙]:
 1. Step-by-Step 원칙: 한 번에 단 1개의 질문만 제시하고 학습자의 대답을 기다리세요.
 2. 성찰 분리 원칙: 대화 종결 전까지는 성찰 질문을 일절 하지 말고 오직 성취기준 내용 탐구에만 집중하세요.
+3. [원리 2: 학습자 선택권 및 최종판단 보존] 정답이 맞는지, 학습자가 얼마나 이해했는지, 어떤 전략/역할/선택이 옳은지를 당신이 대신 단정하지 마세요. 항상 질문과 선택지로 되돌려주고, 최종 판단은 학습자 스스로 내리게 하세요.
 [이번 응답 지침]:
 ${promptInstruction}`;
 
       const apiMsgs = [
         { role: "system", content: systemPrompt },
-        ...state.messages.map(m => ({ role: m.role, content: m.content }))
+        ...state.messages
+          .filter(m => m.role === 'user' || m.role === 'assistant')
+          .map(m => ({ role: m.role, content: m.content }))
       ];
 
-      const res = await fetch(`${state.baseUrl}/chat/completions`, {
+      // 원리 2(학습자 선택권 및 최종판단 보존): 개인 키가 설정된 경우에만 직접 호출(사용자의 선택),
+      // 그렇지 않으면 서버 프록시(/api/chat)를 사용해 API 키를 절대 브라우저에 노출하지 않음.
+      const useDirect = !!state.apiKey;
+      const url = useDirect ? `${state.baseUrl}/chat/completions` : "/api/chat";
+      const headers = { "Content-Type": "application/json" };
+      if (useDirect) headers["Authorization"] = `Bearer ${state.apiKey}`;
+
+      const res = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${state.apiKey}`
-        },
+        headers,
         body: JSON.stringify({
           model: state.model,
           messages: apiMsgs
         })
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error?.message || `HTTP ${res.status}`);
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        throw new Error("서버 프록시(/api/chat)를 찾을 수 없습니다. GitHub Pages처럼 서버 프록시가 없는 정적 호스팅에서는 우측 상단 ⚙ 설정에서 개인 Upstage API 키를 입력해주세요.");
       }
 
-      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error?.message || data.error || `HTTP ${res.status}`);
+      }
+
       return data.choices[0].message.content;
     }
 
@@ -931,7 +1068,16 @@ ${promptInstruction}`;
       container.innerHTML = '';
 
       state.messages.forEach(msg => {
-        if (msg.role === 'user') {
+        if (msg.role === 'notice') {
+          const div = document.createElement("div");
+          div.className = "flex justify-center";
+          div.innerHTML = `
+            <div class="max-w-[90%] text-center text-[11px] font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-4 py-1.5">
+              ${msg.content} <span class="text-amber-400">• ${msg.timestamp}</span>
+            </div>
+          `;
+          container.appendChild(div);
+        } else if (msg.role === 'user') {
           const badge = msg.delegationType === 'learner_directed' ? '🌟 주도적 탐구' : '🤖 AI 위임 질문';
           const div = document.createElement("div");
           div.className = "flex items-start justify-end gap-3";
@@ -1033,8 +1179,62 @@ ${promptInstruction}`;
           verifiedAt: new Date().toISOString()
         };
         renderMessages();
+        applyAdaptiveFading(activeVerStatus);
       }
       closeVerificationModal();
+    }
+
+    // --- 원리 11/12: 대화 로그 대시보드 & 개별 성찰 팝업 제어 ---
+    function renderDialogueLog() {
+      const box = document.getElementById('dialogue-log-list');
+      if (!box) return;
+      const userMsgs = state.messages.filter(m => m.role === 'user');
+      if (userMsgs.length === 0) {
+        box.innerHTML = `<p class="text-[11px] text-slate-400">아직 대화 로그가 없습니다.</p>`;
+        return;
+      }
+      box.innerHTML = userMsgs.map((m, idx) => {
+        const badge = m.delegationType === 'learner_directed' ? '🌟' : '🤖';
+        const reflected = m.logReflection && (m.logReflection.roleComment || m.logReflection.promptComment);
+        return `
+          <button onclick="openLogReflectionModal(${m.id})" class="w-full text-left text-[11px] p-2 rounded-lg border ${reflected ? 'border-indigo-300 bg-indigo-50/60' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'} transition">
+            <div class="flex items-center justify-between text-slate-400">
+              <span>#${idx + 1} ${badge} • ${m.timestamp}</span>
+              ${reflected ? '<i class="fa-solid fa-circle-check text-indigo-500"></i>' : '<i class="fa-solid fa-pen text-slate-300"></i>'}
+            </div>
+            <div class="text-slate-700 truncate">${escapeHTML(m.content)}</div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function openLogReflectionModal(msgId) {
+      const msg = state.messages.find(m => m.id === msgId);
+      if (!msg || msg.role !== 'user') return;
+      activeLogMsgId = msgId;
+      document.getElementById('log-modal-target-text').innerText = msg.content;
+      document.getElementById('log-modal-role-comment').value = msg.logReflection?.roleComment || '';
+      document.getElementById('log-modal-prompt-comment').value = msg.logReflection?.promptComment || '';
+      document.getElementById('log-reflection-modal').classList.remove('hidden');
+    }
+
+    function closeLogReflectionModal() {
+      document.getElementById('log-reflection-modal').classList.add('hidden');
+      activeLogMsgId = null;
+    }
+
+    function saveLogReflection() {
+      if (activeLogMsgId === null) return;
+      const msg = state.messages.find(m => m.id === activeLogMsgId);
+      if (msg) {
+        msg.logReflection = {
+          roleComment: document.getElementById('log-modal-role-comment').value.trim(),
+          promptComment: document.getElementById('log-modal-prompt-comment').value.trim(),
+          updatedAt: new Date().toISOString()
+        };
+        renderDialogueLog();
+      }
+      closeLogReflectionModal();
     }
 
     function renderLoadingBubble() {
@@ -1058,6 +1258,7 @@ ${promptInstruction}`;
     }
 
     function changeStrategy(val) {
+      const prev = state.currentStrategy;
       state.currentStrategy = val;
       document.getElementById('active-strat-badge').innerText = val.split('(')[0];
       const descs = {
@@ -1068,9 +1269,71 @@ ${promptInstruction}`;
         "이해 점검(Monitoring)": "자신이 어디까지 이해했고 어느 부분에서 막혔는지 질문을 던져 점검하는 전략입니다."
       };
       document.getElementById('strategy-explanation').innerText = descs[val] || '';
+
+      // 원리 9: 본 대화 중 전략을 바꾸면 조정 사유를 학습자에게 직접 물어 누적 기록 (원리2: 판단은 학습자 몫)
+      if (prev !== val && state.stage === WORKFLOW_STAGES.DIALOGUE_ACTIVE) {
+        const reason = prompt(`[원리 9: 인지 전략 조정 기록]\n'${prev.split('(')[0]}' → '${val.split('(')[0]}'(으)로 전략을 바꾸는 이유는 무엇인가요?`, "");
+        state.strategyChangeLog.push({
+          type: "대화 중 조정",
+          strategy: val,
+          reason: (reason || "").trim() || "(사유 미입력)",
+          at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+        renderStrategyLog();
+      }
     }
 
-    function setScaffold(level) {
+    function renderStrategyLog() {
+      const box = document.getElementById('strategy-log');
+      if (!box) return;
+      if (state.strategyChangeLog.length === 0) {
+        box.innerHTML = `<p class="text-[11px] text-slate-400">아직 기록된 전략 선택/조정 사유가 없습니다.</p>`;
+        return;
+      }
+      box.innerHTML = state.strategyChangeLog.map(l => `
+        <div class="text-[11px] bg-slate-50 border border-slate-100 rounded-lg p-2 space-y-0.5">
+          <div class="flex justify-between text-slate-400">
+            <span>${escapeHTML(l.type)} • ${l.at}</span>
+            <span class="font-bold text-indigo-600">${escapeHTML(l.strategy.split('(')[0])}</span>
+          </div>
+          <div class="text-slate-700">${escapeHTML(l.reason)}</div>
+        </div>
+      `).join('');
+    }
+
+    // 원리 9: "지금 전략이 잘 안 통해요" 점검 요청 -> AI가 점검 질문 + 전략 대안 제시
+    async function requestMonitoring() {
+      if (state.stage !== WORKFLOW_STAGES.DIALOGUE_ACTIVE) {
+        alert("본 탐구 대화가 진행 중일 때만 사용할 수 있는 점검 요청이에요.");
+        return;
+      }
+      const text = "🧭 지금 사용 중인 전략이 잘 안 통하는 것 같아요. 함께 점검해주세요.";
+      state.messages.push({
+        id: state.messages.length,
+        role: "user",
+        content: text,
+        delegationType: "learner_directed",
+        stageAtTime: state.stage,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      state.monitoringRequested = true;
+      renderMessages();
+      updateCharts();
+      renderDialogueLog();
+      renderLoadingBubble();
+      try {
+        const reply = await generateAIResponse(text);
+        pushAIMessage(reply);
+      } catch (err) {
+        pushAIMessage(`⚠️ AI 통신 중 오류가 발생했습니다: ${err.message}`);
+      }
+    }
+
+    function setScaffold(level, opts = {}) {
+      if (state.scaffoldLocked && !opts.system) {
+        alert("지금은 [원리 13: AI 소거 전이 과업] 단계라 비계 조절이 잠시 잠겨 있어요. 전이 과업을 스스로 풀어본 뒤 다시 조절할 수 있어요.");
+        return;
+      }
       state.scaffolding = level;
       document.getElementById('scaffold-badge').innerText = `${level} (비계 ${level === 'High' ? '높음' : level === 'Medium' ? '중간' : '소거'})`;
       ["high", "medium", "low"].forEach(l => {
@@ -1081,6 +1344,32 @@ ${promptInstruction}`;
           btn.className = "py-1.5 rounded-lg text-slate-500";
         }
       });
+    }
+
+    // 원리 1: 비계의 적응적 지원 감소(자동 페이딩). 원리2를 해치지 않도록 수동 버튼은 항상 열어둔다.
+    function applyAdaptiveFading(verStatus) {
+      if (state.stage !== WORKFLOW_STAGES.DIALOGUE_ACTIVE || state.scaffoldLocked) return;
+      if (verStatus === '수용') {
+        state.adaptiveMetrics.acceptStreak++;
+      } else {
+        state.adaptiveMetrics.acceptStreak = 0;
+      }
+      if (state.adaptiveMetrics.acceptStreak >= 3 && state.scaffolding !== 'Low') {
+        const next = state.scaffolding === 'High' ? 'Medium' : 'Low';
+        state.adaptiveMetrics.acceptStreak = 0;
+        setScaffold(next, { system: true });
+        pushSystemNotice(`📉 <b>[원리 1: 비계 자동 조정]</b> 최근 AI 응답들을 비판적으로 검토하며 잘 이해(수용)하고 계신 것 같아, 힌트 수준을 <b>${next}</b>(으)로 자동으로 낮췄어요. 필요하면 언제든 우측 패널에서 직접 조절할 수 있어요.`);
+      }
+    }
+
+    function pushSystemNotice(html) {
+      state.messages.push({
+        id: state.messages.length,
+        role: "notice",
+        content: html,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      renderMessages();
     }
 
     function initCharts() {
@@ -1164,7 +1453,8 @@ ${promptInstruction}`;
         messages: state.messages,
         context: state.context,
         scaffolding: state.scaffolding,
-        current_strategy: state.currentStrategy
+        current_strategy: state.currentStrategy,
+        strategy_change_log: state.strategyChangeLog
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -1192,6 +1482,13 @@ ${promptInstruction}`;
       }
       toggleConfigModal();
       alert("API 설정이 저장되었습니다!");
+    }
+
+    function clearConfigKey() {
+      state.apiKey = "";
+      localStorage.removeItem("UPSTAGE_API_KEY");
+      document.getElementById('cfg-api-key').value = "";
+      alert("개인 API 키를 삭제했습니다. 이제부터 안전한 서버 프록시(/api/chat)를 통해 호출됩니다.");
     }
 
     function escapeHTML(str) {

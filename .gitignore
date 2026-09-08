@@ -35,6 +35,10 @@ venv/
 # Streamlit
 .streamlit/secrets.toml
 
+# Vercel
+.vercel/
+node_modules/
+
 # OS Files
 Thumbs.db
 Desktop.ini
