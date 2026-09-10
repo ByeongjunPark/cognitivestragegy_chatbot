@@ -364,6 +364,7 @@
         <div>
           <label class="field-label" for="st-band">학년</label>
           <select class="select" id="st-band"></select>
+          <p class="hint">3·4학년, 5·6학년, 중1~3학년은 교육과정에서 배울 내용이 학년군으로 묶여 있어서, 같은 묶음이면 고를 수 있는 내용이 같아요.</p>
         </div>
         <div>
           <label class="field-label" for="st-subject">과목</label>
@@ -586,6 +587,17 @@ const SUPPORT_LABEL = { high:'많이', mid:'보통', low:'조금' };
 const SUPPORT_PCT   = { high:100, mid:60, low:28 };
 const PHASES = { prep:'먼저 이야기', explore:'같이 알아가기', wrap:'마무리' };
 
+/* 학년은 3·4·5·6·중1·중2·중3·고1을 따로 고르게 하되,
+   2022 개정 교육과정 성취기준은 '학년군' 단위(3~4 / 5~6 / 중1~3 / 고1 공통)로
+   고시되어 있어 같은 군의 학년은 동일한 성취기준 목록을 공유한다. */
+const GRADES = ['초등학교 3학년','초등학교 4학년','초등학교 5학년','초등학교 6학년','중학교 1학년','중학교 2학년','중학교 3학년','고등학교 1학년'];
+function bandOf(grade){
+  if(grade.indexOf('초등학교 3')===0 || grade.indexOf('초등학교 4')===0) return '초등학교 3~4학년';
+  if(grade.indexOf('초등학교 5')===0 || grade.indexOf('초등학교 6')===0) return '초등학교 5~6학년';
+  if(grade.indexOf('중학교')===0) return '중학교 1~3학년';
+  return '고등학교 1학년';
+}
+
 const $  = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -762,7 +774,7 @@ function renderHome(){
 
   // session list
   $('#sess-list').innerHTML = S.length
-    ? S.slice().reverse().map(s=>`<div class="sess-item"><div><div class="t">${esc(trim(s.ctx.std,52))}</div><div class="d">${s.startedAt.slice(0,10)} · ${s.ctx.band} ${s.ctx.subject} · 주고받은 말 ${(s.turns||[]).filter(t=>t.role!=='note').length}번 · 공부 방법 ${s.strategyLabel||'-'} · AI 도움 ${SUPPORT_LABEL[s.support]||'-'}</div></div><div class="hint">${esc(trim(s.reflect&&s.reflect.note,40)) || '돌아보기 안 씀'}</div></div>`).join('')
+    ? S.slice().reverse().map(s=>`<div class="sess-item"><div><div class="t">${esc(trim(s.ctx.std,52))}</div><div class="d">${s.startedAt.slice(0,10)} · ${s.ctx.grade||s.ctx.band} ${s.ctx.subject} · 주고받은 말 ${(s.turns||[]).filter(t=>t.role!=='note').length}번 · 공부 방법 ${s.strategyLabel||'-'} · AI 도움 ${SUPPORT_LABEL[s.support]||'-'}</div></div><div class="hint">${esc(trim(s.reflect&&s.reflect.note,40)) || '돌아보기 안 씀'}</div></div>`).join('')
     : '<p class="hint">아직 기록이 없어요.</p>';
 
   $('#home-summary-line').textContent = S.length
@@ -776,19 +788,21 @@ function renderHome(){
 function renderStart(){
   const b = $('#st-band');
   if(!b.options.length){
-    Object.keys(CURRICULUM_STANDARDS).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=k; b.appendChild(o); });
+    GRADES.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; b.appendChild(o); });
+    b.value = '초등학교 5학년';
   }
   fillStartSubjects();
 }
 function fillStartSubjects(){
-  const band = $('#st-band').value;
-  const sub = $('#st-subject'); sub.innerHTML='';
+  const band = bandOf($('#st-band').value);
+  const sub = $('#st-subject'); const prev = sub.value; sub.innerHTML='';
   Object.keys(CURRICULUM_STANDARDS[band]||{}).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=k; sub.appendChild(o); });
+  if(prev && [...sub.options].some(o=>o.value===prev)) sub.value = prev;
   fillStartStds();
 }
 let stPick = null;
 function fillStartStds(){
-  const band=$('#st-band').value, subj=$('#st-subject').value;
+  const band=bandOf($('#st-band').value), subj=$('#st-subject').value;
   const q = $('#st-filter').value.trim();
   let list = (CURRICULUM_STANDARDS[band] && CURRICULUM_STANDARDS[band][subj]) || [];
   if(q) list = list.filter(it => (it.name+it.code+it.area).includes(q));
@@ -803,10 +817,10 @@ function syncStartGo(){
   if(stPick){ p.hidden=false; p.innerHTML = `오늘 배울 내용 · <b>${esc(stPick.code)}</b> ${esc(stPick.name)}`; } else p.hidden = true;
 }
 function startSession(){
-  const band=$('#st-band').value, subj=$('#st-subject').value;
+  const grade=$('#st-band').value, subj=$('#st-subject').value;
   session = {
     id:uid(), startedAt:new Date().toISOString(), endedAt:null,
-    ctx:{ band, subject:subj, code:stPick.code, std:stPick.name, area:stPick.area||'' },
+    ctx:{ grade, band:bandOf(grade), subject:subj, code:stPick.code, std:stPick.name, area:stPick.area||'' },
     goal: $('#st-goal').value.trim(),
     prior:{ score:null, note:'' }, meta:{ raw:'', u:'', s:'', c:'' },
     strategy:null, strategyLabel:null,
@@ -830,7 +844,7 @@ function enterChat(){
   $('#rng-role').value = session.roleSplit;
   renderStream();
   if(!session.turns.length){
-    pushNote(`공부 시작 · [${session.ctx.band} ${session.ctx.subject}] ${trim(session.ctx.std,44)}`);
+    pushNote(`공부 시작 · [${session.ctx.grade||session.ctx.band} ${session.ctx.subject}] ${trim(session.ctx.std,44)}`);
     advancePrep();
   }
 }
@@ -909,6 +923,7 @@ function sysPrompt(instruction){
   const stratLabel = STRATS.find(s=>s.id===session.strategy)?.label || '아직 없음';
   return [
 `당신은 대한민국 2022 개정 교육과정 성취기준 기반 초·중·고 메타인지 학습 튜터입니다. 학습자와 친근한 반말로 대화합니다.`,
+`[학습자 학년] ${session.ctx.grade || session.ctx.band}`,
 `[성취기준] ${session.ctx.std}  (${session.ctx.band} ${session.ctx.subject}${session.ctx.area?' · '+session.ctx.area:''})`,
 `[학습목표] ${session.goal || '(아직 미정)'}`,
 `[역할 분담] 0(힌트만)~100(첨삭까지) 중 현재 ${session.roleSplit}. 이 수치에 맞춰 개입 강도 조절.`,
@@ -1034,7 +1049,7 @@ async function startResidual(){
   try{
     const raw = await callLLM([
       { role:'system', content:'너는 교육과정 성취기준 기반 평가 문항 출제자다. 반드시 순수 JSON만 출력한다.' },
-      { role:'user', content:`성취기준: "${session.ctx.std}" (${session.ctx.band} ${session.ctx.subject})
+      { role:'user', content:`성취기준: "${session.ctx.std}" (${session.ctx.grade||session.ctx.band} · ${session.ctx.subject})
 학습자가 대화에서 쓴 전략: ${session.strategyLabel||'없음'} / 목표: ${session.goal||'-'}
 대화에서 AI가 썼을 힌트 표현은 재사용하지 말고 표면 소재만 바꿔라.
 {"near":"근접 전이(구조 동일, 숫자·소재만 변경)","far":"원거리 전이(같은 개념을 다른 맥락에 적용)"} — 각 2~3문장, 한국어, 정답은 쓰지 말 것` }
@@ -1149,8 +1164,8 @@ function init(){
   $('#st-filter').addEventListener('input', fillStartStds);
   $('#st-std').addEventListener('click', e=>{
     const b=e.target.closest('.chip'); if(!b) return;
-    const band=$('#st-band').value, subj=$('#st-subject').value;
-    const it = CURRICULUM_STANDARDS[band][subj].find(x=>x.code===b.dataset.code);
+    const band=bandOf($('#st-band').value), subj=$('#st-subject').value;
+    const it = (CURRICULUM_STANDARDS[band]?.[subj]||[]).find(x=>x.code===b.dataset.code);
     stPick = it ? { ...it } : null; fillStartStds();
   });
   $('#st-back').addEventListener('click', ()=> show('home'));
