@@ -5,12 +5,12 @@ import { ready, kvGet, kvSet, readToken, getCookie } from './_store.js';
 export default async function handler(req, res) {
   const r = ready();
   if (!r.store || !r.secret) {
-    res.status(500).json({ error: '서버 저장소가 설정되지 않았습니다.' });
+    res.status(500).json({ error: '지금 서버에 연결이 안 돼요. 잠시 뒤 다시 해 주세요.' });
     return;
   }
 
   const nick = readToken(getCookie(req, 'sess'));
-  if (!nick) { res.status(401).json({ error: '로그인이 필요합니다.' }); return; }
+  if (!nick) { res.status(401).json({ error: '먼저 공부방에 들어와 주세요.' }); return; }
   const dKey = 'data:' + nick;
 
   try {
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       let body = req.body;
       if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = null; } }
       if (!body || typeof body !== 'object' || !Array.isArray(body.sessions)) {
-        res.status(400).json({ error: 'sessions 배열을 가진 객체가 필요합니다.' });
+        res.status(400).json({ error: '저장할 내용의 형식이 올바르지 않아요.' });
         return;
       }
       const doc = JSON.stringify({
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
         created: body.created || new Date().toISOString(),
         sessions: body.sessions
       });
-      if (doc.length > 1_500_000) { res.status(413).json({ error: '데이터가 너무 큽니다.' }); return; }
+      if (doc.length > 1_500_000) { res.status(413).json({ error: '저장할 내용이 너무 많아요.' }); return; }
       await kvSet(dKey, doc);
       res.status(200).json({ ok: true });
       return;
@@ -44,6 +44,7 @@ export default async function handler(req, res) {
 
     res.status(405).json({ error: 'Method not allowed' });
   } catch (e) {
-    res.status(502).json({ error: '저장소 오류: ' + String(e.message || e) });
+    console.error('[data]', e && e.message);
+    res.status(502).json({ error: '지금 서버에 연결이 안 돼요. 잠시 뒤 다시 해 주세요.' });
   }
 }
