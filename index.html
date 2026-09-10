@@ -580,7 +580,6 @@ const SUPPORT_LABEL = { high:'높음', mid:'중간', low:'낮음' };
 const SUPPORT_PCT   = { high:100, mid:60, low:28 };
 const PHASES = { prep:'준비 대화', explore:'탐구 대화', wrap:'마무리' };
 
-const DB_KEY = 'mars.db.v3';
 const $  = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -588,13 +587,46 @@ const uid = () => Math.random().toString(36).slice(2,9);
 const trim = (s,n) => (s && s.length>n) ? s.slice(0,n)+'…' : (s||'');
 const todayStr = () => new Date().toISOString().slice(0,10);
 
-/* ---------- persistence ---------- */
-function loadDB(){ try{ const r = JSON.parse(localStorage.getItem(DB_KEY)); return (r && r.accounts) ? r : { accounts:{}, currentUser:null }; }catch(e){ return { accounts:{}, currentUser:null }; } }
-function saveDB(){ try{ localStorage.setItem(DB_KEY, JSON.stringify(DB)); }catch(e){} }
-let DB = loadDB();
+/* ---------- persistence : 서버(Redis) 전용, localStorage 미사용 ---------- */
+let DB = { accounts:{}, currentUser:null };   // 메모리 캐시일 뿐, 진짜 저장은 서버
 let session = null;          // active session object (not yet in account.sessions until finished)
+let _saveTimer = null;
 
 function account(){ return DB.accounts[DB.currentUser] || null; }
+
+async function apiJSON(path, opts){
+  const r = await fetch(path, Object.assign({
+    headers:{ 'Content-Type':'application/json' },
+    credentials:'same-origin'
+  }, opts||{}));
+  let j = {}; try{ j = await r.json(); }catch(e){}
+  if(!r.ok) throw new Error((j && j.error) || ('요청 실패 (' + r.status + ')'));
+  return j;
+}
+
+// account().sessions 등이 바뀔 때마다 호출 → 서버에 통째로 저장(디바운스)
+function queueSave(){
+  const acc = account(); if(!acc) return;
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(()=>flushSave(), 600);
+}
+async function flushSave(){
+  clearTimeout(_saveTimer); _saveTimer = null;
+  const acc = account(); if(!acc) return;
+  try{
+    await apiJSON('/api/data', { method:'PUT', body: JSON.stringify({ created:acc.created, sessions:acc.sessions }) });
+  }catch(e){ console.warn('저장 실패:', e.message); }
+}
+window.addEventListener('beforeunload', ()=>{
+  if(!_saveTimer) return;
+  const acc = account(); if(!acc) return;
+  try{
+    navigator.sendBeacon('/api/data', new Blob(
+      [JSON.stringify({ created:acc.created, sessions:acc.sessions })], { type:'application/json' }));
+  }catch(e){}
+});
+// 이전 버전에서 브라우저에 남아있던 로컬 데이터 흔적 정리
+try{ localStorage.removeItem('mars.db.v3'); }catch(e){}
 
 /* ---------- router ---------- */
 function show(name){
@@ -661,22 +693,23 @@ function switchAuthTab(t){
   $('#auth-msg').hidden = true;
   clearPin(); $('#au-nick').value='';
 }
-function doAuth(){
+async function doAuth(){
   const nick = $('#au-nick').value.trim();
   const msg = $('#auth-msg');
   if(!nick || !pinReady()){ msg.hidden=false; msg.textContent='닉네임과 그림 네 개를 모두 채워 주세요.'; return; }
   const code = reels.join('');
-  if(authTab==='signup'){
-    if(DB.accounts[nick]){ msg.hidden=false; msg.textContent='이미 있는 닉네임입니다. 로그인 탭을 쓰거나 다른 닉네임을 고르세요.'; return; }
-    DB.accounts[nick] = { nickname:nick, pin:reels.slice(), created:new Date().toISOString(), sessions:[] };
-    DB.currentUser = nick; saveDB();
+  const btn = $('#auth-go'); btn.disabled = true; msg.hidden = true;
+  try{
+    const j = await apiJSON('/api/auth', { method:'POST', body: JSON.stringify({
+      mode: authTab==='signup' ? 'signup' : 'login', nickname:nick, pin:code
+    }) });
+    DB.accounts = { [j.nickname]: j.data };
+    DB.currentUser = j.nickname;
     show('home');
-  } else {
-    const acc = DB.accounts[nick];
-    if(!acc){ msg.hidden=false; msg.textContent='가입되지 않은 닉네임입니다. 회원가입 탭을 먼저 이용하세요.'; return; }
-    if(acc.pin.join('') !== code){ msg.hidden=false; msg.textContent='그림 비밀번호가 일치하지 않습니다.'; return; }
-    DB.currentUser = nick; saveDB();
-    show('home');
+  }catch(e){
+    msg.hidden=false; msg.textContent = e.message;
+  }finally{
+    btn.disabled = false; refreshAuth();
   }
 }
 
@@ -972,7 +1005,7 @@ function commitSession(){
   // upsert by id
   const i = acc.sessions.findIndex(s=>s.id===session.id);
   if(i>=0) acc.sessions[i] = session; else acc.sessions.push(session);
-  saveDB();
+  flushSave();
 }
 
 /* ============================================================
@@ -1097,7 +1130,11 @@ function init(){
   $('#auth-go').addEventListener('click', doAuth);
 
   $('#btn-home').addEventListener('click', ()=> show('home'));
-  $('#btn-logout').addEventListener('click', ()=>{ DB.currentUser=null; saveDB(); session=null; switchAuthTab('login'); show('auth'); });
+  $('#btn-logout').addEventListener('click', async ()=>{
+    try{ await flushSave(); }catch(e){}
+    try{ await apiJSON('/api/auth', { method:'POST', body: JSON.stringify({ mode:'logout' }) }); }catch(e){}
+    DB = { accounts:{}, currentUser:null }; session=null; switchAuthTab('login'); show('auth');
+  });
   $('#btn-new-session').addEventListener('click', ()=>{ stPick=null; $('#st-goal').value=''; $('#st-filter').value=''; show('start'); });
 
   $('#st-band').addEventListener('change', ()=>{ stPick=null; fillStartSubjects(); });
@@ -1189,8 +1226,16 @@ function init(){
   $('#modal-ok').addEventListener('click', ()=> $('#scrim').classList.remove('open'));
   $('#scrim').addEventListener('click', e=>{ if(e.target===$('#scrim')) $('#scrim').classList.remove('open'); });
 
-  if(DB.currentUser && DB.accounts[DB.currentUser]) show('home');
-  else { switchAuthTab('login'); show('auth'); }
+  // 서버 세션 쿠키가 살아있으면 바로 학습터로, 아니면 로그인 화면
+  switchAuthTab('login'); show('auth');
+  (async ()=>{
+    try{
+      const j = await apiJSON('/api/data', { method:'GET' });
+      DB.accounts = { [j.nickname]: j.data };
+      DB.currentUser = j.nickname;
+      show('home');
+    }catch(e){ /* 미로그인: auth 화면 유지 */ }
+  })();
 }
 function roleValText(v){ return (v<=20?'힌트만':v<=40?'힌트 중심':v<=60?'균형':v<=80?'첨삭 중심':'적극 첨삭') + ` (${v})`; }
 

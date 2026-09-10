@@ -1,0 +1,10 @@
+{
+  "name": "cognitivestrategy-chatbot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "메타인지·AI활용 성찰 지원 시스템 - Vercel 서버리스 API (Upstage 프록시 + Redis 계정/데이터 저장)",
+  "dependencies": {
+    "redis": "^4.7.1"
+  }
+}
