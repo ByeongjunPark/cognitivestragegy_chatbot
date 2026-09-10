@@ -562,6 +562,12 @@
    로그인/회원가입(그림 잠금) → 내 학습터(누적) → 세션 시작 → 대화(준비도 대화 안에서) → 되짚기 → 잔여물 확인
    ============================================================ */
 
+/* GitHub Pages(정적 호스팅)에서는 /api 백엔드를 실행할 수 없으므로
+   실제 서비스(Vercel)로 보낸다. Vercel·로컬에서는 아무 영향 없음. */
+if (location.hostname.endsWith('github.io')) {
+  location.replace('https://repo-gilt-sigma.vercel.app/');
+}
+
 /* ===== 설정: Upstage API 키를 여기에 직접 고정할 수 있습니다 =====
    FIXED_API_KEY 를 채우면 서버 프록시 없이 브라우저에서 바로 호출합니다.
    비워두면  (1) localStorage 'UPSTAGE_API_KEY'  (2) 서버 프록시 /api/chat  순으로 사용합니다. */
