@@ -1,1501 +1,1255 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>메타인지 & 인간-AI 성찰 챗봇 시스템</title>
-  <!-- Tailwind CSS & FontAwesome CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- 교육과정 성취기준 메타데이터 DB 로드 -->
-  <script src="curriculum_standards.js"></script>
-  <style>
-    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-    body { font-family: 'Pretendard', sans-serif; }
-    .chat-bubble-user { background: linear-gradient(135deg, #4f46e5, #6366f1); }
-    .chat-bubble-ai { background: #ffffff; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.2s ease; }
-    .chat-bubble-ai:hover { border-color: #cbd5e1; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
-    .slot-item { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .slot-item:hover { transform: scale(1.15); }
-    .slot-box { transition: all 0.3s ease; }
-    @keyframes slotSpin {
-      0% { transform: translateY(-30px); opacity: 0; }
-      50% { transform: translateY(10px); opacity: 0.8; }
-      100% { transform: translateY(0); opacity: 1; }
-    }
-    .spinning { animation: slotSpin 0.3s ease; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>메타인지·AI활용 성찰 지원 시스템</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="curriculum_standards.js"></script>
+<style>
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+
+  :root{
+    --bg:#f4f5f6; --surface:#ffffff; --surface-2:#fafbfb;
+    --line:#eceef0; --line-strong:#dcdfe2;
+    --ink:#17191c; --ink-2:#565c63; --muted:#8b9198;
+    --accent:#12a05f; --accent-ink:#0b7a46; --accent-wash:#e7f6ef;
+    --primary:#1b1e21; --on-primary:#ffffff;
+    --warn:#c2410c; --warn-wash:#fdf1ea;
+    --info:#1d4ed8; --info-wash:#eef2ff;
+    --radius:18px; --radius-sm:12px; --radius-xs:9px;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px -16px rgba(16,24,40,.10);
+    --font:'Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,system-ui,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  button{font-family:inherit;cursor:pointer}
+  input,textarea,select{font-family:inherit}
+  ::selection{background:var(--accent-wash)}
+
+  .app{max-width:1080px;margin:0 auto;padding:0 20px 96px;min-height:100%}
+
+  /* top bar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 2px 22px;position:sticky;top:0;background:linear-gradient(var(--bg) 72%,rgba(244,245,246,0));z-index:20}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em}
+  .brand .dot{width:22px;height:22px;border-radius:7px;background:var(--accent);position:relative;flex:none}
+  .brand .dot::after{content:"";position:absolute;inset:6px;border-radius:3px;background:#fff;opacity:.85}
+  .brand small{display:block;font-weight:500;color:var(--muted);font-size:11.5px;letter-spacing:0}
+  .top-right{display:flex;align-items:center;gap:14px}
+  .progress-label{font-size:12.5px;color:var(--muted);font-weight:600;white-space:nowrap}
+  .icon-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font-size:15px;display:grid;place-items:center;transition:.15s}
+  .icon-btn:hover{background:var(--surface-2);color:var(--ink)}
+
+  /* screen shell */
+  .screen{display:none;animation:rise .28s cubic-bezier(.2,.7,.2,1)}
+  .screen.is-active{display:block}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .rail{border-left:3px solid var(--accent);padding-left:18px;margin-bottom:26px}
+  .eyebrow{color:var(--accent-ink);font-weight:800;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase}
+  .headline{font-size:30px;line-height:1.25;font-weight:800;letter-spacing:-.025em;margin-top:10px}
+  .subhead{color:var(--ink-2);font-size:14.5px;margin-top:12px;max-width:70ch}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:30px;box-shadow:var(--shadow)}
+  .card + .card{margin-top:16px}
+  .split{display:grid;grid-template-columns:1.05fr .95fr;gap:0}
+  .split > *{padding:32px}
+  .split > * + *{border-left:1px solid var(--line)}
+  @media(max-width:860px){
+    .split{grid-template-columns:1fr}
+    .split > * + *{border-left:0;border-top:1px solid var(--line)}
+    .headline{font-size:25px}
+    .split > *{padding:24px}
+    .card{padding:22px}
+  }
+
+  .kicker{font-size:12.5px;font-weight:800;color:var(--accent-ink);letter-spacing:.02em;margin-bottom:8px}
+  .qtext{font-size:19px;font-weight:800;letter-spacing:-.02em;line-height:1.4}
+  .field-label{display:block;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:7px}
+
+  .input,.textarea,.select{width:100%;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:var(--radius-sm);padding:12px 14px;font-size:14.5px;color:var(--ink);transition:.15s}
+  .input:focus,.textarea:focus,.select:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 4px var(--accent-wash)}
+  .textarea{resize:vertical;min-height:112px;line-height:1.6}
+  .select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b9198' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:38px}
+  .callout{background:var(--surface-2);border:1px solid var(--line);border-left:3px solid var(--line-strong);border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--ink-2)}
+  .callout.warn{background:var(--warn-wash);border-left-color:var(--warn);color:#9a3412}
+  .callout.info{background:var(--info-wash);border-left-color:var(--info);color:#1e3a8a}
+  .callout.accent{background:var(--accent-wash);border-left-color:var(--accent);color:var(--accent-ink)}
+
+  .choices{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  @media(max-width:520px){.choices{grid-template-columns:1fr}}
+  .choice{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius-sm);padding:14px 12px;font-weight:700;font-size:14px;color:var(--ink-2);text-align:center;transition:.14s}
+  .choice:hover{border-color:var(--muted);color:var(--ink)}
+  .choice.is-selected{border-color:var(--accent);background:var(--accent-wash);color:var(--accent-ink);box-shadow:0 0 0 3px var(--accent-wash)}
+  .choice small{display:block;font-weight:500;font-size:11.5px;color:var(--muted);margin-top:3px}
+  .choice.is-selected small{color:var(--accent-ink);opacity:.8}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--line-strong);background:var(--surface);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--ink-2);transition:.14s}
+  .chip:hover{border-color:var(--accent);color:var(--accent-ink)}
+  .chip.is-selected{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  .range{width:100%;-webkit-appearance:none;appearance:none;height:6px;border-radius:999px;background:var(--line-strong);outline:none}
+  .range::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid var(--accent);box-shadow:0 2px 6px rgba(16,24,40,.18);cursor:pointer}
+  .range::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid var(--accent);cursor:pointer}
+  .range-ends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:8px;font-weight:600}
+  .range-val{font-size:13px;font-weight:800;color:var(--accent-ink);text-align:center;margin-top:6px}
+
+  /* bottom nav */
+  .nav{display:flex;align-items:center;justify-content:space-between;margin-top:26px}
+  .nav .filler{flex:1}
+  .btn{border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);border-radius:var(--radius-sm);padding:12px 22px;font-weight:700;font-size:14.5px;transition:.15s;display:inline-flex;align-items:center;gap:8px}
+  .btn:hover{background:var(--surface-2)}
+  .btn:disabled{opacity:.42;cursor:not-allowed}
+  .btn-ghost{border-color:transparent;background:transparent;color:var(--muted)}
+  .btn-ghost:hover{color:var(--ink);background:var(--surface-2)}
+  .btn-primary{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+  .btn-primary:hover{background:#000}
+  .btn-accent{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn-accent:hover{background:var(--accent-ink)}
+  .btn-sm{padding:8px 14px;font-size:13px;border-radius:9px}
+
+  /* stepper dots */
+  .stepper{display:flex;gap:6px;align-items:center;margin-bottom:22px}
+  .stepper i{width:26px;height:4px;border-radius:999px;background:var(--line-strong);transition:.2s}
+  .stepper i.done{background:var(--accent)}
+  .stepper i.now{background:var(--accent);box-shadow:0 0 0 3px var(--accent-wash)}
+
+  /* slot machine */
+  .slots{display:flex;gap:12px;justify-content:center;margin:8px 0 4px}
+  .reel{width:74px;height:92px;border:1px solid var(--line-strong);border-radius:14px;background:var(--surface-2);display:grid;place-items:center;font-size:40px;font-weight:800;overflow:hidden;position:relative;transition:.2s}
+  .reel.spinning{border-color:var(--accent);color:var(--accent-ink)}
+  .reel.locked{border-color:var(--accent);background:var(--accent-wash);color:var(--accent-ink)}
+  .reel .num{transition:transform .06s linear}
+  .reel.spinning .num{animation:spin .28s linear infinite}
+  @keyframes spin{from{transform:translateY(-8px);opacity:.55}to{transform:translateY(8px);opacity:.55}}
+
+  /* chat */
+  .chatwrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;min-height:560px}
+  .chat-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);background:var(--surface-2);flex-wrap:wrap}
+  .chat-head .meta{font-size:12.5px;color:var(--ink-2);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .support-badge{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:var(--accent-ink);background:var(--accent-wash);border:1px solid #cdeadd;border-radius:999px;padding:5px 12px}
+  .support-badge .bar{width:46px;height:5px;border-radius:999px;background:#cdeadd;overflow:hidden}
+  .support-badge .bar > i{display:block;height:100%;background:var(--accent);transition:width .4s}
+  .stream{flex:1;padding:22px;overflow-y:auto;max-height:520px;display:flex;flex-direction:column;gap:18px}
+  .msg{display:flex;gap:12px;max-width:88%}
+  .msg .av{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;font-size:15px;font-weight:800}
+  .msg.ai .av{background:var(--accent-wash);color:var(--accent-ink)}
+  .msg.me{margin-left:auto;flex-direction:row-reverse}
+  .msg.me .av{background:var(--primary);color:#fff}
+  .bubble{border-radius:14px;padding:13px 15px;font-size:14.5px;line-height:1.62;white-space:pre-wrap}
+  .msg.ai .bubble{background:var(--surface-2);border:1px solid var(--line)}
+  .msg.me .bubble{background:var(--primary);color:#fff}
+  .msg.note{max-width:100%;justify-content:center}
+  .msg.note .bubble{background:var(--info-wash);border:1px solid #dbe4ff;color:#1e3a8a;font-size:12.5px;font-weight:600;text-align:center;border-radius:999px;padding:8px 16px}
+  .judge{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+  .judge button{border:1px solid var(--line-strong);background:#fff;border-radius:8px;padding:6px 11px;font-size:12px;font-weight:700;color:var(--ink-2);transition:.14s}
+  .judge button:hover{border-color:var(--muted);color:var(--ink)}
+  .judge button.on{border-color:var(--accent);background:var(--accent-wash);color:var(--accent-ink)}
+  .judge .cmt{width:100%;margin-top:8px}
+  .turn-strats{margin-top:10px}
+  .compose{border-top:1px solid var(--line);padding:14px 16px;background:var(--surface-2);display:flex;flex-direction:column;gap:10px}
+  .compose .row{display:flex;gap:10px}
+  .compose .input{background:#fff}
+  .stuck{align-self:flex-start;border:1px dashed var(--line-strong);background:#fff;border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:700;color:var(--warn)}
+  .stuck:hover{border-color:var(--warn);background:var(--warn-wash)}
+
+  /* reflect */
+  .timeline{display:flex;gap:12px;overflow-x:auto;padding:6px 2px 14px}
+  .tl-card{flex:none;width:210px;border:1px solid var(--line-strong);border-radius:12px;padding:14px;background:var(--surface)}
+  .tl-card .role{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .tl-card .txt{font-size:12.5px;color:var(--ink-2);margin:8px 0 12px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;min-height:64px}
+  .tl-tags{display:flex;gap:6px}
+  .tl-tags button{flex:1;border:1px solid var(--line-strong);background:#fff;border-radius:7px;padding:6px 4px;font-size:11px;font-weight:700;color:var(--ink-2)}
+  .tl-tags button.on{border-color:var(--accent);background:var(--accent-wash);color:var(--accent-ink)}
+  .dash{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}
+  @media(max-width:720px){.dash{grid-template-columns:1fr}}
+  .dash .box{border:1px solid var(--line);border-radius:14px;padding:18px}
+  .dash h4{font-size:13px;font-weight:800;margin-bottom:12px}
+  .metric{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--line);color:var(--ink-2)}
+  .metric b{color:var(--ink)}
+
+  /* residual */
+  .paper{border:1px solid var(--line-strong);border-radius:14px;background:var(--surface);overflow:hidden}
+  .paper .tab{background:var(--surface-2);border-bottom:1px solid var(--line);padding:10px 16px;font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--ink-2)}
+  .paper .body{padding:20px}
+  .paper .prompt{font-size:15px;font-weight:600;line-height:1.6;color:var(--ink)}
+  .axis-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
+  .axis-tbl th,.axis-tbl td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  .axis-tbl th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:800;background:var(--surface-2)}
+  .delta{display:inline-flex;align-items:center;gap:5px;font-weight:800;font-size:12px;padding:2px 8px;border-radius:999px}
+  .delta.up{background:var(--accent-wash);color:var(--accent-ink)}
+  .delta.flat{background:#f1f3f5;color:var(--ink-2)}
+  .delta.na{background:#f1f3f5;color:var(--muted)}
+
+  .loading{display:inline-flex;gap:6px;align-items:center;color:var(--muted);font-size:13px}
+  .loading i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:blink 1s infinite}
+  .loading i:nth-child(2){animation-delay:.15s}.loading i:nth-child(3){animation-delay:.3s}
+  @keyframes blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
+
+  .stack{display:flex;flex-direction:column;gap:18px}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:620px){.row-2{grid-template-columns:1fr}}
+  .modal-scrim{position:fixed;inset:0;background:rgba(16,24,40,.4);display:none;place-items:center;padding:20px;z-index:50}
+  .modal-scrim.open{display:grid}
+  .modal{background:#fff;border-radius:16px;max-width:420px;width:100%;padding:24px}
+  .kv{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  [hidden]{display:none!important}
+</style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body>
+<div class="app">
 
-  <!-- ================================================================= -->
-  <!-- 1. 빠칭코(그림 4자리) 회원가입 & 로그인 모달 -->
-  <!-- ================================================================= -->
-  <div id="auth-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 max-h-[90vh] overflow-y-auto">
-      
-      <div class="text-center space-y-1">
-        <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white text-xl flex items-center justify-center mx-auto shadow-md shadow-indigo-200">
-          <i class="fa-solid fa-graduation-cap"></i>
-        </div>
-        <h2 class="text-xl font-bold text-slate-900">메타인지 AI 학습터</h2>
-        <p class="text-xs text-slate-500">
-          <span class="text-emerald-600 font-semibold"><i class="fa-solid fa-shield-check"></i> 개인정보 보호:</span>
-          실명·연락처 없이 <b>닉네임</b>과 <b>4자리 그림 비밀번호</b>로 입장합니다.
-        </p>
-      </div>
-
-      <!-- 탭 전환 -->
-      <div class="flex bg-slate-100 p-1 rounded-2xl text-xs font-bold">
-        <button id="tab-btn-register" onclick="switchAuthTab('register')" class="flex-1 py-2.5 rounded-xl bg-white text-indigo-600 shadow-xs transition flex items-center justify-center gap-1.5">
-          <i class="fa-solid fa-user-plus"></i> 새 계정 만들기 (회원가입)
-        </button>
-        <button id="tab-btn-login" onclick="switchAuthTab('login')" class="flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5">
-          <i class="fa-solid fa-arrow-right-to-bracket"></i> 기존 계정으로 시작 (로그인)
-        </button>
-      </div>
-
-      <!-- 닉네임 입력 -->
-      <div class="space-y-1">
-        <label class="block text-xs font-bold text-slate-700">1. 학습자 닉네임</label>
-        <input id="auth-nickname" type="text" placeholder="사용할 닉네임을 입력하세요" class="w-full text-sm border border-slate-300 rounded-xl px-4 py-2 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-      </div>
-
-      <!-- 회원가입 전용: 학년(초3~고3 개별 선택), 교과목, 성취기준 선택 -->
-      <div id="register-curriculum-box" class="space-y-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-        
-        <!-- 학년 선택 (초3~고3 각각 따로따로 선택) -->
-        <div class="space-y-1">
-          <label class="block text-xs font-bold text-slate-700">2. 학년 선택 (초3~고3 개별 선택)</label>
-          <select id="auth-grade" onchange="onGradeChange()" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white focus:outline-none">
-            <option value="초등학교 3학년">초등학교 3학년</option>
-            <option value="초등학교 4학년">초등학교 4학년</option>
-            <option value="초등학교 5학년">초등학교 5학년</option>
-            <option value="초등학교 6학년" selected>초등학교 6학년</option>
-            <option value="중학교 1학년">중학교 1학년</option>
-            <option value="중학교 2학년">중학교 2학년</option>
-            <option value="중학교 3학년">중학교 3학년</option>
-            <option value="고등학교 1학년">고등학교 1학년</option>
-            <option value="고등학교 2학년">고등학교 2학년</option>
-            <option value="고등학교 3학년">고등학교 3학년</option>
-          </select>
-        </div>
-
-        <!-- 교과목 선택 (초3~중3: 국어,영어,수학,사회,과학 / 고등: 국어,수학,영어,통합사회,통합과학 국한) -->
-        <div class="space-y-1">
-          <label class="block text-xs font-bold text-slate-700">3. 학습할 교과목 선택</label>
-          <select id="auth-subject" onchange="onSubjectChange()" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white focus:outline-none">
-            <!-- 동적으로 채워짐 -->
-          </select>
-        </div>
-
-        <!-- 교육과정 성취기준 선택 메타데이터 기반 -->
-        <div class="space-y-1">
-          <div class="flex justify-between items-center">
-            <label class="text-xs font-bold text-slate-700">4. 교육과정 성취기준 선택</label>
-            <span class="text-[10px] text-indigo-600 font-bold">공식 교육과정 메타데이터 연동</span>
-          </div>
-          <select id="auth-standard" onchange="onStandardChange()" class="w-full text-xs font-medium border border-slate-300 rounded-xl px-3 py-2 bg-white focus:outline-none">
-            <!-- 동적으로 채워짐 -->
-          </select>
-          <textarea id="auth-custom-standard" rows="2" class="w-full text-xs border border-slate-200 rounded-xl p-2 bg-white hidden" placeholder="성취기준을 직접 작성해보세요."></textarea>
-        </div>
-
-      </div>
-
-      <!-- 빠칭코 4자리 그림 비밀번호 영역 -->
-      <div class="space-y-2">
-        <div class="flex justify-between items-center">
-          <label class="text-xs font-bold text-slate-700" id="pin-label">빠칭코 4자리 그림 비밀번호 설정</label>
-          <button onclick="spinSlots()" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition">
-            <i class="fa-solid fa-arrows-rotate"></i> 🎰 룰렛 돌리기
-          </button>
-        </div>
-
-        <div class="grid grid-cols-4 gap-2 bg-slate-100 p-2 rounded-2xl border border-slate-200 text-center">
-          <div id="slot-0" class="slot-box bg-white h-11 rounded-xl border border-slate-300 flex items-center justify-center text-xl shadow-xs">❓</div>
-          <div id="slot-1" class="slot-box bg-white h-11 rounded-xl border border-slate-300 flex items-center justify-center text-xl shadow-xs">❓</div>
-          <div id="slot-2" class="slot-box bg-white h-11 rounded-xl border border-slate-300 flex items-center justify-center text-xl shadow-xs">❓</div>
-          <div id="slot-3" class="slot-box bg-white h-11 rounded-xl border border-slate-300 flex items-center justify-center text-xl shadow-xs">❓</div>
-        </div>
-
-        <p class="text-[11px] text-slate-400 text-center">아래 15개 그림 중 4개를 순서대로 터치하거나 [룰렛 돌리기]를 누르세요.</p>
-        <div id="emoji-palette" class="grid grid-cols-5 gap-1.5 p-1.5 bg-slate-50 rounded-2xl border border-slate-200"></div>
-      </div>
-
-      <!-- 제출 버튼 -->
-      <div class="space-y-1.5 pt-1">
-        <button id="auth-submit-btn" onclick="submitAuth()" class="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-200 transition flex items-center justify-center gap-2">
-          <span>선택한 성취기준으로 학습 시작하기</span> <i class="fa-solid fa-arrow-right"></i>
-        </button>
-        <button onclick="clearSlotPassword()" class="w-full py-1 text-xs font-semibold text-slate-400 hover:text-slate-600">
-          그림 비밀번호 초기화
-        </button>
-      </div>
-
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot"></span>
+      <span>메타인지·AI활용 성찰 지원 시스템<small id="brand-sub">설정 · 대화 · 되짚기를 분리한 학습 흐름</small></span>
     </div>
-  </div>
-
-  <!-- ================================================================= -->
-  <!-- 2. 원리 10: AI 답변 비판적 검증 전용 팝업 모달 -->
-  <!-- ================================================================= -->
-  <div id="verification-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200">
-      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">
-            <i class="fa-solid fa-shield-check"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-sm text-slate-900">원리 10: AI 응답 비판적 검증 &amp; 판단</h3>
-            <p class="text-[11px] text-slate-500">AI 산출물을 비판적으로 검토하고 주도적 수용 여부를 결정합니다.</p>
-          </div>
-        </div>
-        <button onclick="closeVerificationModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-700 max-h-32 overflow-y-auto leading-relaxed">
-        <span class="font-bold text-slate-500 block mb-1">검토 중인 AI 답변:</span>
-        <div id="modal-target-ai-text" class="whitespace-pre-line text-slate-800"></div>
-      </div>
-
-      <div class="space-y-1.5">
-        <label class="block text-xs font-bold text-slate-700">1. 나의 비판적 수용 여부 판단</label>
-        <div class="grid grid-cols-3 gap-2 text-xs">
-          <button type="button" onclick="selectModalStatus('수용')" id="modal-btn-accept" class="py-2.5 px-2 rounded-xl border border-slate-200 font-bold flex items-center justify-center gap-1 transition">
-            👍 수용 (타당함)
-          </button>
-          <button type="button" onclick="selectModalStatus('의문')" id="modal-btn-question" class="py-2.5 px-2 rounded-xl border border-slate-200 font-bold flex items-center justify-center gap-1 transition">
-            ❓ 의문 (확인필요)
-          </button>
-          <button type="button" onclick="selectModalStatus('수정필요')" id="modal-btn-reject" class="py-2.5 px-2 rounded-xl border border-slate-200 font-bold flex items-center justify-center gap-1 transition">
-            ✏️ 수정필요 (오류)
-          </button>
-        </div>
-      </div>
-
-      <div class="space-y-1.5">
-        <label class="block text-xs font-bold text-slate-700">2. 나의 비판적 코멘트 및 의견</label>
-        <textarea id="modal-ver-comment" rows="3" class="w-full text-xs border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="예: 설명의 핵심 결론은 맞으나, 왜 굴절이 일어나는지 구체적인 원인 설명이 미흡합니다."></textarea>
-      </div>
-
-      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-        <button onclick="closeVerificationModal()" class="px-4 py-2 text-xs font-bold rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 transition">취소</button>
-        <button onclick="saveModalVerification()" class="px-5 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition shadow-xs">검증 완료 및 저장</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================================================================= -->
-  <!-- 2-1. 원리 11/12: 대화 로그 개별 성찰 팝업 모달 -->
-  <!-- ================================================================= -->
-  <div id="log-reflection-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200">
-      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">
-            <i class="fa-solid fa-magnifying-glass"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-sm text-slate-900">원리 11·12: 이 질문 되돌아보기</h3>
-            <p class="text-[11px] text-slate-500">내가 입력한 질문 하나를 골라 역할·프롬프트 궤적을 성찰합니다.</p>
-          </div>
-        </div>
-        <button onclick="closeLogReflectionModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-700 max-h-24 overflow-y-auto leading-relaxed">
-        <span class="font-bold text-slate-500 block mb-1">돌아보는 나의 질문:</span>
-        <div id="log-modal-target-text" class="whitespace-pre-line text-slate-800"></div>
-      </div>
-
-      <div class="space-y-1.5">
-        <label class="block text-xs font-bold text-slate-700">1. [원리 11] 이 순간, 나는 스스로 주도했나요, AI에게 위임했나요?</label>
-        <textarea id="log-modal-role-comment" rows="2" class="w-full text-xs border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="예: 내 나름의 가설을 먼저 세운 뒤 확인차 물어봤어요 / 그냥 정답만 물어봤어요."></textarea>
-      </div>
-
-      <div class="space-y-1.5">
-        <label class="block text-xs font-bold text-slate-700">2. [원리 12] 이 프롬프트를 더 명확하게 바꾼다면?</label>
-        <textarea id="log-modal-prompt-comment" rows="2" class="w-full text-xs border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="예: 배경 정보를 더 주고, 원하는 답의 형식을 구체적으로 적었으면 좋았을 것 같아요."></textarea>
-      </div>
-
-      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-        <button onclick="closeLogReflectionModal()" class="px-4 py-2 text-xs font-bold rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 transition">취소</button>
-        <button onclick="saveLogReflection()" class="px-5 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition shadow-xs">성찰 저장</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================================================================= -->
-  <!-- 3. 상단 네비게이션 헤더 -->
-  <!-- ================================================================= -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
-      
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-xl shadow-md">
-          <i class="fa-solid fa-brain"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="text-base font-bold text-slate-900 leading-tight">메타인지 & AI 성찰 챗봇</h1>
-            <span id="current-user-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1">
-              <i class="fa-solid fa-user-graduate"></i> <span id="user-display-name">-</span>
-              (<span id="user-display-grade" class="text-indigo-600 font-bold">-</span> | <span id="user-display-subject" class="text-indigo-600 font-bold">-</span>)
-            </span>
-          </div>
-          <p id="user-display-standard-line" class="text-[11px] text-slate-500 truncate max-w-xl">성취기준: 선택 전</p>
-        </div>
-      </div>
-
-      <!-- 진행 국면 표시 -->
-      <div class="flex items-center gap-2 text-xs font-bold">
-        <span id="step-badge-dialogue" class="px-3 py-1 rounded-full bg-indigo-600 text-white transition">
-          1단계: 문답 탐구 대화
-        </span>
-        <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
-        <span id="step-badge-reflect" class="px-3 py-1 rounded-full bg-slate-100 text-slate-400 transition">
-          2단계: 대화 종결 후 성찰
-        </span>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <button onclick="openAuthModal()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i> 계정/성취기준 변경
-        </button>
-        <button onclick="toggleConfigModal()" class="p-2 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition" title="API 설정">
-          <i class="fa-solid fa-gear"></i>
-        </button>
-      </div>
-
+    <div class="top-right">
+      <span class="progress-label" id="progress-label">STEP 0 / 8</span>
+      <button class="icon-btn" id="btn-settings" title="API 설정">⚙</button>
     </div>
   </header>
 
-  <!-- ================================================================= -->
-  <!-- 4. 메인 대화 & 실시간 성찰 대시보드 -->
-  <!-- ================================================================= -->
-  <div class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-    <!-- 좌측: 대화형 소크라테스 AI 발문 엔진 (8컬럼) -->
-    <main class="lg:col-span-8 flex flex-col bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden" style="min-height: 720px;">
-      
-      <!-- 상태 표시줄 및 [대화 종결 및 성찰 시작] 버튼 -->
-      <div class="px-6 py-3.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2 text-xs">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span class="font-bold text-slate-800">소크라-봇</span>
-          <span class="text-slate-300">•</span>
-          <span id="dialogue-status-text" class="text-indigo-600 font-bold">[성취기준 기반 탐구 대화 진행 중]</span>
-        </div>
-
-        <!-- 핵심: 대화 종결 후 성찰로 전환하는 버튼 -->
-        <button id="btn-terminate-dialogue" onclick="terminateDialogueAndStartReflection()" class="px-4 py-1.5 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition flex items-center gap-1.5 shadow-xs">
-          <i class="fa-solid fa-flag-checkered"></i> <span>대화 종결 및 성찰 시작</span>
-        </button>
+  <!-- ============ STEP 0 · 진입·식별 ============ -->
+  <section class="screen" data-screen="entry">
+    <div class="rail">
+      <div class="eyebrow">STEP 0 · 시작하기</div>
+      <h1 class="headline">닉네임과 네 자리 그림 잠금을 정합니다</h1>
+      <p class="subhead">실명·연락처 없이 시작합니다. 슬롯을 돌리고 정지 버튼으로 네 자리를 하나씩 확정하세요. 이 값은 다음에 이어서 학습할 때 나를 찾는 코드로만 쓰입니다.</p>
+    </div>
+    <div class="card stack">
+      <div>
+        <label class="field-label" for="in-nick">닉네임</label>
+        <input class="input" id="in-nick" maxlength="16" placeholder="예: 민서, 과학탐험대, ..." autocomplete="off" />
       </div>
-
-      <!-- 대화 메시지 스크롤 영역 -->
-      <div id="chat-messages" class="flex-1 p-6 space-y-6 overflow-y-auto max-h-[540px]"></div>
-
-      <!-- 메시지 입력 영역 -->
-      <div class="p-4 bg-slate-50 border-t border-slate-200 space-y-3">
-        
-        <div class="flex items-center justify-between text-xs px-1">
-          <div class="flex items-center gap-3">
-            <span class="font-bold text-slate-700 flex items-center gap-1">
-              <i class="fa-solid fa-user-astronaut text-indigo-600"></i> 나의 질문 성향:
-            </span>
-            <label class="flex items-center gap-1 cursor-pointer text-slate-700 font-medium">
-              <input type="radio" name="question_type" value="learner_directed" checked class="accent-indigo-600" />
-              <span>🌟 주도적 탐구 (내 생각/가설 제시)</span>
-            </label>
-            <label class="flex items-center gap-1 cursor-pointer text-slate-600 font-medium">
-              <input type="radio" name="question_type" value="ai_delegated" class="accent-indigo-600" />
-              <span>🤖 AI 단순 위임 (정답만 질문)</span>
-            </label>
-          </div>
-          <span class="text-[11px] text-slate-400">말풍선을 누르면 비판적 검토(원리 10) 팝업이 뜹니다</span>
+      <div>
+        <label class="field-label">네 자리 그림 잠금 (빠찡코형)</label>
+        <div class="slots" id="slots"></div>
+        <div class="range-ends" style="justify-content:center;gap:14px;margin-top:12px">
+          <button class="btn btn-sm" id="btn-spin">🎰 돌리기</button>
+          <button class="btn btn-sm btn-accent" id="btn-stop" disabled>정지 (한 자리 확정)</button>
+          <button class="btn btn-sm btn-ghost" id="btn-reset-pin">초기화</button>
         </div>
-
-        <div class="flex gap-2">
-          <input id="user-input" type="text" onkeydown="if(event.key==='Enter') sendMessage()" class="flex-1 text-sm border border-slate-300 rounded-2xl px-4 py-3 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-xs" placeholder="생각이나 질문을 입력하세요..." />
-          <button id="btn-send" onclick="sendMessage()" class="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-200 transition flex items-center gap-2 shrink-0">
-            <span>전송</span> <i class="fa-solid fa-paper-plane"></i>
-          </button>
-        </div>
-
-      </div>
-
-    </main>
-
-    <!-- 우측: 13대 설계원리 실시간 시각화 & 대시보드 (4컬럼) -->
-    <aside class="lg:col-span-4 space-y-5">
-      
-      <!-- 1. 원리 8/9: 인지 전략 카드 -->
-      <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
-            <i class="fa-solid fa-bullseye"></i> 원리 8/9: 인지 전략 조절
-          </h2>
-          <span id="active-strat-badge" class="px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-50 text-indigo-700">정교화</span>
-        </div>
-        <select id="select-strategy" onchange="changeStrategy(this.value)" class="w-full text-xs font-medium border border-slate-300 rounded-xl p-2 bg-slate-50 focus:outline-none">
-          <option value="정교화(Elaboration)">정교화: 나만의 말과 일상 비유로 설명</option>
-          <option value="조직화(Organization)">조직화: 표, 마인드맵, 핵심 요약 구조화</option>
-          <option value="비판적 사고(Critical Thinking)">비판적 사고: 근거 따지기 및 반례 찾기</option>
-          <option value="시연(Rehearsal)">시연: 핵심 용어 반복 암기 및 인출</option>
-          <option value="이해 점검(Monitoring)">이해 점검: 알고 모르는 부분 스스로 확인</option>
-        </select>
-        <p id="strategy-explanation" class="text-xs text-slate-500 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-          새로운 지식을 이미 알고 있는 경험에 빗대어 설명하고 비유를 만들어보는 전략입니다.
-        </p>
-        <button onclick="requestMonitoring()" class="w-full py-2 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-[11px] flex items-center justify-center gap-1.5 transition">
-          <i class="fa-solid fa-compass"></i> 지금 전략이 잘 안 통해요 (점검 요청)
-        </button>
-        <div>
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">전략 선택·조정 사유 기록</p>
-          <div id="strategy-log" class="space-y-1.5 max-h-32 overflow-y-auto">
-            <p class="text-[11px] text-slate-400">아직 기록된 전략 선택/조정 사유가 없습니다.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. 원리 1: 비계 수준 (Fading) 카드 -->
-      <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
-            <i class="fa-solid fa-stairs"></i> 원리 1: 비계 수준 (Fading)
-          </h2>
-          <span id="scaffold-badge" class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800">High (비계 높음)</span>
-        </div>
-        <p class="text-[10px] text-slate-400 leading-relaxed">AI 응답을 3회 연속 "수용"하면 자동으로 한 단계 낮아져요. 언제든 아래에서 직접 조절할 수도 있어요.</p>
-        <div class="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold text-center">
-          <button onclick="setScaffold('High')" id="scaffold-high" class="py-1.5 rounded-lg bg-white text-indigo-600 shadow-xs">높음</button>
-          <button onclick="setScaffold('Medium')" id="scaffold-medium" class="py-1.5 rounded-lg text-slate-500">중간</button>
-          <button onclick="setScaffold('Low')" id="scaffold-low" class="py-1.5 rounded-lg text-slate-500">낮음(소거)</button>
-        </div>
-      </div>
-
-      <!-- 3. 원리 11: 주도권 비율 실시간 원형 차트 -->
-      <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
-          <i class="fa-solid fa-chart-pie"></i> 원리 11: 주도권 vs AI 위임 비율
-        </h2>
-        <div class="h-44 flex items-center justify-center">
-          <canvas id="chart-delegation"></canvas>
-        </div>
-      </div>
-
-      <!-- 3-1. 원리 11/12: 대화 로그 대시보드 (전체 질문 궤적 제시 & 개별 선택 성찰) -->
-      <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
-          <i class="fa-solid fa-table-list"></i> 원리 11·12: 대화 로그 대시보드
-        </h2>
-        <p class="text-[11px] text-slate-500 leading-relaxed">
-          내가 던진 질문 전체 궤적이에요. 하나를 눌러서 <b>주도권(원리11)</b>과 <b>프롬프트 개선(원리12)</b>을 성찰해보세요.
-        </p>
-        <div id="dialogue-log-list" class="space-y-1.5 max-h-56 overflow-y-auto">
-          <p class="text-[11px] text-slate-400">아직 대화 로그가 없습니다.</p>
-        </div>
-      </div>
-
-      <!-- 4. 원리 13: 사전 vs 사후 이해도 성장 비교 막대 차트 -->
-      <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 flex items-center gap-1.5">
-          <i class="fa-solid fa-chart-simple"></i> 원리 13: 이해도 성장 변화
-        </h2>
-        <div class="h-36">
-          <canvas id="chart-scores"></canvas>
-        </div>
-        <div class="flex justify-between text-xs text-slate-500">
-          <span>사전 이해도: <b id="pre-score-text">-</b></span>
-          <span>사후 이해도: <b id="post-score-text">-</b></span>
-        </div>
-      </div>
-
-      <!-- 5. 원리 3: 비식별화 학습 데이터 저장 -->
-      <button onclick="exportSessionJSON()" class="w-full py-3 rounded-2xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-2 transition shadow-xs">
-        <i class="fa-solid fa-file-export text-indigo-600"></i> 비식별화 학습 기록 다운로드 (JSON)
-      </button>
-
-    </aside>
-
-  </div>
-
-  <!-- ================================================================= -->
-  <!-- 5. API 설정 모달 창 -->
-  <!-- ================================================================= -->
-  <div id="config-modal" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-slate-900 flex items-center gap-2">
-          <i class="fa-solid fa-key text-indigo-600"></i> Upstage Solar API 설정
-        </h3>
-        <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 leading-relaxed">
-        <i class="fa-solid fa-shield-check"></i> 기본적으로는 서버(<code>/api/chat</code>)가 API 키를 안전하게 보관하고 대신 호출해주므로 아래 입력은 <b>선택사항</b>입니다. GitHub Pages 등 서버 프록시가 없는 정적 호스팅에서 사용하거나, 개인 키로 직접 호출하고 싶을 때만 입력하세요.
-      </div>
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Upstage API Key (선택, 이 브라우저에만 저장)</label>
-          <input id="cfg-api-key" type="password" placeholder="up_xxxxxxxxxxxxxxxxxxxx (비워두면 서버 프록시 사용)" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Model</label>
-          <input id="cfg-model" type="text" value="solar-pro" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-        </div>
-        <button type="button" onclick="clearConfigKey()" class="text-[11px] font-semibold text-slate-400 hover:text-rose-600">개인 키 지우고 서버 프록시로 되돌리기</button>
-      </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="toggleConfigModal()" class="px-4 py-2 text-xs font-bold rounded-xl border border-slate-300 text-slate-600">닫기</button>
-        <button onclick="saveConfigModal()" class="px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white">저장</button>
+        <p class="hint" id="pin-hint" style="text-align:center">돌리기 → 정지를 네 번 눌러 네 자리를 확정합니다.</p>
       </div>
     </div>
-  </div>
-
-  <!-- ================================================================= -->
-  <!-- 6. 프론트엔드 자바스크립트 엔진 (성취기준 연동 & 대화 종결 후 성찰 분리) -->
-  <!-- ================================================================= -->
-  <script>
-    const EMOJI_LIST = [
-      { id: 'apple', icon: '🍎', name: '사과' },
-      { id: 'banana', icon: '🍌', name: '바나나' },
-      { id: 'grapes', icon: '🍇', name: '포도' },
-      { id: 'strawberry', icon: '🍓', name: '딸기' },
-      { id: 'watermelon', icon: '🍉', name: '수박' },
-      { id: 'dog', icon: '🐶', name: '강아지' },
-      { id: 'cat', icon: '🐱', name: '고양이' },
-      { id: 'rabbit', icon: '🐰', name: '토끼' },
-      { id: 'lion', icon: '🦁', name: '사자' },
-      { id: 'panda', icon: '🐼', name: '판다' },
-      { id: 'rocket', icon: '🚀', name: '로켓' },
-      { id: 'car', icon: '🚗', name: '자동차' },
-      { id: 'soccer', icon: '⚽', name: '축구공' },
-      { id: 'book', icon: '📚', name: '책' },
-      { id: 'icecream', icon: '🍦', name: '아이스크림' }
-    ];
-
-    let currentAuthTab = 'register';
-    let selectedPin = [];
-    const BACKEND_URL = "http://localhost:8000";
-
-    // 대화 진행 상태 머신 (대화 단계 vs 대화 종결 후 성찰 단계 엄격 분리)
-    const WORKFLOW_STAGES = {
-      // 1단계: 문답 탐구 대화 국면 (준비 -> 본 탐구 대화)
-      PREP_STEP_1_CONFIRM: "PREP_STEP_1_CONFIRM", // 성취기준 확인 & 나의 구체적 학습 목표 (원리4)
-      PREP_STEP_2_ROLE: "PREP_STEP_2_ROLE",       // AI 과업 분담 1개 질문 (원리5)
-      PREP_STEP_3_PRIOR: "PREP_STEP_3_PRIOR",     // 사전 지식 및 사전 점수 1개 질문 (원리6)
-      PREP_STEP_4_META_UNDERSTAND: "PREP_STEP_4_META_UNDERSTAND", // 메타인지: 이해질문 (원리7-①)
-      PREP_STEP_5_META_STRATEGY: "PREP_STEP_5_META_STRATEGY",     // 메타인지: 전략질문 (원리7-②)
-      PREP_STEP_6_META_CONNECT: "PREP_STEP_6_META_CONNECT",       // 메타인지: 연결질문 (원리7-③)
-      PREP_STEP_7_STRATEGY_PLAN: "PREP_STEP_7_STRATEGY_PLAN",     // 인지전략 최종 선택 근거 (원리8)
-      DIALOGUE_ACTIVE: "DIALOGUE_ACTIVE",         // 본 탐구 대화 (지속적 핑퐁 문답, 원리9 모니터링 포함)
-
-      // 2단계: 대화 종결 후 성찰 국면 (대화 종결 버튼 누른 후 시작)
-      REFL_STEP_1_ROLE: "REFL_STEP_1_ROLE",       // 주도권 vs AI 위임 성찰
-      REFL_STEP_2_PROMPT: "REFL_STEP_2_PROMPT",   // 질문 궤적 및 프롬프트 개선 성찰
-      REFL_STEP_3_TRANSFER: "REFL_STEP_3_TRANSFER",// AI 소거 유사 전이 과업
-      REFL_STEP_4_GROWTH: "REFL_STEP_4_GROWTH"    // 이해도 성장 및 인지전략 최종 성찰
-    };
-
-    const GRADE_PEDAGOGY = {
-      "초등학교 3학년": { tone: "친근하고 쉬운 어조, 비유 중심", guide: "한 번에 단 1개의 쉬운 질문만 할 것." },
-      "초등학교 4학년": { tone: "친근하고 격려하는 어조", guide: "한 번에 단 1개의 질문만 할 것." },
-      "초등학교 5학년": { tone: "다정하고 호기심을 유발하는 존댓말", guide: "인과관계 탐색 유도." },
-      "초등학교 6학년": { tone: "논리적이고 다정한 어조", guide: "원인과 결과, 일상 적용 유도." },
-      "중학교 1학년": { tone: "체계적이고 존중하는 동료 톤", guide: "기초 학술 용어 정착 및 반례 탐색." },
-      "중학교 2학년": { tone: "논리적인 탐구 톤", guide: "개념 구조화 및 자기설명 유도." },
-      "중학교 3학년": { tone: "심층적이고 분석적인 톤", guide: "논리적 인과관계 및 오류 검증." },
-      "고등학교 1학년": { tone: "학술적 연구자 톤", guide: "심화 이론 모델링 및 고차원 비판적 검토." },
-      "고등학교 2학년": { tone: "전문적이고 지적인 톤", guide: "변인 간 상관관계 분석 및 엄밀한 정의." },
-      "고등학교 3학년": { tone: "심층 학술 담론 톤", guide: "복합 원리 융합 분석 및 AI 의존성 소거." }
-    };
-
-    const state = {
-      user: {
-        nickname: localStorage.getItem('current_user_nickname') || '',
-        grade: localStorage.getItem('current_user_grade') || '초등학교 6학년',
-        subject: localStorage.getItem('current_user_subject') || '과학',
-        standard: localStorage.getItem('current_user_standard') || '',
-        pin: []
-      },
-      apiKey: localStorage.getItem("UPSTAGE_API_KEY") || "",
-      model: localStorage.getItem("UPSTAGE_MODEL") || "solar-pro",
-      baseUrl: "https://api.upstage.ai/v1",
-
-      stage: WORKFLOW_STAGES.PREP_STEP_1_CONFIRM,
-      scaffolding: "High",
-      scaffoldLocked: false,
-      currentStrategy: "정교화(Elaboration)",
-      strategyChangeLog: [],
-      adaptiveMetrics: { acceptStreak: 0 },
-      monitoringRequested: false,
-      messages: [],
-
-      context: {
-        priorScore: null,
-        postScore: null
-      }
-    };
-
-    let activeVerMsgId = null;
-    let activeVerStatus = '수용';
-    let activeLogMsgId = null;
-    let chartDelInstance = null;
-    let chartScoreInstance = null;
-
-    const LocalDB = {
-      getUsers() { return JSON.parse(localStorage.getItem('registered_users_db') || '{}'); },
-      saveUser(nickname, pin, grade, subject, standard) {
-        const users = this.getUsers();
-        users[nickname] = { nickname, pin, grade, subject, standard, createdAt: new Date().toISOString() };
-        localStorage.setItem('registered_users_db', JSON.stringify(users));
-      },
-      findUser(nickname) { return this.getUsers()[nickname] || null; }
-    };
-
-    window.addEventListener('DOMContentLoaded', () => {
-      initEmojiPalette();
-      initCharts();
-      onGradeChange(); // 학년별 과목 및 성취기준 동적 초기화
-
-      if (state.user.nickname && state.user.standard) {
-        document.getElementById('auth-modal').classList.add('hidden');
-        updateHeaderUserInfo();
-        startAITutoring();
-      } else {
-        switchAuthTab('register');
-        clearSlotPassword();
-      }
-    });
-
-    // 학년 변경 이벤트 -> 교과목 드롭다운 업데이트
-    function onGradeChange() {
-      const grade = document.getElementById('auth-grade').value;
-      const subjectSelect = document.getElementById('auth-subject');
-      subjectSelect.innerHTML = '';
-
-      let subjects = [];
-      if (grade.startsWith('고등학교')) {
-        // 고등학교는 국어, 수학, 영어, 통합사회, 통합과학으로만 국한
-        subjects = ["국어", "수학", "영어", "통합사회", "통합과학"];
-      } else {
-        // 초3~중3: 국어, 영어, 수학, 사회, 과학
-        subjects = ["국어", "영어", "수학", "사회", "과학"];
-      }
-
-      subjects.forEach(sub => {
-        const opt = document.createElement('option');
-        opt.value = sub;
-        opt.innerText = sub;
-        subjectSelect.appendChild(opt);
-      });
-
-      onSubjectChange();
-    }
-
-    // 과목 변경 이벤트 -> 성취기준 드롭다운 업데이트
-    function onSubjectChange() {
-      const grade = document.getElementById('auth-grade').value;
-      const subject = document.getElementById('auth-subject').value;
-      const standardSelect = document.getElementById('auth-standard');
-      standardSelect.innerHTML = '';
-
-      const standardsList = (CURRICULUM_STANDARDS[grade] && CURRICULUM_STANDARDS[grade][subject]) || [];
-
-      standardsList.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = `[${item.code}] ${item.name}`;
-        opt.innerText = `[${item.code}] ${item.name}`;
-        standardSelect.appendChild(opt);
-      });
-
-      // 직접 입력 옵션 추가
-      const customOpt = document.createElement('option');
-      customOpt.value = "CUSTOM";
-      customOpt.innerText = "✏️ 성취기준 직접 입력하기...";
-      standardSelect.appendChild(customOpt);
-
-      onStandardChange();
-    }
-
-    function onStandardChange() {
-      const standardSelect = document.getElementById('auth-standard');
-      const customBox = document.getElementById('auth-custom-standard');
-      if (standardSelect.value === 'CUSTOM') {
-        customBox.classList.remove('hidden');
-      } else {
-        customBox.classList.add('hidden');
-      }
-    }
-
-    function updateHeaderUserInfo() {
-      document.getElementById('user-display-name').innerText = state.user.nickname;
-      document.getElementById('user-display-grade').innerText = state.user.grade;
-      document.getElementById('user-display-subject').innerText = state.user.subject;
-      document.getElementById('user-display-standard-line').innerText = `성취기준: ${state.user.standard}`;
-    }
-
-    function switchAuthTab(tab) {
-      currentAuthTab = tab;
-      const btnReg = document.getElementById('tab-btn-register');
-      const btnLog = document.getElementById('tab-btn-login');
-      const curricBox = document.getElementById('register-curriculum-box');
-      const submitBtn = document.getElementById('auth-submit-btn');
-
-      clearSlotPassword();
-      document.getElementById('auth-nickname').value = '';
-
-      if (tab === 'register') {
-        btnReg.className = "flex-1 py-2.5 rounded-xl bg-white text-indigo-600 shadow-xs transition flex items-center justify-center gap-1.5";
-        btnLog.className = "flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5";
-        curricBox.classList.remove('hidden');
-        submitBtn.innerHTML = `<span>선택한 성취기준으로 학습 시작하기</span> <i class="fa-solid fa-arrow-right"></i>`;
-      } else {
-        btnLog.className = "flex-1 py-2.5 rounded-xl bg-white text-indigo-600 shadow-xs transition flex items-center justify-center gap-1.5";
-        btnReg.className = "flex-1 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5";
-        curricBox.classList.add('hidden');
-        submitBtn.innerHTML = `<span>로그인하고 내 학습터 입장</span> <i class="fa-solid fa-right-to-bracket"></i>`;
-      }
-    }
-
-    function initEmojiPalette() {
-      const palette = document.getElementById('emoji-palette');
-      palette.innerHTML = '';
-      EMOJI_LIST.forEach(item => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'slot-item p-1.5 rounded-xl bg-white hover:bg-indigo-50 border border-slate-200 text-lg flex flex-col items-center justify-center gap-0.5 shadow-2xs';
-        btn.innerHTML = `<span>${item.icon}</span><span class="text-[9px] text-slate-500 font-medium">${item.name}</span>`;
-        btn.onclick = () => addPinEmoji(item.icon);
-        palette.appendChild(btn);
-      });
-    }
-
-    function addPinEmoji(icon) {
-      if (selectedPin.length < 4) {
-        selectedPin.push(icon);
-        renderSlots();
-      }
-    }
-
-    function clearSlotPassword() {
-      selectedPin = [];
-      renderSlots();
-    }
-
-    function renderSlots() {
-      for (let i = 0; i < 4; i++) {
-        const slotEl = document.getElementById(`slot-${i}`);
-        slotEl.innerText = selectedPin[i] || '❓';
-        if (selectedPin[i]) {
-          slotEl.classList.add('border-indigo-500', 'bg-indigo-50/50');
-        } else {
-          slotEl.classList.remove('border-indigo-500', 'bg-indigo-50/50');
-        }
-      }
-    }
-
-    function spinSlots() {
-      selectedPin = [];
-      for (let i = 0; i < 4; i++) {
-        const randomItem = EMOJI_LIST[Math.floor(Math.random() * EMOJI_LIST.length)];
-        selectedPin.push(randomItem.icon);
-        const slotEl = document.getElementById(`slot-${i}`);
-        slotEl.classList.add('spinning');
-        setTimeout(() => slotEl.classList.remove('spinning'), 300);
-      }
-      renderSlots();
-    }
-
-    async function submitAuth() {
-      const nickname = document.getElementById('auth-nickname').value.trim();
-      if (!nickname) {
-        alert("닉네임을 입력해주세요!");
-        return;
-      }
-      if (selectedPin.length < 4) {
-        alert("4자리의 그림 비밀번호를 모두 입력해주세요!");
-        return;
-      }
-
-      if (currentAuthTab === 'register') {
-        const grade = document.getElementById('auth-grade').value;
-        const subject = document.getElementById('auth-subject').value;
-        let standard = document.getElementById('auth-standard').value;
-        if (standard === 'CUSTOM') {
-          standard = document.getElementById('auth-custom-standard').value.trim();
-          if (!standard) {
-            alert("성취기준을 직접 작성해주세요!");
-            return;
-          }
-        }
-
-        if (LocalDB.findUser(nickname)) {
-          alert("이미 존재하는 닉네임입니다. 다른 닉네임을 사용하거나 [로그인] 탭을 이용하세요.");
-          return;
-        }
-
-        LocalDB.saveUser(nickname, selectedPin, grade, subject, standard);
-
-        state.user.nickname = nickname;
-        state.user.grade = grade;
-        state.user.subject = subject;
-        state.user.standard = standard;
-        state.user.pin = selectedPin;
-
-        localStorage.setItem('current_user_nickname', nickname);
-        localStorage.setItem('current_user_grade', grade);
-        localStorage.setItem('current_user_subject', subject);
-        localStorage.setItem('current_user_standard', standard);
-
-        updateHeaderUserInfo();
-        document.getElementById('auth-modal').classList.add('hidden');
-        startAITutoring();
-
-      } else {
-        const user = LocalDB.findUser(nickname);
-        if (!user) {
-          alert("가입되지 않은 닉네임입니다. [회원가입]을 먼저 진행해주세요!");
-          return;
-        }
-        if (JSON.stringify(user.pin) !== JSON.stringify(selectedPin)) {
-          alert("그림 비밀번호가 일치하지 않습니다!");
-          return;
-        }
-
-        state.user.nickname = user.nickname;
-        state.user.grade = user.grade;
-        state.user.subject = user.subject || "과학";
-        state.user.standard = user.standard || "";
-
-        localStorage.setItem('current_user_nickname', user.nickname);
-        localStorage.setItem('current_user_grade', user.grade);
-        localStorage.setItem('current_user_subject', state.user.subject);
-        localStorage.setItem('current_user_standard', state.user.standard);
-
-        updateHeaderUserInfo();
-        document.getElementById('auth-modal').classList.add('hidden');
-        startAITutoring();
-      }
-    }
-
-    function openAuthModal() {
-      document.getElementById('auth-modal').classList.remove('hidden');
-    }
-
-    // --- 대화 시작 (선택된 성취기준 기반) ---
-    function startAITutoring() {
-      state.messages = [];
-      state.stage = WORKFLOW_STAGES.PREP_STEP_1_CONFIRM;
-      state.scaffoldLocked = false;
-      state.strategyChangeLog = [];
-      state.adaptiveMetrics = { acceptStreak: 0 };
-      state.monitoringRequested = false;
-      state.context = { priorScore: null, postScore: null };
-      document.getElementById('pre-score-text').innerText = '-';
-      document.getElementById('post-score-text').innerText = '-';
-      updateScoreChart();
-      updateCharts();
-      setScaffold('High', { system: true });
-      renderStrategyLog();
-      renderDialogueLog();
-      updateWorkflowUI();
-
-      const grade = state.user.grade;
-      const subject = state.user.subject;
-      const standard = state.user.standard;
-
-      pushAIMessage(
-        `반가워요, **${state.user.nickname}** 학생! 🦉\n` +
-        `오늘 우리는 **${grade} [${subject}]** 교과의 다음 성취기준을 탐구할 거예요.\n\n` +
-        `📌 **[선택된 성취기준]**\n> **${standard}**\n\n` +
-        `이 성취기준을 바탕으로, 오늘 여러분이 꼭 달성하고 싶은 **구체적인 나만의 학습 목표**는 무엇인가요? (원리 4: 학습 목표 명료화)`
-      );
-    }
-
-    function updateWorkflowUI() {
-      const bDia = document.getElementById('step-badge-dialogue');
-      const bRef = document.getElementById('step-badge-reflect');
-      const statusText = document.getElementById('dialogue-status-text');
-      const btnTerm = document.getElementById('btn-terminate-dialogue');
-
-      if (state.stage.startsWith("REFL_")) {
-        // 대화 종결 후 성찰 국면
-        bDia.className = "px-3 py-1 rounded-full bg-slate-100 text-slate-400 transition";
-        bRef.className = "px-3 py-1 rounded-full bg-amber-600 text-white shadow-xs transition";
-        statusText.innerText = "[2단계: 대화 종결 후 성찰 국면 진행 중]";
-        btnTerm.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> <span>새로운 학습 시작</span>`;
-        btnTerm.className = "px-4 py-1.5 text-xs font-bold rounded-xl bg-slate-700 hover:bg-slate-800 text-white transition flex items-center gap-1.5 shadow-xs";
-      } else {
-        // 문답 탐구 대화 국면
-        bDia.className = "px-3 py-1 rounded-full bg-indigo-600 text-white shadow-xs transition";
-        bRef.className = "px-3 py-1 rounded-full bg-slate-100 text-slate-400 transition";
-        statusText.innerText = `[1단계: 성취기준 기반 탐구 대화 진행 중]`;
-        btnTerm.innerHTML = `<i class="fa-solid fa-flag-checkered"></i> <span>대화 종결 및 성찰 시작</span>`;
-        btnTerm.className = "px-4 py-1.5 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition flex items-center gap-1.5 shadow-xs";
-      }
-    }
-
-    // 핵심: 대화 종결 버튼을 눌렀을 때만 성찰 국면으로 진입
-    function terminateDialogueAndStartReflection() {
-      if (state.stage.startsWith("REFL_")) {
-        if (confirm("새로운 성취기준으로 학습을 시작하시겠습니까?")) {
-          openAuthModal();
-        }
-        return;
-      }
-
-      if (confirm("AI 튜터와의 탐구 대화를 마치고 '대화 종결 및 성찰 단계'로 이동하시겠습니까?")) {
-        state.stage = WORKFLOW_STAGES.REFL_STEP_1_ROLE;
-        updateWorkflowUI();
-
-        pushAIMessage(
-          `오늘 성취기준에 대한 탐구 대화를 성공적으로 마쳤습니다! 👏\n` +
-          `이제 대화를 종결하고 **[대화 종결 및 성찰 단계]**를 차례차례 진행하겠습니다.\n\n` +
-          `**[원리 11: 주도권 및 AI 위임 성찰]**\n` +
-          `오늘 나눈 대화 전체를 돌아보았을 때, 여러분이 **스스로 주도권을 쥐고 생각했던 순간**과 저에게 **단순히 정답을 위임해버렸던 순간**은 각각 언제였나요? 우측의 [주도권 비율 원형 차트]를 보며 솔직한 생각을 들려주세요.`
-        );
-      }
-    }
-
-    async function sendMessage() {
-      const inputEl = document.getElementById('user-input');
-      const text = inputEl.value.trim();
-      if (!text) return;
-
-      const qType = document.querySelector("input[name='question_type']:checked").value;
-      const anonText = anonymize(text);
-
-      state.messages.push({
-        id: state.messages.length,
-        role: "user",
-        content: anonText,
-        delegationType: qType,
-        stageAtTime: state.stage,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      });
-
-      inputEl.value = '';
-      renderMessages();
-      updateCharts();
-      renderDialogueLog();
-      renderLoadingBubble();
-
-      try {
-        const reply = await generateAIResponse(anonText);
-        pushAIMessage(reply);
-      } catch (err) {
-        pushAIMessage(`⚠️ AI 통신 중 오류가 발생했습니다: ${err.message}`);
-      }
-    }
-
-    function pushAIMessage(content) {
-      removeLoadingBubble();
-      state.messages.push({
-        id: state.messages.length,
-        role: "assistant",
-        content: content,
-        scaffolding: state.scaffolding,
-        verification: { status: "미검증", comment: "" },
-        stageAtTime: state.stage,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      });
-      renderMessages();
-    }
-
-    // Step by Step 단일 질문 프롬프트 제어
-    async function generateAIResponse(userText) {
-      const grade = state.user.grade;
-      const pedagogy = GRADE_PEDAGOGY[grade] || GRADE_PEDAGOGY["초등학교 6학년"];
-      let promptInstruction = "";
-
-      // 1. 대화 준비 단계 (원리 4 -> 5 -> 6 -> 7 -> 본 대화)
-      if (state.stage === WORKFLOW_STAGES.PREP_STEP_1_CONFIRM) {
-        state.stage = WORKFLOW_STAGES.PREP_STEP_2_ROLE;
-        promptInstruction = `학습자가 성취기준에 대한 자신의 학습 목표를 말했습니다.
-한 문장으로 격려한 뒤, [원리 5: AI 과업 분담] "오늘 저에게 어떤 역할을 기대하나요? (① 힌트 질문자, ② 동료 탐구자, ③ 설명 점검자 중 하나 선택)"를 **단 1개의 질문으로만** 간결하게 물어보세요.`;
-      }
-      else if (state.stage === WORKFLOW_STAGES.PREP_STEP_2_ROLE) {
-        state.stage = WORKFLOW_STAGES.PREP_STEP_3_PRIOR;
-        promptInstruction = `학습자가 선택한 역할을 확인하고 지지하세요.
-그런 다음, [원리 6: 사전지식 활성화] "이 성취기준 주제에 대해 이미 알고 있는 지식이나 일상 경험이 무엇인지, 그리고 5점 만점 중 스스로 몇 점이라고 생각하나요?"를 **단 1개의 질문으로만** 물어보세요.`;
-      }
-      else if (state.stage === WORKFLOW_STAGES.PREP_STEP_3_PRIOR) {
-        state.stage = WORKFLOW_STAGES.PREP_STEP_4_META_UNDERSTAND;
-        const matchScore = userText.match(/[1-5]/);
-        if (matchScore) {
-          state.context.priorScore = parseInt(matchScore[0]);
-          document.getElementById('pre-score-text').innerText = `${state.context.priorScore}점`;
-          updateScoreChart();
-        }
-        promptInstruction = `학습자의 사전지식 답변을 격려하세요.
-그런 다음, [원리 7-① 메타인지 이해질문] "이 성취기준의 내용을 지금 스스로 어느 정도까지 이해하고 있다고 생각하나요? 어떤 부분이 아직 헷갈리나요?" **딱 1가지 질문만** 물어보세요.`;
-      }
-      else if (state.stage === WORKFLOW_STAGES.PREP_STEP_4_META_UNDERSTAND) {
-        state.stage = WORKFLOW_STAGES.PREP_STEP_5_META_STRATEGY;
-        promptInstruction = `학습자의 이해도 자가진단에 공감하세요.
-그런 다음, [원리 7-② 메타인지 전략질문] "이 내용을 공부할 때 나에게 가장 잘 맞는 공부 방법(전략)은 무엇이었나요? 그 방법이 왜 효과적이라고 생각하나요?" **딱 1가지 질문만** 물어보세요.`;
-      }
-      else if (state.stage === WORKFLOW_STAGES.PREP_STEP_5_META_STRATEGY) {
-        state.stage = WORKFLOW_STAGES.PREP_STEP_6_META_CONNECT;
-        promptInstruction = `학습자의 전략 인식에 공감하세요.
-그런 다음, [원리 7-③ 메타인지 연결질문] "이 성취기준의 내용은 이전에 배운 다른 개념이나 나의 일상 경험과 어떻게 연결되나요?" **딱 1가지 질문만** 물어보세요.`;
-      }
-      else if (state.stage === WORKFLOW_STAGES.PREP_STEP_6_META_CONNECT) {
-        state.stage = WORKFLOW_STAGES.PREP_STEP_7_STRATEGY_PLAN;
-        promptInstruction = `학습자가 찾은 연결고리를 칭찬하세요.
-그런 다음, [원리 8: 인지 전략 계획 수립] 우측 패널에서 학습자가 고른 인지 전략은 현재 [${state.currentStrategy}]입니다. "이 과업의 특성과 너의 현재 이해 수준을 생각했을 때, 오늘은 왜 이 전략이 가장 도움이 될 거라고 생각하나요? (다른 전략으로 바꾸고 싶다면 오른쪽에서 먼저 바꾼 후 이유를 말해줘도 좋아요)" **딱 1가지 질문만** 물어 최종 선택의 근거를 학습자 스스로 말하도록 하세요. 절대 대신 전략을 정해주지 마세요(원리2).`;
-      }
-      else if (state.stage === WORKFLOW_STAGES.PREP_STEP_7_STRATEGY_PLAN) {
-        state.stage = WORKFLOW_STAGES.DIALOGUE_ACTIVE;
-        state.strategyChangeLog.push({
-          type: "최초 계획",
-          strategy: state.currentStrategy,
-          reason: userText,
-          at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        });
-        renderStrategyLog();
-        promptInstruction = `학습자가 밝힌 인지 전략 선택 근거를 존중하며 격려하세요(그 근거를 대신 평가하거나 옳고 그름을 판정하지 마세요, 원리2).
-이제 대화 준비를 마치고 [본 탐구 대화]를 시작함을 알리며, 선택된 인지 전략([${state.currentStrategy}])을 활용하여 첫 번째 질문이나 호기심을 던져보도록 유도하세요.`;
-      }
-      // 2. 본 탐구 대화 단계 (지속적 소크라테스 핑퐁 문답 - 성찰 발문 절대 끼어들지 않음)
-      else if (state.stage === WORKFLOW_STAGES.DIALOGUE_ACTIVE) {
-        if (state.monitoringRequested) {
-          state.monitoringRequested = false;
-          promptInstruction = `[원리 9: 학습 과정 모니터링 기반 인지 전략 조정]
-학습자가 "이해가 잘 안 되거나 지금 전략이 안 통하는 것 같다"는 점검 요청을 보냈습니다.
-1) 어느 지점에서 이해가 막혔는지, 지금 전략([${state.currentStrategy}])의 어떤 점이 효과적이지 않았는지 점검하는 질문을 먼저 던지고,
-2) 다른 인지 전략(시연/정교화/조직화/비판적 사고/이해 점검) 중 대안이 될 만한 것을 1~2개 제안은 하되, 최종 전략 변경 여부와 선택은 반드시 학습자가 직접 우측 패널에서 고르도록 맡기세요(원리2).
-**딱 1개의 질문 또는 제안 메시지만** 간결하게 보내세요.`;
-        } else {
-          promptInstruction = `[본 탐구 대화 진행]
-- 성취기준: [${state.user.standard}]
-- 학년 수준: [${grade}] (${pedagogy.tone})
-- 비계 수준: [${state.scaffolding}] (${pedagogy.guide})
-- 현재 인지 전략: [${state.currentStrategy}]
-- 핵심 원칙: 절대로 강의하듯 길게 늘어놓지 말고, 3~5문장의 명쾌한 힌트/설명과 함께 학습자의 생각을 이끌어내는 소크라테스식 발문 딱 1개를 던져 핑퐁식 대화를 이어가세요.
-- 주의: 학생이 [대화 종결 및 성찰 시작] 버튼을 누르기 전까지는 절대로 성찰 질문을 먼저 꺼내지 말고 오직 교과 내용 탐구에만 집중하세요.`;
-        }
-      }
-      // 3. 대화 종결 후 성찰 단계 (종결 버튼 누른 후 순차 진행)
-      else if (state.stage === WORKFLOW_STAGES.REFL_STEP_1_ROLE) {
-        state.stage = WORKFLOW_STAGES.REFL_STEP_2_PROMPT;
-        promptInstruction = `학습자의 주도권 성찰(원리 11)에 따뜻하게 공감하세요.
-그런 다음, [원리 12: 질문 궤적 및 프롬프트 성찰] "오늘 나에게 입력했던 질문들 중 어떤 질문이 가장 효과적인 배움을 이끌어냈나요? 다음번에 더 명확하게 질문하려면 프롬프트를 어떻게 개선해볼 수 있을까요?" **딱 1개의 질문만** 던지세요.`;
-      }
-      else if (state.stage === WORKFLOW_STAGES.REFL_STEP_2_PROMPT) {
-        state.stage = WORKFLOW_STAGES.REFL_STEP_3_TRANSFER;
-        // 원리 13: AI 도움을 실제로 소거하는 것을 시각적으로도 보장 (비계 Low 고정 + 수동조절 잠금)
-        setScaffold('Low', { system: true });
-        state.scaffoldLocked = true;
-        promptInstruction = `학습자의 프롬프트 성찰을 칭찬하세요.
-그런 다음, [원리 13: AI 소거 전이 과업] 오늘 성취기준([${state.user.standard}])과 관련하여 AI의 도움 없이 스스로 풀어볼 수 있는 **새로운 유사 적용 문제 1개만** 출제하고 정답 없이 학습자의 풀이를 기다리세요. 이 단계에서는 힌트나 풀이 방향을 절대 알려주지 말고 문제만 제시하세요.`;
-      }
-      else {
-        // REFL_STEP_4_GROWTH
-        const matchPost = userText.match(/[1-5]/);
-        if (matchPost) {
-          state.context.postScore = parseInt(matchPost[0]);
-          document.getElementById('post-score-text').innerText = `${state.context.postScore}점`;
-          updateScoreChart();
-        }
-        promptInstruction = `학습자의 전이 과제 자가 풀이를 격려하세요.
-그런 다음, [원리 13: 종합 성장 성찰] 학습 전과 비교해 이해도가 5점 만점 중 몇 점으로 향상되었는지 묻고, 오늘 적용한 인지전략([${state.currentStrategy}])으로 성장한 점을 칭찬하며 전체 성찰을 따뜻하게 마무리하세요.`;
-      }
-
-      updateWorkflowUI();
-
-      const systemPrompt = `당신은 대한민국 교육과정 성취기준 기반의 초·중·고 메타인지 AI 튜터 '소크라-봇'입니다.
-[학습자 정보]
-- 닉네임: ${state.user.nickname}
-- 학년: ${grade}
-- 교과목: ${state.user.subject}
-- 성취기준: ${state.user.standard}
-[교수법 원칙]:
-1. Step-by-Step 원칙: 한 번에 단 1개의 질문만 제시하고 학습자의 대답을 기다리세요.
-2. 성찰 분리 원칙: 대화 종결 전까지는 성찰 질문을 일절 하지 말고 오직 성취기준 내용 탐구에만 집중하세요.
-3. [원리 2: 학습자 선택권 및 최종판단 보존] 정답이 맞는지, 학습자가 얼마나 이해했는지, 어떤 전략/역할/선택이 옳은지를 당신이 대신 단정하지 마세요. 항상 질문과 선택지로 되돌려주고, 최종 판단은 학습자 스스로 내리게 하세요.
-[이번 응답 지침]:
-${promptInstruction}`;
-
-      const apiMsgs = [
-        { role: "system", content: systemPrompt },
-        ...state.messages
-          .filter(m => m.role === 'user' || m.role === 'assistant')
-          .map(m => ({ role: m.role, content: m.content }))
-      ];
-
-      // 원리 2(학습자 선택권 및 최종판단 보존): 개인 키가 설정된 경우에만 직접 호출(사용자의 선택),
-      // 그렇지 않으면 서버 프록시(/api/chat)를 사용해 API 키를 절대 브라우저에 노출하지 않음.
-      const useDirect = !!state.apiKey;
-      const url = useDirect ? `${state.baseUrl}/chat/completions` : "/api/chat";
-      const headers = { "Content-Type": "application/json" };
-      if (useDirect) headers["Authorization"] = `Bearer ${state.apiKey}`;
-
-      const res = await fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          model: state.model,
-          messages: apiMsgs
-        })
-      });
-
-      let data;
-      try {
-        data = await res.json();
-      } catch (parseErr) {
-        throw new Error("서버 프록시(/api/chat)를 찾을 수 없습니다. GitHub Pages처럼 서버 프록시가 없는 정적 호스팅에서는 우측 상단 ⚙ 설정에서 개인 Upstage API 키를 입력해주세요.");
-      }
-
-      if (!res.ok) {
-        throw new Error(data.error?.message || data.error || `HTTP ${res.status}`);
-      }
-
-      return data.choices[0].message.content;
-    }
-
-    function renderMessages() {
-      const container = document.getElementById('chat-messages');
-      container.innerHTML = '';
-
-      state.messages.forEach(msg => {
-        if (msg.role === 'notice') {
-          const div = document.createElement("div");
-          div.className = "flex justify-center";
-          div.innerHTML = `
-            <div class="max-w-[90%] text-center text-[11px] font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-4 py-1.5">
-              ${msg.content} <span class="text-amber-400">• ${msg.timestamp}</span>
-            </div>
-          `;
-          container.appendChild(div);
-        } else if (msg.role === 'user') {
-          const badge = msg.delegationType === 'learner_directed' ? '🌟 주도적 탐구' : '🤖 AI 위임 질문';
-          const div = document.createElement("div");
-          div.className = "flex items-start justify-end gap-3";
-          div.innerHTML = `
-            <div class="space-y-1 max-w-[80%] text-right">
-              <div class="text-[11px] text-slate-400 font-medium">${msg.timestamp} • ${badge}</div>
-              <div class="chat-bubble-user text-white p-4 rounded-2xl shadow-sm text-sm text-left leading-relaxed">
-                ${escapeHTML(msg.content)}
-              </div>
-            </div>
-            <div class="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shrink-0">🧑‍🎓</div>
-          `;
-          container.appendChild(div);
-        } else {
-          const div = document.createElement("div");
-          div.className = "flex items-start gap-3";
-          const verStatus = msg.verification?.status || "미검증";
-          
-          let badgeColor = "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200";
-          if (verStatus === '수용') badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-300";
-          else if (verStatus === '의문') badgeColor = "bg-amber-50 text-amber-700 border-amber-300";
-          else if (verStatus === '수정필요') badgeColor = "bg-rose-50 text-rose-700 border-rose-300";
-
-          div.innerHTML = `
-            <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">🦉</div>
-            <div class="space-y-1.5 max-w-[85%]">
-              <div class="flex items-center justify-between text-[11px] text-slate-400 font-medium">
-                <span>${msg.timestamp} • 소크라-봇</span>
-                <button onclick="openVerificationModal(${msg.id})" class="px-2 py-0.5 rounded-full border text-[10px] font-bold transition flex items-center gap-1 ${badgeColor}" title="클릭하여 AI 응답을 비판적으로 검증하고 의견을 남기세요">
-                  <i class="fa-solid fa-shield-check text-[10px]"></i> 원리 10 비판적 검토: <b>${verStatus}</b>
-                </button>
-              </div>
-              
-              <div onclick="openVerificationModal(${msg.id})" class="chat-bubble-ai p-4 rounded-2xl shadow-xs text-sm text-slate-800 leading-relaxed whitespace-pre-line" title="클릭하여 비판적 검증 팝업 열기">
-                ${msg.content}
-              </div>
-
-              ${msg.verification?.comment ? `
-                <div class="text-[11px] text-indigo-700 bg-indigo-50/70 px-3 py-1.5 rounded-xl border border-indigo-100 flex items-center gap-1.5">
-                  <i class="fa-solid fa-comment-dots text-indigo-500"></i>
-                  <span><b>나의 비판 의견:</b> ${escapeHTML(msg.verification.comment)}</span>
-                </div>
-              ` : ''}
-            </div>
-          `;
-          container.appendChild(div);
-        }
-      });
-
-      container.scrollTop = container.scrollHeight;
-    }
-
-    // --- 원리 10 전용 팝업 모달 제어 ---
-    function openVerificationModal(msgId) {
-      const msg = state.messages.find(m => m.id === msgId);
-      if (!msg || msg.role !== 'assistant') return;
-
-      activeVerMsgId = msgId;
-      activeVerStatus = msg.verification?.status || '수용';
-      if (activeVerStatus === '미검증') activeVerStatus = '수용';
-
-      document.getElementById('modal-target-ai-text').innerText = msg.content;
-      document.getElementById('modal-ver-comment').value = msg.verification?.comment || '';
-
-      selectModalStatus(activeVerStatus);
-      document.getElementById('verification-modal').classList.remove('hidden');
-    }
-
-    function closeVerificationModal() {
-      document.getElementById('verification-modal').classList.add('hidden');
-      activeVerMsgId = null;
-    }
-
-    function selectModalStatus(status) {
-      activeVerStatus = status;
-      const btnAcc = document.getElementById('modal-btn-accept');
-      const btnQue = document.getElementById('modal-btn-question');
-      const btnRej = document.getElementById('modal-btn-reject');
-
-      [btnAcc, btnQue, btnRej].forEach(b => b.className = "py-2.5 px-2 rounded-xl border border-slate-200 hover:border-slate-300 font-bold flex items-center justify-center gap-1 transition bg-white text-slate-600");
-
-      if (status === '수용') {
-        btnAcc.className = "py-2.5 px-2 rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-700 font-bold flex items-center justify-center gap-1 transition";
-      } else if (status === '의문') {
-        btnQue.className = "py-2.5 px-2 rounded-xl border border-amber-500 bg-amber-50 text-amber-700 font-bold flex items-center justify-center gap-1 transition";
-      } else {
-        btnRej.className = "py-2.5 px-2 rounded-xl border border-rose-500 bg-rose-50 text-rose-700 font-bold flex items-center justify-center gap-1 transition";
-      }
-    }
-
-    function saveModalVerification() {
-      if (activeVerMsgId === null) return;
-      const msg = state.messages.find(m => m.id === activeVerMsgId);
-      if (msg) {
-        const comment = document.getElementById('modal-ver-comment').value.trim();
-        msg.verification = {
-          status: activeVerStatus,
-          comment: comment,
-          verifiedAt: new Date().toISOString()
-        };
-        renderMessages();
-        applyAdaptiveFading(activeVerStatus);
-      }
-      closeVerificationModal();
-    }
-
-    // --- 원리 11/12: 대화 로그 대시보드 & 개별 성찰 팝업 제어 ---
-    function renderDialogueLog() {
-      const box = document.getElementById('dialogue-log-list');
-      if (!box) return;
-      const userMsgs = state.messages.filter(m => m.role === 'user');
-      if (userMsgs.length === 0) {
-        box.innerHTML = `<p class="text-[11px] text-slate-400">아직 대화 로그가 없습니다.</p>`;
-        return;
-      }
-      box.innerHTML = userMsgs.map((m, idx) => {
-        const badge = m.delegationType === 'learner_directed' ? '🌟' : '🤖';
-        const reflected = m.logReflection && (m.logReflection.roleComment || m.logReflection.promptComment);
-        return `
-          <button onclick="openLogReflectionModal(${m.id})" class="w-full text-left text-[11px] p-2 rounded-lg border ${reflected ? 'border-indigo-300 bg-indigo-50/60' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'} transition">
-            <div class="flex items-center justify-between text-slate-400">
-              <span>#${idx + 1} ${badge} • ${m.timestamp}</span>
-              ${reflected ? '<i class="fa-solid fa-circle-check text-indigo-500"></i>' : '<i class="fa-solid fa-pen text-slate-300"></i>'}
-            </div>
-            <div class="text-slate-700 truncate">${escapeHTML(m.content)}</div>
-          </button>
-        `;
-      }).join('');
-    }
-
-    function openLogReflectionModal(msgId) {
-      const msg = state.messages.find(m => m.id === msgId);
-      if (!msg || msg.role !== 'user') return;
-      activeLogMsgId = msgId;
-      document.getElementById('log-modal-target-text').innerText = msg.content;
-      document.getElementById('log-modal-role-comment').value = msg.logReflection?.roleComment || '';
-      document.getElementById('log-modal-prompt-comment').value = msg.logReflection?.promptComment || '';
-      document.getElementById('log-reflection-modal').classList.remove('hidden');
-    }
-
-    function closeLogReflectionModal() {
-      document.getElementById('log-reflection-modal').classList.add('hidden');
-      activeLogMsgId = null;
-    }
-
-    function saveLogReflection() {
-      if (activeLogMsgId === null) return;
-      const msg = state.messages.find(m => m.id === activeLogMsgId);
-      if (msg) {
-        msg.logReflection = {
-          roleComment: document.getElementById('log-modal-role-comment').value.trim(),
-          promptComment: document.getElementById('log-modal-prompt-comment').value.trim(),
-          updatedAt: new Date().toISOString()
-        };
-        renderDialogueLog();
-      }
-      closeLogReflectionModal();
-    }
-
-    function renderLoadingBubble() {
-      const container = document.getElementById('chat-messages');
-      const div = document.createElement("div");
-      div.id = "loading-bubble";
-      div.className = "flex items-start gap-3";
-      div.innerHTML = `
-        <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">🦉</div>
-        <div class="chat-bubble-ai p-4 rounded-2xl shadow-xs text-sm text-slate-400 flex items-center gap-2">
-          <i class="fa-solid fa-spinner animate-spin text-indigo-600"></i> 소크라-봇이 사고하는 중입니다...
-        </div>
-      `;
-      container.appendChild(div);
-      container.scrollTop = container.scrollHeight;
-    }
-
-    function removeLoadingBubble() {
-      const b = document.getElementById('loading-bubble');
-      if (b) b.remove();
-    }
-
-    function changeStrategy(val) {
-      const prev = state.currentStrategy;
-      state.currentStrategy = val;
-      document.getElementById('active-strat-badge').innerText = val.split('(')[0];
-      const descs = {
-        "정교화(Elaboration)": "새로운 지식을 이미 알고 있는 경험에 빗대어 설명하고 비유를 만들어보는 전략입니다.",
-        "조직화(Organization)": "개념들 간의 관계를 표, 계층도, 마인드맵 형태로 일목요연하게 구조화하는 전략입니다.",
-        "비판적 사고(Critical Thinking)": "AI의 답변이나 정보에 대해 근거를 따져보고 반례를 찾으며 스스로 검증하는 전략입니다.",
-        "시연(Rehearsal)": "핵심 개념, 용어, 공식을 소리 내어 읽거나 반복 암기하며 각인하는 전략입니다.",
-        "이해 점검(Monitoring)": "자신이 어디까지 이해했고 어느 부분에서 막혔는지 질문을 던져 점검하는 전략입니다."
-      };
-      document.getElementById('strategy-explanation').innerText = descs[val] || '';
-
-      // 원리 9: 본 대화 중 전략을 바꾸면 조정 사유를 학습자에게 직접 물어 누적 기록 (원리2: 판단은 학습자 몫)
-      if (prev !== val && state.stage === WORKFLOW_STAGES.DIALOGUE_ACTIVE) {
-        const reason = prompt(`[원리 9: 인지 전략 조정 기록]\n'${prev.split('(')[0]}' → '${val.split('(')[0]}'(으)로 전략을 바꾸는 이유는 무엇인가요?`, "");
-        state.strategyChangeLog.push({
-          type: "대화 중 조정",
-          strategy: val,
-          reason: (reason || "").trim() || "(사유 미입력)",
-          at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        });
-        renderStrategyLog();
-      }
-    }
-
-    function renderStrategyLog() {
-      const box = document.getElementById('strategy-log');
-      if (!box) return;
-      if (state.strategyChangeLog.length === 0) {
-        box.innerHTML = `<p class="text-[11px] text-slate-400">아직 기록된 전략 선택/조정 사유가 없습니다.</p>`;
-        return;
-      }
-      box.innerHTML = state.strategyChangeLog.map(l => `
-        <div class="text-[11px] bg-slate-50 border border-slate-100 rounded-lg p-2 space-y-0.5">
-          <div class="flex justify-between text-slate-400">
-            <span>${escapeHTML(l.type)} • ${l.at}</span>
-            <span class="font-bold text-indigo-600">${escapeHTML(l.strategy.split('(')[0])}</span>
+    <div class="nav">
+      <span class="filler"></span>
+      <button class="btn btn-primary" id="entry-next" disabled>다음 →</button>
+    </div>
+  </section>
+
+  <!-- ============ STEP 1-5 · 설정(온보딩) ============ -->
+  <section class="screen" data-screen="setup">
+    <div class="stepper" id="setup-stepper"></div>
+    <div class="rail">
+      <div class="eyebrow" id="setup-eyebrow">STEP 1 · 학습 맥락</div>
+      <h1 class="headline" id="setup-title">무엇을, 어떤 성취기준으로 배울지 정합니다</h1>
+      <p class="subhead" id="setup-sub">이 화면은 대화창이 아니라 <b>설정 폼</b>입니다. 여기서 정한 값이 이어지는 대화와 되짚기의 기준이 됩니다.</p>
+    </div>
+
+    <!-- 1) 교과 맥락 -->
+    <div class="card setup-step" data-step="1">
+      <div class="stack">
+        <div class="row-2">
+          <div>
+            <label class="field-label" for="sel-level">학교급 · 학년</label>
+            <select class="select" id="sel-level"></select>
           </div>
-          <div class="text-slate-700">${escapeHTML(l.reason)}</div>
+          <div>
+            <label class="field-label" for="sel-subject">과목</label>
+            <select class="select" id="sel-subject"></select>
+          </div>
         </div>
-      `).join('');
+        <div>
+          <label class="field-label">이 차시의 성취기준 (과목 메타데이터에서 불러옴)</label>
+          <div class="chips" id="std-chips"></div>
+          <p class="hint">칩을 눌러 이번 대화에서 다룰 성취기준 하나를 고릅니다.</p>
+        </div>
+        <div class="callout accent" id="std-picked" hidden></div>
+      </div>
+    </div>
+
+    <!-- 2) 학습목표 -->
+    <div class="card setup-step" data-step="2" hidden>
+      <div class="stack">
+        <div>
+          <label class="field-label" for="in-goal">오늘 나의 학습목표 · 과업</label>
+          <textarea class="textarea" id="in-goal" placeholder="이 성취기준으로 내가 스스로 할 수 있게 되고 싶은 것을 한두 문장으로 적습니다."></textarea>
+        </div>
+        <div>
+          <label class="field-label">예시 추천 (선택한 성취기준 기반)</label>
+          <div class="chips" id="goal-chips"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3) 역할 분담 -->
+    <div class="card setup-step" data-step="3" hidden>
+      <div class="stack">
+        <label class="field-label">AI와 나의 역할 분담</label>
+        <input type="range" class="range" id="rng-role" min="0" max="100" step="10" value="40" />
+        <div class="range-ends"><span>← 힌트만 주기</span><span>바로 첨삭까지 →</span></div>
+        <div class="range-val" id="role-val">힌트 중심 (40)</div>
+        <div class="callout">AI가 얼마나 개입할지 <b>내가</b> 정합니다. 대화 중에도 언제든 다시 바꿀 수 있습니다.</div>
+      </div>
+    </div>
+
+    <!-- 4) 사전지식 -->
+    <div class="card setup-step" data-step="4" hidden>
+      <div class="stack">
+        <div>
+          <label class="field-label">이 주제에 대한 내 사전지식 (자가평가)</label>
+          <input type="range" class="range" id="rng-prior" min="1" max="5" step="1" value="3" />
+          <div class="range-ends"><span>1 · 거의 모름</span><span>5 · 잘 앎</span></div>
+          <div class="range-val" id="prior-val">3 / 5</div>
+        </div>
+        <div>
+          <label class="field-label" id="prior-q-label">사전지식 서술 문항</label>
+          <textarea class="textarea" id="in-prior" placeholder="지금 아는 만큼만 적어도 됩니다."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5) 메타인지 점검 -->
+    <div class="card setup-step" data-step="5" hidden>
+      <div class="stack">
+        <div>
+          <label class="field-label">이해 질문 — 나는 이 주제의 무엇을 이미 이해하고 있나요?</label>
+          <textarea class="textarea" id="in-meta-u" placeholder="아는 개념·용어를 짧게"></textarea>
+        </div>
+        <div>
+          <label class="field-label">전략 질문 — 이 주제를 배울 때 어떤 방법이 나에게 잘 맞나요?</label>
+          <textarea class="textarea" id="in-meta-s" placeholder="예: 예시로 이해, 그림으로 정리, 소리 내어 설명 ..."></textarea>
+        </div>
+        <div>
+          <label class="field-label">연결 질문 — 이 주제는 내가 아는 다른 것과 어떻게 이어지나요?</label>
+          <textarea class="textarea" id="in-meta-c" placeholder="이전에 배운 개념 / 일상 경험과의 연결"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout warn" id="setup-warn" hidden>⚠ 필수 응답이 남았습니다.</div>
+
+    <div class="nav">
+      <button class="btn btn-ghost" id="setup-prev">← 이전</button>
+      <span class="filler"></span>
+      <button class="btn btn-primary" id="setup-next">다음 →</button>
+    </div>
+  </section>
+
+  <!-- ============ STEP 6 · 대화 ============ -->
+  <section class="screen" data-screen="chat">
+    <div class="rail">
+      <div class="eyebrow">STEP 6 · AI와 대화</div>
+      <h1 class="headline">고른 전략으로, 스스로 판단하며 대화합니다</h1>
+      <p class="subhead">모든 AI 응답에는 <b>수용 · 보류 · 코멘트</b> 버튼이 붙습니다. AI는 정답을 확정하지 않습니다. 막히면 <b>“나 지금 막혔어”</b>를 누르세요.</p>
+    </div>
+
+    <div class="chatwrap">
+      <div class="chat-head">
+        <div class="meta">
+          <b id="chat-who">학습자</b>
+          <span>·</span>
+          <span id="chat-std">성취기준</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span class="support-badge" id="support-badge" title="지원 강도(비계)는 대화가 쌓일수록 옅어집니다">
+            지원강도 <span id="support-text">높음</span>
+            <span class="bar"><i id="support-fill" style="width:100%"></i></span>
+          </span>
+          <button class="btn btn-sm" id="btn-role-adj">역할 조정</button>
+        </div>
+      </div>
+      <div id="role-panel" class="chat-head" style="border-bottom:1px solid var(--line);background:#fff;flex-direction:column;align-items:stretch;gap:12px" hidden>
+        <div>
+          <label class="field-label" style="margin-bottom:6px">AI 개입 강도</label>
+          <input type="range" class="range" id="rng-role-live" min="0" max="100" step="10" />
+          <div class="range-ends"><span>← 힌트만</span><span id="role-live-val">힌트 중심 (40)</span><span>첨삭까지 →</span></div>
+        </div>
+        <div>
+          <label class="field-label" style="margin-bottom:6px">지원강도(비계)</label>
+          <div class="choices" id="support-pick" style="grid-template-columns:repeat(3,1fr)">
+            <button class="choice" data-v="high">높음</button>
+            <button class="choice" data-v="mid">중간</button>
+            <button class="choice" data-v="low">낮음</button>
+          </div>
+        </div>
+        <div class="nav" style="margin:0">
+          <span class="filler"></span>
+          <button class="btn btn-sm" id="role-cancel">취소</button>
+          <button class="btn btn-sm btn-primary" id="role-apply" style="margin-left:8px">적용</button>
+        </div>
+      </div>
+      <div class="stream" id="stream"></div>
+      <div class="compose">
+        <button class="stuck" id="btn-stuck">🧭 나 지금 막혔어 (점검 요청)</button>
+        <div class="row">
+          <input class="input" id="chat-input" placeholder="내 생각·가설을 먼저 적고 물어보세요. (자유 입력)" autocomplete="off" />
+          <button class="btn btn-primary" id="chat-send">보내기</button>
+        </div>
+        <label style="display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);font-weight:600">
+          <input type="checkbox" id="chk-delegate" /> 이번 입력은 “AI에게 답을 맡기는” 질문이다
+        </label>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="btn btn-ghost" id="chat-back">← 설정 다시</button>
+      <span class="filler"></span>
+      <button class="btn btn-accent" id="chat-finish">대화 마치기 → 되짚기</button>
+    </div>
+  </section>
+
+  <!-- ============ STEP 7 · 직후 성찰 ============ -->
+  <section class="screen" data-screen="reflect">
+    <div class="rail">
+      <div class="eyebrow">STEP 7 · 대화 되짚기</div>
+      <h1 class="headline">누가 이끌었는지, 무엇을 물었는지 되짚습니다</h1>
+      <p class="subhead">대화창이 아닌 <b>타임라인·대시보드</b>입니다. 각 턴을 눌러 “내 주도 / AI 위임”을 직접 표시하세요.</p>
+    </div>
+
+    <div class="card stack">
+      <div>
+        <h4 style="font-size:13px;font-weight:800;margin-bottom:10px">대화 타임라인 — 턴별로 주도 주체를 태깅</h4>
+        <div class="timeline" id="timeline"></div>
+      </div>
+      <div class="dash">
+        <div class="box">
+          <h4>질문 유형 비율</h4>
+          <canvas id="pie-init" height="150"></canvas>
+        </div>
+        <div class="box">
+          <h4>수용 여부 분포</h4>
+          <div id="judge-dist"></div>
+          <div class="metric"><span>내 주도 턴</span><b id="m-self">0</b></div>
+          <div class="metric"><span>AI 위임 턴</span><b id="m-ai">0</b></div>
+          <div class="metric" style="border:0"><span>막힘 신호 사용</span><b id="m-stuck">0</b></div>
+        </div>
+      </div>
+      <div>
+        <label class="field-label" for="in-reflect">되짚기 서술 — 다음엔 프롬프트를 어떻게 바꿔볼까요?</label>
+        <textarea class="textarea" id="in-reflect" placeholder="가장 효과적이었던 질문 / 아쉬웠던 질문 / 다음 시도"></textarea>
+      </div>
+      <div class="callout info" id="residual-cue" hidden>
+        <b>인지적 잔여물 확인</b> — 보통은 3~7일 뒤(또는 같은 개념이 다시 나오는 차시에) 알림이 옵니다. 그때는 AI 도움 없이 비슷한 과제를 스스로 풀어 전후를 비교합니다.
+        <div style="margin-top:10px"><button class="btn btn-sm btn-accent" id="btn-goto-residual">지금 미리 체험하기 →</button></div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="btn btn-ghost" id="reflect-back">← 대화로</button>
+      <span class="filler"></span>
+      <button class="btn btn-primary" id="reflect-save">되짚기 저장</button>
+    </div>
+  </section>
+
+  <!-- ============ STEP 8 · 인지적 잔여물 확인 ============ -->
+  <section class="screen" data-screen="residual">
+    <div class="rail">
+      <div class="eyebrow">STEP 8 · 인지적 잔여물 확인</div>
+      <h1 class="headline">이번엔 AI 없이, 스스로 풉니다</h1>
+      <p class="subhead">이 화면에는 대화 기능이 없습니다. 구조는 같지만 소재를 바꾼 두 과제를 스스로 풀고, 왜 그렇게 풀었는지 설명합니다.</p>
+    </div>
+
+    <div id="res-gate" class="card stack">
+      <div class="callout warn"><b>지금은 AI 도움을 받을 수 없습니다.</b> 대화에서 배운 것이 나에게 얼마나 남았는지 확인하는 단계입니다.</div>
+      <div class="kv"><span>대상 성취기준</span><b id="res-std">-</b></div>
+      <div class="kv" style="border:0"><span>대화에서 내가 고른 전략</span><b id="res-strat">-</b></div>
+      <button class="btn btn-primary" id="res-start">전이 과제 받기</button>
+    </div>
+
+    <div id="res-quiz" hidden class="stack">
+      <div class="paper">
+        <div class="tab">과제 ① 근접 전이 · 구조는 같고 소재만 다릅니다</div>
+        <div class="body stack">
+          <p class="prompt" id="q-near">…</p>
+          <div><label class="field-label">내 풀이 / 답</label><textarea class="textarea" id="a-near" placeholder="스스로 푼 답"></textarea></div>
+          <div><label class="field-label">왜 그렇게 풀었는지 설명 (필수)</label><textarea class="textarea" id="e-near" placeholder="정답 여부와 상관없이, 내 사고 과정을 적습니다."></textarea></div>
+          <div>
+            <label class="field-label">이 답에 대한 내 확신도</label>
+            <input type="range" class="range" id="c-near" min="0" max="100" step="10" value="50" />
+            <div class="range-val" id="c-near-val">50%</div>
+          </div>
+        </div>
+      </div>
+      <div class="paper">
+        <div class="tab">과제 ② 원거리 전이 · 같은 개념을 다른 맥락에 적용합니다</div>
+        <div class="body stack">
+          <p class="prompt" id="q-far">…</p>
+          <div><label class="field-label">내 풀이 / 답</label><textarea class="textarea" id="a-far" placeholder="스스로 푼 답"></textarea></div>
+          <div><label class="field-label">왜 그렇게 풀었는지 설명 (필수)</label><textarea class="textarea" id="e-far" placeholder="내 사고 과정"></textarea></div>
+          <div>
+            <label class="field-label">이 답에 대한 내 확신도</label>
+            <input type="range" class="range" id="c-far" min="0" max="100" step="10" value="50" />
+            <div class="range-val" id="c-far-val">50%</div>
+          </div>
+        </div>
+      </div>
+      <div class="callout warn" id="res-warn" hidden>⚠ 두 과제의 풀이와 설명을 모두 입력해야 제출할 수 있습니다.</div>
+      <div class="nav">
+        <span class="filler"></span>
+        <button class="btn btn-primary" id="res-submit" disabled>제출하고 전후 비교 보기</button>
+      </div>
+    </div>
+
+    <div id="res-result" hidden class="card stack">
+      <h4 style="font-size:15px;font-weight:800">4축 근거 자료 (판정은 하지 않습니다)</h4>
+      <table class="axis-tbl">
+        <thead><tr><th>축</th><th>이번 결과</th><th>대화 시점 대비</th></tr></thead>
+        <tbody id="axis-body"></tbody>
+      </table>
+      <div class="callout">
+        절차적 정확도(정답/오답)만 시스템이 규칙 기반으로 객관 확인합니다. 자기설명 품질·전략 전이·역량 향상 여부는 <b>내 자기이해의 영역</b>이라 시스템이 대신 판정하지 않고 근거만 보여줍니다.
+      </div>
+      <div>
+        <label class="field-label">이 근거를 보고 — 나는 전보다 나아졌다고 생각하나요?</label>
+        <div class="choices" id="res-judge">
+          <button class="choice" data-v="accept">그렇다 (수용)</button>
+          <button class="choice" data-v="hold">아직 모르겠다 (보류)</button>
+          <button class="choice" data-v="comment">근거에 이견 (코멘트)</button>
+        </div>
+        <textarea class="textarea" id="res-comment" style="margin-top:10px" placeholder="보류·이견이면 이유를 적어 주세요." hidden></textarea>
+      </div>
+      <div>
+        <label class="field-label">다음 세션의 시작 지원강도를 스스로 정합니다</label>
+        <div class="choices" id="next-support">
+          <button class="choice" data-v="high">높게</button>
+          <button class="choice" data-v="mid">중간</button>
+          <button class="choice" data-v="low">낮게</button>
+        </div>
+      </div>
+      <div class="callout accent" id="res-report" hidden></div>
+      <div class="nav">
+        <span class="filler"></span>
+        <button class="btn btn-primary" id="res-finish">리포트 저장 · 처음으로</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- settings -->
+<div class="modal-scrim" id="scrim">
+  <div class="modal stack">
+    <div>
+      <div style="font-weight:800;font-size:15px">API 연결</div>
+      <p class="hint">기본은 서버 프록시(<code>/api/chat</code>)가 키를 안전하게 보관해 대신 호출합니다. GitHub Pages처럼 프록시가 없을 때만 개인 키를 넣으세요. 개인 키는 이 브라우저에만 저장됩니다.</p>
+    </div>
+    <div>
+      <label class="field-label" for="cfg-key">개인 Upstage API Key (선택)</label>
+      <input class="input" id="cfg-key" type="password" placeholder="비워두면 서버 프록시 사용" autocomplete="off" />
+    </div>
+    <div class="nav" style="margin:0">
+      <button class="btn btn-ghost" id="cfg-clear">키 지우기</button>
+      <span class="filler"></span>
+      <button class="btn" id="cfg-close">닫기</button>
+      <button class="btn btn-primary" id="cfg-save" style="margin-left:8px">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   메타인지·AI활용 성찰 지원 시스템 — 어포던스 설계 v1 구현
+   설정(Non-chat) / 대화(Chat) / 되짚기(Non-chat) / 잔여물 확인(No-AI) 분리
+   ============================================================ */
+
+const LS_KEY = 'mars.state.v2';
+const STRATS = [
+  { id:'think-aloud', label:'사고구술', desc:'내 생각을 소리 내어 말하기' },
+  { id:'example',      label:'예시 요청', desc:'구체적 예시로 이해하기' },
+  { id:'refute',       label:'반박 요청', desc:'내 답의 허점 찾기' },
+  { id:'organize',     label:'구조화',   desc:'표·그림으로 정리하기' },
+  { id:'check',        label:'근거 점검', desc:'왜 그런지 따져 묻기' }
+];
+
+const blankState = () => ({
+  learner:{ nickname:'', pin:'' },
+  ctx:{ level:'', subject:'', code:'', std:'' },
+  goal:'',
+  roleSplit:40,
+  prior:{ score:3, note:'' },
+  meta:{ u:'', s:'', c:'' },
+  strategy:null,
+  support:'high',
+  acceptStreak:0,
+  turns:[],           // {id, role:'me'|'ai'|'note', text, delegate?, initiative?, judge?, comment?, support?}
+  stuckCount:0,
+  reflectNote:'',
+  residual:{ started:false, near:null, far:null, ans:{}, result:null, judge:null, comment:'', nextSupport:null, done:false },
+  screen:'entry'
+});
+
+let S = load();
+function load(){ try{ const r = JSON.parse(localStorage.getItem(LS_KEY)); return r && r.learner ? r : blankState(); }catch(e){ return blankState(); } }
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }catch(e){} }
+
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2,9);
+
+/* ---------- router ---------- */
+const STEP_NO = { entry:0, setup:0, chat:6, reflect:7, residual:8 };
+function show(name){
+  S.screen = name; save();
+  $$('.screen').forEach(el => el.classList.toggle('is-active', el.dataset.screen === name));
+  window.scrollTo({ top:0, behavior:'smooth' });
+  let n = STEP_NO[name];
+  if (name === 'setup') n = setupStep;
+  $('#progress-label').textContent = `STEP ${n} / 8`;
+  if (name === 'setup') renderSetup();
+  if (name === 'chat') enterChat();
+  if (name === 'reflect') enterReflect();
+  if (name === 'residual') enterResidual();
+}
+
+/* ============================================================
+   STEP 0 · 진입 · 식별
+   ============================================================ */
+const reels = [null,null,null,null];
+let spinTimers = [], lockedCount = 0;
+function buildSlots(){
+  const wrap = $('#slots'); wrap.innerHTML = '';
+  for (let i=0;i<4;i++){
+    const d = document.createElement('div');
+    d.className = 'reel'; d.id = 'reel'+i;
+    d.innerHTML = `<span class="num">–</span>`;
+    wrap.appendChild(d);
+  }
+}
+function spinAll(){
+  stopAllTimers();
+  lockedCount = 0; reels.fill(null);
+  for (let i=0;i<4;i++){
+    const el = $('#reel'+i); el.className = 'reel spinning';
+    spinTimers[i] = setInterval(()=>{ el.querySelector('.num').textContent = Math.floor(Math.random()*10); }, 60);
+  }
+  $('#btn-stop').disabled = false;
+  $('#pin-hint').textContent = '정지를 눌러 왼쪽부터 한 자리씩 확정하세요.';
+  refreshEntry();
+}
+function stopOne(){
+  if (lockedCount >= 4) return;
+  const i = lockedCount;
+  clearInterval(spinTimers[i]);
+  const el = $('#reel'+i);
+  const v = Math.floor(Math.random()*10);
+  reels[i] = v;
+  el.className = 'reel locked';
+  el.querySelector('.num').textContent = v;
+  lockedCount++;
+  if (lockedCount === 4){
+    $('#btn-stop').disabled = true;
+    $('#pin-hint').textContent = '네 자리 확정 완료! 닉네임을 확인하고 다음으로.';
+  }
+  refreshEntry();
+}
+function stopAllTimers(){ spinTimers.forEach(t=>clearInterval(t)); spinTimers = []; }
+function resetPin(){
+  stopAllTimers(); lockedCount = 0; reels.fill(null);
+  buildSlots(); $('#btn-stop').disabled = true;
+  $('#pin-hint').textContent = '돌리기 → 정지를 네 번 눌러 네 자리를 확정합니다.';
+  refreshEntry();
+}
+function refreshEntry(){
+  const ok = $('#in-nick').value.trim().length > 0 && reels.every(v => v !== null);
+  $('#entry-next').disabled = !ok;
+}
+
+/* ============================================================
+   STEP 1-5 · 설정
+   ============================================================ */
+let setupStep = 1;
+const SETUP_META = {
+  1:{ eb:'STEP 1 · 학습 맥락', t:'무엇을, 어떤 성취기준으로 배울지 정합니다', s:'이 화면은 대화창이 아니라 <b>설정 폼</b>입니다. 여기서 정한 값이 이어지는 대화와 되짚기의 기준이 됩니다.' },
+  2:{ eb:'STEP 2 · 학습 목표', t:'오늘 스스로 도달하고 싶은 지점을 적습니다', s:'성취기준을 나의 말로 바꿔 구체적인 목표로 만듭니다.' },
+  3:{ eb:'STEP 3 · 역할 분담', t:'AI가 얼마나 개입할지 내가 정합니다', s:'힌트만 받을지, 첨삭까지 받을지 — 선택권은 학습자에게 있습니다.' },
+  4:{ eb:'STEP 4 · 사전지식', t:'지금 아는 만큼을 스스로 점검합니다', s:'대화 전후의 변화를 비교하기 위한 출발점입니다.' },
+  5:{ eb:'STEP 5 · 메타인지 점검', t:'이해·전략·연결을 짧게 확인합니다', s:'무엇을 알고, 어떻게 배우며, 무엇과 잇는지 스스로 말해 봅니다.' }
+};
+function renderSetup(){
+  const m = SETUP_META[setupStep];
+  $('#setup-eyebrow').innerHTML = m.eb;
+  $('#setup-title').textContent = m.t;
+  $('#setup-sub').innerHTML = m.s;
+  $('#setup-stepper').innerHTML = [1,2,3,4,5].map(i =>
+    `<i class="${i<setupStep?'done':i===setupStep?'now':''}"></i>`).join('');
+  $$('.setup-step').forEach(el => el.hidden = (+el.dataset.step !== setupStep));
+  syncSetupInputs();
+  $('#setup-warn').hidden = true;
+  $('#setup-prev').style.visibility = setupStep === 1 ? 'hidden' : 'visible';
+  $('#setup-next').textContent = setupStep === 5 ? '설정 마치고 대화 시작 →' : '다음 →';
+  if (setupStep === 1) ensureCtxUI();
+  if (setupStep === 2) renderGoalChips();
+  if (setupStep === 4) $('#prior-q-label').textContent = `“${S.ctx.std || '이 성취기준'}” 에 대해 지금 아는 것을 적어보세요`;
+  $('#progress-label').textContent = `STEP ${setupStep} / 8`;
+}
+function ensureCtxUI(){
+  const lv = $('#sel-level');
+  if (!lv.options.length){
+    Object.keys(CURRICULUM_STANDARDS).forEach(k=>{
+      const o = document.createElement('option'); o.value=k; o.textContent=k; lv.appendChild(o);
+    });
+  }
+  lv.value = S.ctx.level || lv.options[3].value;
+  fillSubjects();
+}
+function fillSubjects(){
+  const lv = $('#sel-level').value;
+  const sub = $('#sel-subject'); sub.innerHTML = '';
+  Object.keys(CURRICULUM_STANDARDS[lv] || {}).forEach(k=>{
+    const o = document.createElement('option'); o.value=k; o.textContent=k; sub.appendChild(o);
+  });
+  if (S.ctx.subject && CURRICULUM_STANDARDS[lv][S.ctx.subject]) sub.value = S.ctx.subject;
+  fillStdChips();
+}
+function fillStdChips(){
+  const lv = $('#sel-level').value, sb = $('#sel-subject').value;
+  const list = (CURRICULUM_STANDARDS[lv] && CURRICULUM_STANDARDS[lv][sb]) || [];
+  $('#std-chips').innerHTML = list.map(it =>
+    `<button class="chip ${S.ctx.code===it.code?'is-selected':''}" data-code="${esc(it.code)}" data-name="${esc(it.name)}">[${esc(it.code)}] ${esc(it.name)}</button>`
+  ).join('');
+  updateStdPicked();
+}
+function updateStdPicked(){
+  const p = $('#std-picked');
+  if (S.ctx.std){ p.hidden = false; p.innerHTML = `선택됨 · <b>[${esc(S.ctx.code)}]</b> ${esc(S.ctx.std)}`; }
+  else p.hidden = true;
+}
+function renderGoalChips(){
+  const base = S.ctx.std || '';
+  const ideas = base ? [
+    `“${trim(base,22)}”를 친구에게 내 말로 설명할 수 있다`,
+    `예시 없이 스스로 한 문제를 풀 수 있다`,
+    `왜 그렇게 되는지 근거를 들어 말할 수 있다`
+  ] : ['성취기준을 먼저 선택하세요'];
+  $('#goal-chips').innerHTML = ideas.map(t=>`<button class="chip" data-goal="${esc(t)}">${esc(t)}</button>`).join('');
+}
+const trim = (s,n) => s.length>n ? s.slice(0,n)+'…' : s;
+
+function syncSetupInputs(){
+  if (setupStep === 2) $('#in-goal').value = S.goal || '';
+  if (setupStep === 3){
+    $('#rng-role').value = S.roleSplit;
+    $('#rng-role').dispatchEvent(new Event('input'));
+  }
+  if (setupStep === 4){
+    $('#rng-prior').value = S.prior.score;
+    $('#prior-val').textContent = S.prior.score + ' / 5';
+    $('#in-prior').value = S.prior.note || '';
+  }
+  if (setupStep === 5){
+    $('#in-meta-u').value = S.meta.u || '';
+    $('#in-meta-s').value = S.meta.s || '';
+    $('#in-meta-c').value = S.meta.c || '';
+  }
+}
+
+function setupValid(){
+  if (setupStep === 1) return !!S.ctx.code;
+  if (setupStep === 2) return $('#in-goal').value.trim().length >= 4;
+  if (setupStep === 4) return $('#in-prior').value.trim().length >= 2;
+  if (setupStep === 5) return ['in-meta-u','in-meta-s','in-meta-c'].every(id => $('#'+id).value.trim().length >= 2);
+  return true;
+}
+function captureSetup(){
+  if (setupStep === 2) S.goal = $('#in-goal').value.trim();
+  if (setupStep === 3) S.roleSplit = +$('#rng-role').value;
+  if (setupStep === 4){ S.prior.score = +$('#rng-prior').value; S.prior.note = $('#in-prior').value.trim(); }
+  if (setupStep === 5){ S.meta.u=$('#in-meta-u').value.trim(); S.meta.s=$('#in-meta-s').value.trim(); S.meta.c=$('#in-meta-c').value.trim(); }
+  save();
+}
+
+/* ============================================================
+   STEP 6 · 대화
+   ============================================================ */
+const SUPPORT_LABEL = { high:'높음', mid:'중간', low:'낮음' };
+const SUPPORT_PCT   = { high:100, mid:60, low:28 };
+
+function enterChat(){
+  $('#chat-who').textContent = `${S.learner.nickname}`;
+  $('#chat-std').textContent = S.ctx.std ? `[${S.ctx.code}] ${trim(S.ctx.std,30)}` : '성취기준 미선택';
+  paintSupport();
+  renderStream();
+  if (!S.turns.length){
+    pushNote(`역할 분담 ${S.roleSplit} · 지원강도 ${SUPPORT_LABEL[S.support]}에서 시작합니다. 전략을 먼저 고르세요.`);
+    aiTurn(`학습자에게 이 성취기준으로 무엇을 해보고 싶은지 가볍게 물으며 대화를 연다. 학습자가 아직 전략을 고르지 않았으니, 아래 전략 칩 중 하나를 고르도록 한 문장으로 권한다.`, { firstStrats:true });
+  }
+}
+function paintSupport(){
+  $('#support-text').textContent = SUPPORT_LABEL[S.support];
+  $('#support-fill').style.width = SUPPORT_PCT[S.support] + '%';
+}
+function pushNote(text){ S.turns.push({ id:uid(), role:'note', text }); save(); renderStream(); }
+function pushMe(text, delegate){
+  S.turns.push({ id:uid(), role:'me', text, delegate:!!delegate, initiative: delegate ? 'ai' : 'self' });
+  save(); renderStream();
+}
+function pushAi(text){
+  S.turns.push({ id:uid(), role:'ai', text, support:S.support, judge:null, comment:'' });
+  save(); renderStream();
+}
+
+function renderStream(){
+  const box = $('#stream'); box.innerHTML = '';
+  S.turns.forEach(t=>{
+    if (t.role === 'note'){
+      box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="bubble">${esc(t.text)}</div></div>`);
+      return;
     }
-
-    // 원리 9: "지금 전략이 잘 안 통해요" 점검 요청 -> AI가 점검 질문 + 전략 대안 제시
-    async function requestMonitoring() {
-      if (state.stage !== WORKFLOW_STAGES.DIALOGUE_ACTIVE) {
-        alert("본 탐구 대화가 진행 중일 때만 사용할 수 있는 점검 요청이에요.");
-        return;
-      }
-      const text = "🧭 지금 사용 중인 전략이 잘 안 통하는 것 같아요. 함께 점검해주세요.";
-      state.messages.push({
-        id: state.messages.length,
-        role: "user",
-        content: text,
-        delegationType: "learner_directed",
-        stageAtTime: state.stage,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      });
-      state.monitoringRequested = true;
-      renderMessages();
-      updateCharts();
-      renderDialogueLog();
-      renderLoadingBubble();
-      try {
-        const reply = await generateAIResponse(text);
-        pushAIMessage(reply);
-      } catch (err) {
-        pushAIMessage(`⚠️ AI 통신 중 오류가 발생했습니다: ${err.message}`);
-      }
+    const mine = t.role === 'me';
+    const av = mine ? '나' : 'AI';
+    let extra = '';
+    if (!mine){
+      const j = t.judge;
+      extra = `<div class="judge" data-id="${t.id}">
+        <button data-v="accept" class="${j==='accept'?'on':''}">수용</button>
+        <button data-v="hold" class="${j==='hold'?'on':''}">보류</button>
+        <button data-v="comment" class="${j==='comment'?'on':''}">코멘트</button>
+        ${(j==='comment')?`<textarea class="input textarea cmt" data-id="${t.id}" placeholder="이 응답에 대한 내 판단·이견">${esc(t.comment||'')}</textarea>`:''}
+      </div>`;
+      if (isFirstAi(t.id)) extra += strategyChipsHTML();
     }
+    box.insertAdjacentHTML('beforeend',
+      `<div class="msg ${mine?'me':'ai'}">
+         <div class="av">${av}</div>
+         <div style="flex:1">
+           <div class="bubble">${esc(t.text)}</div>
+           ${mine && t.delegate ? '<div class="hint">· AI 위임 질문으로 표시됨</div>' : ''}
+           ${extra}
+         </div>
+       </div>`);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+function isFirstAi(id){ return S.turns.find(x=>x.role==='ai')?.id === id; }
+function strategyChipsHTML(){
+  return `<div class="turn-strats chips">` + STRATS.map(s =>
+    `<button class="chip ${S.strategy===s.id?'is-selected':''}" data-strat="${s.id}">${s.label}<span style="opacity:.6"> · ${s.desc}</span></button>`
+  ).join('') + `</div>`;
+}
 
-    function setScaffold(level, opts = {}) {
-      if (state.scaffoldLocked && !opts.system) {
-        alert("지금은 [원리 13: AI 소거 전이 과업] 단계라 비계 조절이 잠시 잠겨 있어요. 전이 과업을 스스로 풀어본 뒤 다시 조절할 수 있어요.");
-        return;
-      }
-      state.scaffolding = level;
-      document.getElementById('scaffold-badge').innerText = `${level} (비계 ${level === 'High' ? '높음' : level === 'Medium' ? '중간' : '소거'})`;
-      ["high", "medium", "low"].forEach(l => {
-        const btn = document.getElementById(`scaffold-${l}`);
-        if (l.toLowerCase() === level.toLowerCase()) {
-          btn.className = "py-1.5 rounded-lg bg-white text-indigo-600 shadow-xs";
-        } else {
-          btn.className = "py-1.5 rounded-lg text-slate-500";
-        }
-      });
+let busy = false;
+async function aiTurn(instruction, opts={}){
+  if (busy) return; busy = true;
+  const box = $('#stream');
+  box.insertAdjacentHTML('beforeend', `<div class="msg ai" id="pending"><div class="av">AI</div><div class="bubble"><span class="loading"><i></i><i></i><i></i></span></div></div>`);
+  box.scrollTop = box.scrollHeight;
+  try{
+    const sys = chatSystemPrompt(instruction);
+    const hist = S.turns.filter(t=>t.role!=='note').map(t=>({ role: t.role==='me'?'user':'assistant', content:t.text }));
+    const text = await ask([{ role:'system', content:sys }, ...hist].slice(-14));
+    $('#pending')?.remove();
+    pushAi(text.trim());
+  }catch(err){
+    $('#pending')?.remove();
+    pushAi('⚠ ' + err.message);
+  }finally{ busy = false; }
+}
+function chatSystemPrompt(instruction){
+  const stratLabel = STRATS.find(s=>s.id===S.strategy)?.label || '아직 없음';
+  return [
+`당신은 대한민국 교육과정 성취기준 기반의 초·중·고 메타인지 학습 튜터입니다.`,
+`[학습자] ${S.learner.nickname} · ${S.ctx.level} ${S.ctx.subject}`,
+`[성취기준] ${S.ctx.std}`,
+`[학습목표] ${S.goal}`,
+`[역할 분담] 0(힌트만)~100(첨삭까지) 중 현재 ${S.roleSplit}. 이 수치에 맞춰 개입 강도를 조절하세요.`,
+`[지원 강도(비계)] ${S.support} — high: 구체적 힌트 허용 / mid: 방향만 / low: 되묻는 질문 위주, 답은 학습자에게.`,
+`[학습자가 고른 인지전략] ${stratLabel}`,
+`규칙:`,
+`- 질문은 한 번에 딱 1개. 3~5문장 이내로 짧게.`,
+`- 정답 여부·이해 수준·수용 여부를 당신이 최종 판정하지 마세요. 판단은 학습자 몫으로 돌려주세요.`,
+`- 학습자가 대화를 끝내기 전에는 성찰/되돌아보기 질문을 먼저 꺼내지 마세요. 교과 내용에 집중.`,
+`[이번 지시] ${instruction}`
+  ].join('\n');
+}
+function fade(){
+  if (S.support === 'high') S.support = 'mid';
+  else if (S.support === 'mid') S.support = 'low';
+  else return false;
+  paintSupport(); save();
+  pushNote(`지원강도를 ${SUPPORT_LABEL[S.support]}(으)로 낮췄습니다. AI 응답을 잘 이해하고 있다는 신호로 판단했어요. 필요하면 “역할 조정”에서 되돌릴 수 있습니다.`);
+  return true;
+}
+
+/* ============================================================
+   STEP 7 · 되짚기
+   ============================================================ */
+let pieChart = null;
+function enterReflect(){
+  const exchanges = S.turns.filter(t=>t.role==='me' || t.role==='ai');
+  $('#timeline').innerHTML = S.turns.filter(t=>t.role!=='note').map(t=>{
+    const mine = t.role==='me';
+    const cur = t.initiative || (mine ? 'self':'—');
+    return `<div class="tl-card">
+      <div class="role">${mine?'학습자 발화':'AI 응답'}</div>
+      <div class="txt">${esc(trim(t.text,120))}</div>
+      ${mine ? `<div class="tl-tags" data-id="${t.id}">
+        <button data-v="self" class="${t.initiative==='self'?'on':''}">내 주도</button>
+        <button data-v="ai" class="${t.initiative==='ai'?'on':''}">AI 위임</button>
+      </div>` : `<div class="hint">지원강도 ${SUPPORT_LABEL[t.support]||'-'}</div>`}
+    </div>`;
+  }).join('') || '<div class="hint">대화 기록이 없습니다.</div>';
+
+  const myTurns = S.turns.filter(t=>t.role==='me');
+  const self = myTurns.filter(t=>(t.initiative||'self')==='self').length;
+  const ai = myTurns.length - self;
+  $('#m-self').textContent = self;
+  $('#m-ai').textContent = ai;
+  $('#m-stuck').textContent = S.stuckCount;
+
+  const jd = { accept:0, hold:0, comment:0, none:0 };
+  S.turns.filter(t=>t.role==='ai').forEach(t=> jd[t.judge||'none']++);
+  $('#judge-dist').innerHTML = ['accept','hold','comment','none'].map(k=>{
+    const label = { accept:'수용', hold:'보류', comment:'코멘트', none:'미판단' }[k];
+    return `<div class="metric"><span>${label}</span><b>${jd[k]}</b></div>`;
+  }).join('');
+
+  if (pieChart) pieChart.destroy();
+  pieChart = new Chart($('#pie-init'), {
+    type:'doughnut',
+    data:{ labels:['내 주도','AI 위임'], datasets:[{ data:[self, ai], backgroundColor:['#12a05f','#f0a13a'], borderWidth:0 }] },
+    options:{ plugins:{ legend:{ position:'bottom', labels:{ font:{ size:11 }, boxWidth:10 } } }, cutout:'62%' }
+  });
+
+  $('#in-reflect').value = S.reflectNote || '';
+  $('#residual-cue').hidden = true;
+}
+
+/* ============================================================
+   STEP 8 · 잔여물 확인
+   ============================================================ */
+function enterResidual(){
+  $('#res-std').textContent = S.ctx.std ? `[${S.ctx.code}] ${S.ctx.std}` : '-';
+  $('#res-strat').textContent = STRATS.find(s=>s.id===S.strategy)?.label || '지정 안 함';
+  const done = S.residual.result;
+  $('#res-gate').hidden = S.residual.started;
+  $('#res-quiz').hidden = !S.residual.started || !!done;
+  $('#res-result').hidden = !done;
+  if (S.residual.near){ $('#q-near').textContent = S.residual.near; $('#q-far').textContent = S.residual.far; }
+  if (done) renderResidualResult();
+}
+async function startResidual(){
+  S.residual.started = true; save(); enterResidual();
+  $('#q-near').textContent = '전이 과제를 만드는 중…';
+  $('#q-far').textContent = '전이 과제를 만드는 중…';
+  try{
+    const raw = await ask([
+      { role:'system', content:'너는 교육과정 성취기준 기반 평가 문항 출제자다. 반드시 순수 JSON만 출력한다.' },
+      { role:'user', content:
+`성취기준: "${S.ctx.std}"
+학습자가 대화에서 사용한 전략: ${STRATS.find(s=>s.id===S.strategy)?.label || '없음'}
+학습목표: ${S.goal}
+
+아래 두 문항을 만들어라. 대화에서 AI가 썼을 법한 힌트 표현은 재사용하지 말고, 표면 소재만 바꿔라.
+- near: 근접 전이(구조 동일, 숫자·소재만 변경)
+- far: 원거리 전이(같은 개념을 다른 맥락에 적용)
+형식: {"near":"...","far":"..."} (각 2~3문장, 한국어, 정답은 쓰지 말 것)` }
+    ]);
+    const j = parseJSON(raw);
+    if (!j || !j.near || !j.far) throw new Error('shape');
+    S.residual.near = String(j.near); S.residual.far = String(j.far);
+  }catch(e){
+    S.residual.near = `“${S.ctx.std}”와 같은 원리가 쓰이는 새로운 상황을 하나 만들고, 그 상황에서 답을 구해 보세요. 숫자나 소재는 수업에서 다룬 것과 다르게 잡습니다.`;
+    S.residual.far = `같은 개념을 전혀 다른 맥락(일상생활·다른 과목)에 적용해야 하는 문제를 스스로 설정하고 풀어 보세요.`;
+  }
+  save(); enterResidual();
+}
+function residualValid(){
+  return ['a-near','e-near','a-far','e-far'].every(id => $('#'+id).value.trim().length >= 2);
+}
+async function submitResidual(){
+  const ans = {
+    near:{ a:$('#a-near').value.trim(), e:$('#e-near').value.trim(), c:+$('#c-near').value },
+    far:{ a:$('#a-far').value.trim(), e:$('#e-far').value.trim(), c:+$('#c-far').value }
+  };
+  S.residual.ans = ans; save();
+  $('#res-submit').disabled = true; $('#res-submit').textContent = '채점 중…';
+  let ev;
+  try{
+    const raw = await ask([
+      { role:'system', content:'너는 4축 루브릭 채점 보조자다. 반드시 순수 JSON만 출력한다. 확정 판정 문구("역량 향상됨" 등)는 쓰지 말고 근거만 서술한다.' },
+      { role:'user', content:
+`성취기준: "${S.ctx.std}"
+[근접전이] 문제:${S.residual.near}
+ 답:${ans.near.a}
+ 자기설명:${ans.near.e}
+[원거리전이] 문제:${S.residual.far}
+ 답:${ans.far.a}
+ 자기설명:${ans.far.e}
+
+다음 형식으로 채점하라(각 note는 1~2문장 근거):
+{"procedural":{"nearCorrect":true|false,"farCorrect":true|false,"note":"..."},
+ "selfExplain":{"level":"낮음|보통|높음","note":"..."},
+ "transfer":{"applied":true|false,"note":"전략을 새 문제에도 스스로 적용했는지"}}` }
+    ]);
+    ev = parseJSON(raw);
+    if (!ev || !ev.procedural || !ev.selfExplain || !ev.transfer) throw new Error('shape');
+  }catch(e){
+    ev = { procedural:{ nearCorrect:null, farCorrect:null, note:'자동 채점을 불러오지 못해 절차적 정확도는 교사 검토가 필요합니다.' },
+           selfExplain:{ level:'보통', note:'자기설명이 입력되었으나 자동 평가를 완료하지 못했습니다.' },
+           transfer:{ applied:null, note:'전략 전이 여부는 교사 검토 대상입니다.' } };
+  }
+  // 메타인지 정확도: 확신도와 정오답 일치(Brier류, 낮을수록 정확)
+  const brier = (correct, conf) => (typeof correct !== 'boolean') ? null : Math.pow((conf/100) - (correct?1:0), 2);
+  const bNear = brier(ev.procedural.nearCorrect, S.residual.ans.near.c);
+  const bFar  = brier(ev.procedural.farCorrect,  S.residual.ans.far.c);
+  const bAvg  = [bNear,bFar].filter(x=>x!==null);
+  ev.metacog = { brier: bAvg.length ? (bAvg.reduce((a,b)=>a+b,0)/bAvg.length) : null };
+  S.residual.result = ev; save();
+  $('#res-submit').textContent = '제출하고 전후 비교 보기';
+  enterResidual();
+}
+function renderResidualResult(){
+  const ev = S.residual.result;
+  if (!ev) return;
+  const yn = v => v===true ? '맞음' : v===false ? '보완 필요' : '교사 검토';
+  const priorPct = (S.prior.score/5*100).toFixed(0);
+  const rows = [
+    ['절차적 정확도',
+      `근접 ${yn(ev.procedural.nearCorrect)} · 원거리 ${yn(ev.procedural.farCorrect)}<div class="hint">${esc(ev.procedural.note||'')}</div>`,
+      deltaChip(ev.procedural.nearCorrect===true && ev.procedural.farCorrect===true ? 'up' : 'flat', '대화 시점: 자기평가 '+S.prior.score+'/5')],
+    ['자기설명 품질',
+      `${esc(ev.selfExplain.level)}<div class="hint">${esc(ev.selfExplain.note||'')}</div>`,
+      deltaChip('na','시스템이 판정하지 않음 · 근거만')],
+    ['전략 전이',
+      `${ev.transfer.applied===true?'스스로 적용':ev.transfer.applied===false?'미적용':'교사 검토'}<div class="hint">${esc(ev.transfer.note||'')}</div>`,
+      deltaChip('na','대화 중 선택 전략: '+(STRATS.find(s=>s.id===S.strategy)?.label||'없음'))],
+    ['메타인지 정확도',
+      ev.metacog.brier===null ? '측정 불가(정오답 미확정)' : `오차 ${(ev.metacog.brier).toFixed(2)} <span class="hint">(0에 가까울수록 내 확신도와 실제가 일치)</span>`,
+      deltaChip('na','확신도 vs 실제 일치도')]
+  ];
+  $('#axis-body').innerHTML = rows.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+  // restore judge / next support
+  $$('#res-judge .choice').forEach(b=> b.classList.toggle('is-selected', b.dataset.v === S.residual.judge));
+  $('#res-comment').hidden = S.residual.judge !== 'comment';
+  $('#res-comment').value = S.residual.comment || '';
+  $$('#next-support .choice').forEach(b=> b.classList.toggle('is-selected', b.dataset.v === S.residual.nextSupport));
+  if (S.residual.judge){
+    $('#res-report').hidden = false;
+    const jl = { accept:'“전보다 나아졌다”고 스스로 수용', hold:'“아직 모르겠다”로 보류', comment:'근거에 이견 남김' }[S.residual.judge];
+    $('#res-report').innerHTML =
+      `<b>서술형 리포트</b><br>· 절차적 정확도(객관): 근접 ${yn(ev.procedural.nearCorrect)}, 원거리 ${yn(ev.procedural.farCorrect)}<br>`+
+      `· 자기설명 품질(근거): ${esc(ev.selfExplain.level)}<br>`+
+      `· 학습자 자기판단: ${jl}<br>`+
+      (S.residual.nextSupport ? `· 다음 세션 시작 지원강도: ${SUPPORT_LABEL[S.residual.nextSupport]} (학습자 선택)` : '· 다음 세션 지원강도: 미선택');
+  }
+}
+function deltaChip(kind, label){
+  const t = kind==='up'?'▲ 근거상 상승' : kind==='flat'?'· 근거 제시' : 'ⓘ 판정 안 함';
+  return `<span class="delta ${kind}">${t}</span><div class="hint">${esc(label)}</div>`;
+}
+
+/* ---------- AI helper ---------- */
+async function ask(messages){
+  const key = localStorage.getItem('UPSTAGE_API_KEY') || '';
+  const url = key ? 'https://api.upstage.ai/v1/chat/completions' : '/api/chat';
+  const headers = { 'Content-Type':'application/json' };
+  if (key) headers['Authorization'] = 'Bearer ' + key;
+  const r = await fetch(url, { method:'POST', headers, body: JSON.stringify({
+    model: localStorage.getItem('UPSTAGE_MODEL') || 'solar-pro', messages
+  })});
+  let d;
+  try { d = await r.json(); }
+  catch(e){ throw new Error('서버 프록시(/api/chat)에 연결하지 못했어요. 정적 호스팅이면 우측 상단 ⚙에서 개인 키를 넣어 주세요.'); }
+  if (!r.ok) throw new Error(d.error?.message || d.error || ('HTTP ' + r.status));
+  return d.choices[0].message.content;
+}
+function parseJSON(s){
+  const m = s.match(/\{[\s\S]*\}/);
+  return JSON.parse(m ? m[0] : s);
+}
+
+/* ============================================================
+   Wiring
+   ============================================================ */
+function init(){
+  buildSlots();
+  // entry
+  $('#in-nick').value = S.learner.nickname || '';
+  $('#in-nick').addEventListener('input', refreshEntry);
+  $('#btn-spin').addEventListener('click', spinAll);
+  $('#btn-stop').addEventListener('click', stopOne);
+  $('#btn-reset-pin').addEventListener('click', resetPin);
+  $('#entry-next').addEventListener('click', ()=>{
+    S.learner.nickname = $('#in-nick').value.trim();
+    S.learner.pin = reels.join('');
+    save(); setupStep = 1; show('setup');
+  });
+
+  // setup
+  $('#sel-level').addEventListener('change', ()=>{ S.ctx.level = $('#sel-level').value; S.ctx.code=''; S.ctx.std=''; save(); fillSubjects(); });
+  $('#sel-subject').addEventListener('change', ()=>{ S.ctx.subject = $('#sel-subject').value; S.ctx.code=''; S.ctx.std=''; save(); fillStdChips(); });
+  $('#std-chips').addEventListener('click', e=>{
+    const b = e.target.closest('.chip'); if(!b) return;
+    S.ctx.level = $('#sel-level').value; S.ctx.subject = $('#sel-subject').value;
+    S.ctx.code = b.dataset.code; S.ctx.std = b.dataset.name; save();
+    fillStdChips();
+  });
+  $('#goal-chips').addEventListener('click', e=>{
+    const b = e.target.closest('.chip'); if(!b) return;
+    const ta = $('#in-goal'); ta.value = (ta.value ? ta.value.trim()+' ' : '') + b.dataset.goal; ta.focus();
+  });
+  $('#rng-role').addEventListener('input', e=>{
+    const v = +e.target.value;
+    $('#role-val').textContent = (v<=20?'힌트만':v<=40?'힌트 중심':v<=60?'균형':v<=80?'첨삭 중심':'적극 첨삭') + ` (${v})`;
+  });
+  $('#rng-prior').addEventListener('input', e=> $('#prior-val').textContent = e.target.value + ' / 5');
+  $('#setup-prev').addEventListener('click', ()=>{ if(setupStep>1){ setupStep--; renderSetup(); } });
+  $('#setup-next').addEventListener('click', ()=>{
+    if (!setupValid()){ $('#setup-warn').hidden = false; return; }
+    captureSetup();
+    if (setupStep < 5){ setupStep++; renderSetup(); }
+    else { S.support = 'high'; S.acceptStreak = 0; save(); show('chat'); }
+  });
+
+  // chat
+  $('#chat-send').addEventListener('click', sendChat);
+  $('#chat-input').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
+  $('#btn-stuck').addEventListener('click', ()=>{
+    if (busy) return;
+    S.stuckCount++; save();
+    pushMe('지금 막혔어요. 어디서 막혔는지 같이 점검해 주세요.', false);
+    aiTurn('학습자가 막힘 신호를 보냈다. (1) 어디서 이해가 끊겼는지 짚는 점검 질문 1개를 하고 (2) 지금 전략 대신 시도할 만한 다른 인지전략 1~2개를 제안하되, 최종 선택은 학습자에게 맡긴다.');
+  });
+  let rolePick = { split:S.roleSplit, support:S.support };
+  const roleValText = v => (v<=20?'힌트만':v<=40?'힌트 중심':v<=60?'균형':v<=80?'첨삭 중심':'적극 첨삭') + ` (${v})`;
+  $('#btn-role-adj').addEventListener('click', ()=>{
+    const p = $('#role-panel');
+    if (!p.hidden){ p.hidden = true; return; }
+    rolePick = { split:S.roleSplit, support:S.support };
+    $('#rng-role-live').value = S.roleSplit;
+    $('#role-live-val').textContent = roleValText(S.roleSplit);
+    $$('#support-pick .choice').forEach(b=> b.classList.toggle('is-selected', b.dataset.v === S.support));
+    p.hidden = false;
+  });
+  $('#rng-role-live').addEventListener('input', e=>{
+    rolePick.split = +e.target.value;
+    $('#role-live-val').textContent = roleValText(rolePick.split);
+  });
+  $('#support-pick').addEventListener('click', e=>{
+    const b = e.target.closest('.choice'); if(!b) return;
+    rolePick.support = b.dataset.v;
+    $$('#support-pick .choice').forEach(x=> x.classList.toggle('is-selected', x === b));
+  });
+  $('#role-cancel').addEventListener('click', ()=> $('#role-panel').hidden = true);
+  $('#role-apply').addEventListener('click', ()=>{
+    const changed = rolePick.split !== S.roleSplit || rolePick.support !== S.support;
+    S.roleSplit = rolePick.split; S.support = rolePick.support;
+    save(); paintSupport();
+    $('#role-panel').hidden = true;
+    if (changed) pushNote(`역할 분담 ${S.roleSplit} · 지원강도 ${SUPPORT_LABEL[S.support]}(으)로 학습자가 직접 조정했습니다.`);
+  });
+  $('#stream').addEventListener('click', e=>{
+    const chip = e.target.closest('[data-strat]');
+    if (chip){
+      S.strategy = chip.dataset.strat; save(); renderStream();
+      const lbl = STRATS.find(s=>s.id===S.strategy).label;
+      pushMe(`이번엔 "${lbl}" 전략으로 해볼게요.`, false);
+      aiTurn(`학습자가 인지전략 "${lbl}"을(를) 골랐다. 그 전략에 맞는 방식으로 성취기준 탐구의 첫 발문을 1개 던진다.`);
+      return;
     }
-
-    // 원리 1: 비계의 적응적 지원 감소(자동 페이딩). 원리2를 해치지 않도록 수동 버튼은 항상 열어둔다.
-    function applyAdaptiveFading(verStatus) {
-      if (state.stage !== WORKFLOW_STAGES.DIALOGUE_ACTIVE || state.scaffoldLocked) return;
-      if (verStatus === '수용') {
-        state.adaptiveMetrics.acceptStreak++;
-      } else {
-        state.adaptiveMetrics.acceptStreak = 0;
-      }
-      if (state.adaptiveMetrics.acceptStreak >= 3 && state.scaffolding !== 'Low') {
-        const next = state.scaffolding === 'High' ? 'Medium' : 'Low';
-        state.adaptiveMetrics.acceptStreak = 0;
-        setScaffold(next, { system: true });
-        pushSystemNotice(`📉 <b>[원리 1: 비계 자동 조정]</b> 최근 AI 응답들을 비판적으로 검토하며 잘 이해(수용)하고 계신 것 같아, 힌트 수준을 <b>${next}</b>(으)로 자동으로 낮췄어요. 필요하면 언제든 우측 패널에서 직접 조절할 수 있어요.`);
-      }
+    const jb = e.target.closest('.judge button');
+    if (jb){
+      const id = jb.closest('.judge').dataset.id;
+      const t = S.turns.find(x=>x.id===id); if(!t) return;
+      const v = jb.dataset.v;
+      t.judge = (t.judge === v) ? null : v;
+      if (t.judge === 'accept'){
+        S.acceptStreak++;
+        if (S.acceptStreak >= 2){ S.acceptStreak = 0; save(); renderStream(); fade(); return; }
+      } else { S.acceptStreak = 0; }
+      save(); renderStream();
+      return;
     }
+  });
+  $('#stream').addEventListener('input', e=>{
+    const ta = e.target.closest('textarea.cmt');
+    if (ta){ const t = S.turns.find(x=>x.id===ta.dataset.id); if(t){ t.comment = ta.value; save(); } }
+  });
+  $('#chat-back').addEventListener('click', ()=>{ setupStep = 1; show('setup'); });
+  $('#chat-finish').addEventListener('click', ()=> show('reflect'));
 
-    function pushSystemNotice(html) {
-      state.messages.push({
-        id: state.messages.length,
-        role: "notice",
-        content: html,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      });
-      renderMessages();
-    }
+  // reflect
+  $('#timeline').addEventListener('click', e=>{
+    const b = e.target.closest('.tl-tags button'); if(!b) return;
+    const id = b.closest('.tl-tags').dataset.id;
+    const t = S.turns.find(x=>x.id===id); if(!t) return;
+    t.initiative = b.dataset.v; save(); enterReflect();
+  });
+  $('#reflect-back').addEventListener('click', ()=> show('chat'));
+  $('#reflect-save').addEventListener('click', ()=>{
+    S.reflectNote = $('#in-reflect').value.trim(); save();
+    $('#residual-cue').hidden = false;
+    $('#reflect-save').textContent = '저장됨 ✓';
+    setTimeout(()=> $('#reflect-save').textContent = '되짚기 저장', 1600);
+  });
+  $('#btn-goto-residual').addEventListener('click', ()=> show('residual'));
 
-    function initCharts() {
-      const ctxDel = document.getElementById('chart-delegation').getContext('2d');
-      chartDelInstance = new Chart(ctxDel, {
-        type: 'doughnut',
-        data: {
-          labels: ['학습자 주도 탐구', 'AI 단순 위임'],
-          datasets: [{
-            data: [0, 0],
-            backgroundColor: ['#4f46e5', '#f97316']
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }
-        }
-      });
+  // residual
+  $('#res-start').addEventListener('click', startResidual);
+  ['c-near','c-far'].forEach(id=>{
+    $('#'+id).addEventListener('input', e=> $('#'+id+'-val').textContent = e.target.value + '%');
+  });
+  $('#res-quiz').addEventListener('input', ()=>{
+    const ok = residualValid();
+    $('#res-submit').disabled = !ok;
+    $('#res-warn').hidden = ok;
+  });
+  $('#res-submit').addEventListener('click', submitResidual);
+  $('#res-judge').addEventListener('click', e=>{
+    const b = e.target.closest('.choice'); if(!b) return;
+    S.residual.judge = b.dataset.v; save(); renderResidualResult();
+  });
+  $('#res-comment').addEventListener('input', e=>{ S.residual.comment = e.target.value; save(); });
+  $('#next-support').addEventListener('click', e=>{
+    const b = e.target.closest('.choice'); if(!b) return;
+    S.residual.nextSupport = b.dataset.v; save(); renderResidualResult();
+  });
+  $('#res-finish').addEventListener('click', ()=>{
+    S.residual.done = true; save();
+    alert('리포트를 저장했습니다. 처음 화면으로 돌아갑니다.');
+    S = blankState(); save();
+    setupStep = 1; resetPin(); $('#in-nick').value = '';
+    show('entry');
+  });
 
-      const ctxScore = document.getElementById('chart-scores').getContext('2d');
-      chartScoreInstance = new Chart(ctxScore, {
-        type: 'bar',
-        data: {
-          labels: ['사전 이해도', '사후 이해도'],
-          datasets: [{
-            label: '이해도 점수',
-            data: [0, 0],
-            backgroundColor: ['#94a3b8', '#10b981'],
-            borderRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: { y: { min: 0, max: 5, ticks: { stepSize: 1 } } },
-          plugins: { legend: { display: false } }
-        }
-      });
-    }
+  // settings
+  $('#btn-settings').addEventListener('click', ()=>{ $('#cfg-key').value = localStorage.getItem('UPSTAGE_API_KEY')||''; $('#scrim').classList.add('open'); });
+  $('#cfg-close').addEventListener('click', ()=> $('#scrim').classList.remove('open'));
+  $('#cfg-save').addEventListener('click', ()=>{
+    const k = $('#cfg-key').value.trim();
+    if (k) localStorage.setItem('UPSTAGE_API_KEY', k); else localStorage.removeItem('UPSTAGE_API_KEY');
+    $('#scrim').classList.remove('open');
+  });
+  $('#cfg-clear').addEventListener('click', ()=>{ localStorage.removeItem('UPSTAGE_API_KEY'); $('#cfg-key').value=''; });
+  $('#scrim').addEventListener('click', e=>{ if(e.target === $('#scrim')) $('#scrim').classList.remove('open'); });
 
-    function updateCharts() {
-      const userMsgs = state.messages.filter(m => m.role === 'user');
-      const learnerDirected = userMsgs.filter(m => m.delegationType === 'learner_directed').length;
-      const aiDelegated = userMsgs.length - learnerDirected;
+  // resume
+  if (S.learner.nickname && S.screen && S.screen !== 'entry'){
+    if (S.screen === 'setup') setupStep = S.ctx.code ? 2 : 1;
+    show(S.screen);
+  } else {
+    show('entry');
+  }
+}
+function sendChat(){
+  const el = $('#chat-input'); const v = el.value.trim();
+  if (!v || busy) return;
+  const delegate = $('#chk-delegate').checked;
+  el.value = ''; $('#chk-delegate').checked = false;
+  pushMe(v, delegate);
+  aiTurn(delegate
+    ? '학습자가 답을 맡기려는 질문을 했다. 바로 정답을 주지 말고, 스스로 접근하도록 힌트/되묻기 1개로 응답한다.'
+    : '학습자의 생각에 반응하고, 다음 사고를 끌어내는 발문 1개를 던진다.');
+}
 
-      if (chartDelInstance) {
-        chartDelInstance.data.datasets[0].data = [learnerDirected, aiDelegated];
-        chartDelInstance.update();
-      }
-    }
-
-    function updateScoreChart() {
-      if (chartScoreInstance) {
-        chartScoreInstance.data.datasets[0].data = [
-          state.context.priorScore || 0,
-          state.context.postScore || 0
-        ];
-        chartScoreInstance.update();
-      }
-    }
-
-    function anonymize(str) {
-      return str
-        .replace(/01[016789]-?\d{3,4}-?\d{4}/g, '[전화번호 보호]')
-        .replace(/[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g, '[이메일 보호]')
-        .replace(/\d{6}-[1-4]\d{6}/g, '[주민번호 보호]');
-    }
-
-    function exportSessionJSON() {
-      const data = {
-        metadata: {
-          system: "초중고 메타인지 & 인간-AI 성찰 챗봇 시스템",
-          user_nickname: state.user.nickname,
-          user_grade: state.user.grade,
-          user_subject: state.user.subject,
-          achievement_standard: state.user.standard,
-          principles: "13대 설계원리 완벽 구현 (성취기준 연동 및 대화 종결 후 성찰 분리)",
-          exported_at: new Date().toISOString()
-        },
-        messages: state.messages,
-        context: state.context,
-        scaffolding: state.scaffolding,
-        current_strategy: state.currentStrategy,
-        strategy_change_log: state.strategyChangeLog
-      };
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `metacognition_${state.user.nickname}_${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function toggleConfigModal() {
-      document.getElementById('config-modal').classList.toggle('hidden');
-    }
-
-    function saveConfigModal() {
-      const key = document.getElementById('cfg-api-key').value.trim();
-      const model = document.getElementById('cfg-model').value.trim();
-      if (key) {
-        state.apiKey = key;
-        localStorage.setItem("UPSTAGE_API_KEY", key);
-      }
-      if (model) {
-        state.model = model;
-        localStorage.setItem("UPSTAGE_MODEL", model);
-      }
-      toggleConfigModal();
-      alert("API 설정이 저장되었습니다!");
-    }
-
-    function clearConfigKey() {
-      state.apiKey = "";
-      localStorage.removeItem("UPSTAGE_API_KEY");
-      document.getElementById('cfg-api-key').value = "";
-      alert("개인 API 키를 삭제했습니다. 이제부터 안전한 서버 프록시(/api/chat)를 통해 호출됩니다.");
-    }
-
-    function escapeHTML(str) {
-      return str.replace(/[&<>'"]/g, tag => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-      }[tag] || tag));
-    }
-  </script>
+document.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>
