@@ -432,6 +432,7 @@
       </div>
       <div class="stream" id="stream"></div>
       <div class="compose">
+        <button class="stuck" id="btn-prep-next" hidden style="border-color:var(--accent);color:var(--accent-ink)">✅ 이 정도면 됐어요 · 다음으로 →</button>
         <button class="stuck" id="btn-stuck" hidden>🧭 막혔어요 (같이 점검해 주세요)</button>
         <div class="row">
           <input class="input" id="chat-input" placeholder="편하게 말해도 돼요. 내 생각이나 예상을 먼저 적어 보세요." autocomplete="off" />
@@ -468,6 +469,10 @@
           <div class="metric"><span>내가 생각해서 물은 것</span><b id="m-self">0</b></div>
           <div class="metric"><span>AI에게 답을 맡긴 것</span><b id="m-ai">0</b></div>
         </div>
+      </div>
+      <div>
+        <h4 style="font-size:13px;font-weight:800;margin-bottom:10px">내가 "다른 생각"으로 남긴 코멘트</h4>
+        <div id="reflect-comments" class="stack" style="gap:8px"></div>
       </div>
       <div>
         <label class="field-label" for="in-reflect">돌아보며 적기 — 다음엔 어떻게 물어보면 더 좋을까요?</label>
@@ -826,7 +831,7 @@ function startSession(){
     strategy:null, strategyLabel:null,
     support: (account().sessions.slice(-1)[0] || {}).nextSupport || 'high',
     roleSplit:40, acceptStreak:0, stuckCount:0,
-    phase:'prep', prepStep:0, awaitPick:null,
+    phase:'prep', prepStep:'init', awaitPick:null,
     turns:[],
     reflect:{ note:'', tags:{} },
     residual:{ started:false, near:null, far:null, ans:{}, result:null, judge:null, comment:'', nextSupport:null }
@@ -851,6 +856,12 @@ function enterChat(){
 function paintSupport(){ $('#support-text').textContent = SUPPORT_LABEL[session.support]; $('#support-fill').style.width = SUPPORT_PCT[session.support]+'%'; }
 function paintPhase(){
   const p = $('#phase-pill'); p.textContent = PHASES[session.phase]; p.classList.toggle('explore', session.phase!=='prep');
+  const inPrepDialog = session.phase==='prep' && (session.prepStep==='prior' || session.prepStep==='meta');
+  const bn = $('#btn-prep-next');
+  bn.hidden = !inPrepDialog;
+  bn.textContent = session.prepStep==='prior'
+    ? '✅ 지금 아는 것 이야기 충분해요 · 다음으로 →'
+    : '✅ 스스로 점검 충분해요 · 다음으로 →';
   $('#btn-stuck').hidden = session.phase!=='explore';
   $('#delegate-wrap').hidden = session.phase!=='explore';
   $('#chat-finish').hidden = session.phase==='prep';
@@ -871,7 +882,15 @@ function renderStream(){
         <button data-v="accept" class="${j==='accept'?'on':''}">좋아요</button>
         <button data-v="hold" class="${j==='hold'?'on':''}">잘 모르겠어요</button>
         <button data-v="comment" class="${j==='comment'?'on':''}">다른 생각</button>
-        ${j==='comment'?`<textarea class="input textarea cmt" data-id="${t.id}" placeholder="이 말에 대한 내 생각을 적어요">${esc(t.comment||'')}</textarea>`:''}
+        ${j==='comment' ? (t.commentSaved ? `
+          <div class="cmt" style="width:100%;margin-top:8px;background:var(--accent-wash);border:1px solid #cdeadd;border-radius:9px;padding:9px 11px">
+            <div style="font-size:12.5px;color:var(--accent-ink)"><b>내 코멘트:</b> ${esc(t.comment)}</div>
+            <button class="btn btn-sm cmt-edit" data-id="${t.id}" style="margin-top:6px;padding:3px 10px">고치기</button>
+          </div>` : `
+          <div style="width:100%;margin-top:8px">
+            <textarea class="input textarea cmt" data-id="${t.id}" placeholder="이 말에 대한 내 생각을 적어요">${esc(t.comment||'')}</textarea>
+            <div style="text-align:right;margin-top:6px"><button class="btn btn-sm btn-primary cmt-save" data-id="${t.id}">코멘트 저장하기</button></div>
+          </div>`) : ''}
       </div>`;
       if(t.kind==='prior-pick') extra += priorPickHTML();
       if(t.kind==='strategy-pick') extra += strategyPickHTML();
@@ -896,26 +915,25 @@ function strategyPickHTML(){
   ).join('') + `</div>`;
 }
 
-/* --- prep script: greet → goal → prior → metacog → strategy --- */
-async function advancePrep(){
-  const step = session.prepStep;
-  if(step===0){
-    session.prepStep=1;
-    const g = session.goal ? `목표를 "${session.goal}"(으)로 잡았구나. 좋아.` : '';
-    await ai(`너는 대한민국 2022 개정 교육과정 성취기준 기반 메타인지 학습 튜터다. 학습자에게 친근한 반말로 인사하고, 오늘 다룰 성취기준 "${session.ctx.std}"를 한 문장으로 쉽게 풀어 말해줘. ${g} 그다음 ${session.goal?'가볍게 각오를 물어봐':'"오늘 이걸로 뭘 할 수 있게 되고 싶어?"라고 목표를 물어봐'}. 질문은 1개.`);
-  } else if(step===1){
-    session.prepStep=2;
-    await ai(`학습자의 답을 짧게 받아주고, [사전지식 활성화] "이 주제에 대해 지금 아는 것이나 관련된 일상 경험을 편하게 말해줄래?"라고 물어봐. 질문은 1개.`, 'prior-wait');
-  } else if(step===2){
-    session.prepStep=3;
-    await ai(`학습자의 사전지식 답변에 공감하고, 이해도를 아래 1~5 버튼으로 눌러 달라고 한 문장으로 안내해줘.`, 'prior-pick');
-  } else if(step===3){
-    session.prepStep=4;
-    await ai(`[메타인지 점검] 세 가지를 한 번에, 짧고 자연스럽게 물어봐: (1) 이 주제에서 이미 이해하고 있는 건? (2) 나한테 잘 맞는 공부법은? (3) 이건 내가 아는 다른 무엇과 연결돼? 목록처럼 딱딱하지 않게, 한 덩어리 질문으로.`, 'meta-wait');
-  } else if(step===4){
-    session.prepStep=5;
-    session.phase='explore'; paintPhase();
-    await ai(`학습자의 답변을 존중하며 짧게 받아주고, "이제 본격적으로 알아보자. 아래에서 오늘 쓸 공부 방법을 하나 골라봐."라고 안내해줘. '인지전략' 같은 어려운 말은 쓰지 마.`, 'strategy-pick');
+/* --- 준비 대화: 각 점검(사전지식·스스로 점검)은 여러 턴 이어지고,
+       학습자가 [다음으로] 버튼을 눌러야 다음 단계로 넘어간다. --- */
+async function advancePrep(){   // 최초 인사만 담당
+  session.prepStep = 'greet';
+  paintPhase();
+  const g = session.goal ? `목표를 "${session.goal}"(으)로 잡았구나. 좋아.` : '';
+  await ai(`너는 초·중·고 학생과 함께 공부하는 학습 도우미다. 친근한 반말로 인사하고, 오늘 배울 내용 "${session.ctx.std}"를 초등학생도 알아들을 만큼 쉬운 한 문장으로 풀어 말해줘. ${g} 그다음 ${session.goal?'가볍게 각오를 물어봐':'"오늘 이걸로 뭘 할 수 있게 되고 싶어?"라고 목표를 물어봐'}. 질문은 1개.`);
+}
+// 학습자가 [다음으로]를 눌렀을 때
+async function prepNext(){
+  if(busy || session.phase!=='prep') return;
+  if(session.prepStep==='prior'){
+    if(!(session.prior.note||'').trim()){ modal('안내','먼저 지금 아는 것이나 관련된 경험을 한 번 이야기해 볼까요?'); return; }
+    session.prepStep='priorscore'; paintPhase();
+    await ai(`좋아, 잘 이야기했어. 그럼 지금 이 주제를 얼마나 이해했다고 느끼는지 아래 1~5 버튼으로 눌러줘. (아직 다음 단계로 넘어가지 마.)`, 'prior-pick');
+  } else if(session.prepStep==='meta'){
+    if(!(session.meta.raw||'').trim()){ modal('안내','스스로 점검하는 이야기를 조금 더 나눠 볼까요?'); return; }
+    session.prepStep='ready'; session.phase='explore'; paintPhase();
+    await ai(`학습자가 스스로 점검한 내용을 존중하며 두세 문장으로 짧게 정리해주고, 이어서 "이제 본격적으로 알아보자. 아래에서 오늘 쓸 공부 방법을 하나 골라봐."라고 안내해줘. 어려운 말은 쓰지 마.`, 'strategy-pick');
   }
 }
 
@@ -963,14 +981,31 @@ function sendChat(){
   el.value=''; $('#chk-delegate').checked=false;
   pushMe(v, delegate);
 
-  // prep phase: capture then advance the script
+  // 준비 대화: 단계별로 여러 턴 이어짐. [다음으로] 버튼으로만 단계 전환.
   if(session.phase==='prep'){
-    const last = session.turns.filter(t=>t.role==='ai').slice(-1)[0];
-    if(session.prepStep===2 && !session.goal){ session.goal = v.slice(0,120); }
-    if(session.prepStep===3){ session.prior.note = v; advancePrep(); return; }
-    if(session.prepStep===5){ session.meta.raw = v; advancePrep(); return; }
-    // steps 1,2 -> just advance
-    advancePrep(); return;
+    const step = session.prepStep;
+    if(step==='greet'){
+      if(!session.goal) session.goal = v.slice(0,120);
+      session.prepStep='prior'; paintPhase();
+      ai(`학습자가 목표를 말했다. 한 문장으로 격려하고, [지금 아는 것 확인하기] "이 주제에 대해 지금 아는 것이나 관련된 경험을 편하게 말해줄래?"라고 물어봐. 질문 1개.`);
+      return;
+    }
+    if(step==='prior'){
+      session.prior.note = (session.prior.note ? session.prior.note+' / ' : '') + v;
+      ai(`지금은 [지금 아는 것 확인하기] 단계이고 여러 턴 이어진다. 학습자의 답에 반응하고, 아직 얕거나 더 끌어낼 여지가 있으면 그 주제 안에서 더 구체적으로 파고드는 후속 질문 1개를 던져. 절대로 다음 단계(이해도 점수, 공부 방법 고르기 등)로 먼저 넘어가지 마. 학습자가 충분하다고 느끼면 화면의 [다음으로] 버튼을 누른다. 질문 1개.`);
+      return;
+    }
+    if(step==='priorscore'){
+      session.prior.note = (session.prior.note ? session.prior.note+' / ' : '') + v;
+      ai(`짧게 반응만 하고, 아래 1~5 버튼으로 지금 이해한 정도를 눌러 달라고 한 문장으로 안내해. 다음 단계로 넘어가지 마.`, 'prior-pick');
+      return;
+    }
+    if(step==='meta'){
+      session.meta.raw = (session.meta.raw ? session.meta.raw+' / ' : '') + v;
+      ai(`지금은 [스스로 점검하기] 단계이고 여러 턴 이어진다. 아래 세 가지를 한 번에 다 묻지 말고 한 턴에 하나씩만 자연스럽게 물어: (1) 이 주제에서 이미 이해하고 있다고 느끼는 부분 (2) 나한테 잘 맞는 공부법 (3) 이건 내가 아는 다른 무엇과 연결되는지. 학습자의 답에 반응하며 아직 안 물은 것을 이어서 물어. 세 가지를 다 짚었으면 "이 정도면 준비된 것 같아, 아래 [다음으로]를 눌러도 좋아"라고만 안내하고 절대 공부 방법 고르기로 먼저 넘어가지 마. 한 턴에 질문 1개.`);
+      return;
+    }
+    return;
   }
   // explore
   ai(delegate
@@ -1012,6 +1047,14 @@ function enterReflect(){
     data:{ labels:['내가 생각한 것','AI에게 맡긴 것'], datasets:[{ data:[self,ai_], backgroundColor:['#12a05f','#f0a13a'], borderWidth:0 }] },
     options:{ plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, boxWidth:10 } } }, cutout:'62%' }
   });
+  const cmts = session.turns.filter(t=>t.role==='ai' && t.judge==='comment' && (t.comment||'').trim());
+  $('#reflect-comments').innerHTML = cmts.length
+    ? cmts.map(t=>`<div class="box" style="padding:12px 14px">
+        <div class="hint" style="margin-bottom:6px">AI가 한 말: ${esc(trim(t.text,90))}</div>
+        <div style="font-size:13px;color:var(--ink)"><b>내 다른 생각:</b> ${esc(t.comment)}</div>
+      </div>`).join('')
+    : '<p class="hint">아직 남긴 코멘트가 없어요. 대화 중 AI 말풍선 아래 [다른 생각]을 눌러 남길 수 있어요.</p>';
+
   $('#in-reflect').value = session.reflect.note || '';
   $('#residual-cue').hidden = true;
 }
@@ -1200,14 +1243,36 @@ function init(){
   });
   $('#stream').addEventListener('click', e=>{
     const pr = e.target.closest('[data-pick="prior"] .chip');
-    if(pr){ session.prior.score = +pr.dataset.n; renderStream(); advancePrep(); return; }
+    if(pr){
+      session.prior.score = +pr.dataset.n;
+      if(session.prepStep==='priorscore'){
+        session.prepStep='meta'; renderStream(); paintPhase();
+        ai(`이해한 정도 잘 알려줬어. 이제 스스로 점검을 해보자. 먼저 한 가지만 물어봐: "이 주제에서 이미 이해하고 있다고 느끼는 부분이 뭐야?" (나머지 두 가지는 다음 턴에 이어서 물을 거야.) 질문 1개.`);
+      } else renderStream();
+      return;
+    }
     const stc = e.target.closest('[data-pick="strategy"] .chip');
     if(stc){
       session.strategy = stc.dataset.strat;
       session.strategyLabel = STRATS.find(s=>s.id===session.strategy).label;
       renderStream();
-      pushMe(`"${session.strategyLabel}" 전략으로 해볼게.`, false);
+      pushMe(`"${session.strategyLabel}" 방법으로 해볼게.`, false);
       ai(`학습자가 공부 방법 "${session.strategyLabel}"을(를) 골랐다. 그 방법에 맞춰 오늘 배울 내용에 대한 첫 질문을 1개 던진다. 쉬운 말로.`);
+      return;
+    }
+    const cs = e.target.closest('.cmt-save');
+    if(cs){
+      const t = session.turns.find(x=>x.id===cs.dataset.id); if(!t) return;
+      const ta = cs.closest('.judge')?.querySelector('textarea.cmt');
+      t.comment = (ta ? ta.value : (t.comment||'')).trim();
+      t.commentSaved = !!t.comment;
+      renderStream();
+      return;
+    }
+    const ce = e.target.closest('.cmt-edit');
+    if(ce){
+      const t = session.turns.find(x=>x.id===ce.dataset.id); if(!t) return;
+      t.commentSaved = false; renderStream();
       return;
     }
     const jb = e.target.closest('.judge button');
@@ -1216,6 +1281,7 @@ function init(){
       const t = session.turns.find(x=>x.id===id); if(!t) return;
       const v = jb.dataset.v;
       t.judge = (t.judge===v) ? null : v;
+      if(t.judge!=='comment'){ t.commentSaved = false; }
       if(t.judge==='accept'){ session.acceptStreak++; if(session.acceptStreak>=2){ session.acceptStreak=0; renderStream(); fade(); return; } }
       else session.acceptStreak = 0;
       renderStream();
@@ -1223,8 +1289,9 @@ function init(){
   });
   $('#stream').addEventListener('input', e=>{
     const ta = e.target.closest('textarea.cmt');
-    if(ta){ const t = session.turns.find(x=>x.id===ta.dataset.id); if(t) t.comment = ta.value; }
+    if(ta){ const t = session.turns.find(x=>x.id===ta.dataset.id); if(t) t.comment = ta.value; } // 저장 전 초안 유지
   });
+  $('#btn-prep-next').addEventListener('click', prepNext);
   $('#chat-finish').addEventListener('click', ()=> show('reflect'));
 
   $('#timeline').addEventListener('click', e=>{
