@@ -192,6 +192,14 @@
   .msg.me .bubble{background:var(--primary);color:#fff}
   .msg.note{max-width:100%;justify-content:center}
   .msg.note .bubble{background:var(--info-wash);border:1px solid #dbe4ff;color:#1e3a8a;font-size:12px;font-weight:600;text-align:center;border-radius:999px;padding:7px 15px}
+  /* 원리7: 메타인지 진단 결과를 대화 안에서 보이는 카드로 노출(계산만 하고 안 보여주면 진단이 아니다) */
+  .meta-score-card{max-width:360px;margin:0 auto;background:var(--teal-wash);border:1px solid #b8ece6;border-radius:14px;padding:14px 16px}
+  .msc-title{font-size:11px;font-weight:800;color:var(--teal-ink);letter-spacing:.02em;margin-bottom:9px}
+  .msc-row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--ink-2);padding:4px 0}
+  .msc-row .bar{flex:1;height:7px;background:#fff;border-radius:999px;overflow:hidden;margin:0 9px}
+  .msc-row .bar>i{display:block;height:100%;background:var(--teal);border-radius:999px}
+  .msc-row b{color:var(--teal-ink);width:34px;text-align:right;flex:none}
+  .msc-note{font-size:12px;color:var(--ink);margin-top:9px;padding-top:9px;border-top:1px dashed #b8ece6;line-height:1.5}
   .inline-pick{margin-top:10px}
   .compose{border-top:1px solid var(--line);padding:13px 15px;background:var(--surface-2);display:flex;flex-direction:column;gap:9px}
   .compose .row{display:flex;gap:10px}
@@ -978,7 +986,7 @@ function renderHome(){
   // 스스로 점검하며 답한 내용
   const metas = S.filter(s=>s.meta && (s.meta.raw||s.meta.u));
   $('#agg-meta').innerHTML = metas.length
-    ? metas.slice().reverse().map(s=>`<div class="meta-card"><div class="d">🗓️ ${s.startedAt.slice(0,10)} · ${SUBJECT_EMOJI[s.ctx.subject]||'📘'} ${esc(trim(s.ctx.std,36))}</div><div class="txt">${esc(s.meta.raw || [s.meta.u,s.meta.s,s.meta.c].filter(Boolean).join(' / '))}</div></div>`).join('')
+    ? metas.slice().reverse().map(s=>`<div class="meta-card"><div class="d">🗓️ ${s.startedAt.slice(0,10)} · ${SUBJECT_EMOJI[s.ctx.subject]||'📘'} ${esc(trim(s.ctx.std,36))}${s.meta.score!=null?` · 진단 ${s.meta.score}점`:''}</div><div class="txt">${esc(s.meta.raw || [s.meta.u,s.meta.s,s.meta.c].filter(Boolean).join(' / '))}</div></div>`).join('')
     : emptyState('🧠', '아직 없어요');
 
   // 지난 공부 기록
@@ -1168,13 +1176,32 @@ function paintProcessBar(){
   }).join('');
 }
 function pushNote(text){ session.turns.push({ id:uid(), role:'note', text }); renderStream(); }
+function pushMetaScoreCard(){
+  const md = session.meta.scoreDetail; if(!md) return;
+  session.turns.push({ id:uid(), role:'note', kind:'meta-score', text:'', meta:{ ...md, feedback:session.meta.feedback } });
+  renderStream();
+}
 function pushMe(text, delegate){ session.turns.push({ id:uid(), role:'me', text, phase:session.phase, delegate:!!delegate, initiative: delegate?'ai':'self' }); renderStream(); }
 function pushAi(text, kind){ session.turns.push({ id:uid(), role:'ai', text, phase:session.phase, kind:kind||null, support:session.support, judge:null, comment:'' }); renderStream(); }
 
 function renderStream(){
   const box = $('#stream'); box.innerHTML='';
   session.turns.forEach(t=>{
-    if(t.role==='note'){ box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="bubble">${esc(t.text)}</div></div>`); return; }
+    if(t.role==='note'){
+      if(t.kind==='meta-score' && t.meta){
+        const row = (label,val)=>`<div class="msc-row"><span>${label}</span><span class="bar"><i style="width:${val}%"></i></span><b>${val}점</b></div>`;
+        box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card">
+          <div class="msc-title">🧠 스스로 점검 결과 (참고용 · 맞다·틀리다가 아니에요)</div>
+          ${row('이해질문', t.meta.understand)}
+          ${row('전략질문', t.meta.strategy)}
+          ${row('연결질문', t.meta.connect)}
+          ${t.meta.feedback ? `<div class="msc-note">${esc(t.meta.feedback)}</div>` : ''}
+        </div></div>`);
+      } else {
+        box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="bubble">${esc(t.text)}</div></div>`);
+      }
+      return;
+    }
     const mine = t.role==='me';
     let extra='';
     if(!mine){
@@ -1314,7 +1341,8 @@ async function prepNext(){
     // explore로 넘어가는 시점은 이유를 답한 직후(sendChat의 'reason' 단계)로 미룬다.
     session.prepStep='ready'; paintPhase();
     await gradeMeta(); // 원리7 타당도: 서술 답변을 루브릭으로 채점해 '메타인지 지식 점수'를 남긴다
-    await ai(`학습자가 스스로 점검한 내용을 존중하며 두세 문장으로 짧게 정리해주고, 이어서 "이제 본격적으로 알아보자. 아래에서 오늘 쓸 공부 방법을 하나 골라봐."라고 안내해줘. 어려운 말은 쓰지 마.`, 'strategy-pick');
+    pushMetaScoreCard(); // 계산만 하고 안 보여주면 진단이 아니다 — 대화 흐름 안에 카드로 노출한다
+    await ai(`바로 위에 뜬 "스스로 점검 결과" 카드를 짧게 언급하며 "너가 보기에도 이 결과가 맞는 것 같아?"라고만 가볍게 물어봐(점수가 맞다 틀리다는 네가 정하지 마, 학습자가 스스로 판단하게). 그런 다음 이어서 "이제 본격적으로 알아보자. 아래에서 오늘 쓸 공부 방법을 하나 골라봐."라고 안내해줘. 어려운 말은 쓰지 마.`, 'strategy-pick');
   }
 }
 
