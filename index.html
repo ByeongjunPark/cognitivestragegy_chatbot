@@ -201,6 +201,16 @@
   .msc-row b{color:var(--teal-ink);width:34px;text-align:right;flex:none}
   .msc-note{font-size:12px;color:var(--ink);margin-top:9px;padding-top:9px;border-top:1px dashed #b8ece6;line-height:1.5}
   .inline-pick{margin-top:10px}
+  /* 원리8: 인지전략 선택을 구체적으로 — 라벨 하나짜리 칩 대신, 하위 실행 팁이 보이는 카드 */
+  .strat-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px;max-width:640px}
+  .strat-card{text-align:left;border:1px solid var(--line-strong);background:#fff;border-radius:13px;padding:12px 13px;transition:.14s}
+  .strat-card:hover{border-color:var(--accent);background:var(--surface-2)}
+  .strat-card.is-selected{border-color:var(--accent);background:var(--accent-wash);box-shadow:0 0 0 3px var(--accent-wash)}
+  .strat-card .sc-head{font-size:13.5px;font-weight:800;color:var(--ink)}
+  .strat-card .sc-desc{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .strat-card .sc-tips{list-style:none;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:4px}
+  .strat-card .sc-tips li{font-size:11px;color:var(--ink-2);line-height:1.4;padding-left:12px;position:relative}
+  .strat-card .sc-tips li::before{content:"·";position:absolute;left:0;color:var(--accent)}
   .compose{border-top:1px solid var(--line);padding:13px 15px;background:var(--surface-2);display:flex;flex-direction:column;gap:9px}
   .compose .row{display:flex;gap:10px}
   .compose .input{background:#fff}
@@ -729,19 +739,26 @@ const PICS = ['🍎','🍌','🍇','🍓','🍉','🥕','🐶','🐱','🐰','�
 /* 공부 방법(인지전략)마다: 대화 중 명시적으로 유도할 동사(verb), 그리고 줄글로 표현하기 힘든
    결과물을 실제 표/마인드맵/비교/사슬 어포던스로 뽑아낼 수 있는 구조화 산출물(structs)을 함께 정의한다. */
 const STRATS = [
-  { id:'think-aloud', emoji:'🗣️', label:'생각 말하기', desc:'내 생각을 소리 내어 말해요', verb:'네 생각과 예상을 그대로 소리 내어 말해보도록', structs:[] },
-  { id:'example',      emoji:'📇', label:'예시로 알기', desc:'예를 들어 달라고 해요', verb:'구체적인 예시를 스스로 들어보도록', structs:[
-    { type:'table', label:'📇 예시들 표로 모으기' }
-  ] },
-  { id:'refute',       emoji:'⚖️', label:'따져보기',   desc:'내 답이 틀린 데는 없는지 찾아요', verb:'자기 답의 허점이나 반례를 스스로 찾아보도록', structs:[
-    { type:'compare', label:'⚖️ 내 생각 vs 반박 비교하기' }
-  ] },
-  { id:'organize',     emoji:'📊', label:'정리하기',   desc:'표나 그림으로 정리해요', verb:'지금까지 알아낸 것을 표나 마인드맵으로 스스로 정리해보도록', structs:[
-    { type:'table', label:'📊 표로 정리하기' }, { type:'mindmap', label:'🧠 마인드맵으로 정리하기' }
-  ] },
-  { id:'check',        emoji:'🔗', label:'이유 찾기',   desc:'왜 그런지 계속 물어요', verb:'원인과 결과를 순서대로 따라가 보도록', structs:[
-    { type:'chain', label:'🔗 원인→결과 순서로 보기' }
-  ] }
+  { id:'think-aloud', emoji:'🗣️', label:'생각 말하기', desc:'내 생각을 소리 내어 말해요',
+    verb:'네 생각과 예상을 그대로 소리 내어 말해보도록',
+    tips:['머릿속 생각을 그대로 입 밖으로 꺼내 말해보기','막히면 "음, 왜냐하면"으로 이어가기','다 말한 뒤 한 문장으로 스스로 요약해보기'],
+    structs:[{ type:'chain', label:'🗣️ 내 생각 흐름 순서대로 정리하기' }] },
+  { id:'example',      emoji:'📇', label:'예시로 알기', desc:'예를 들어 달라고 해요',
+    verb:'구체적인 예시를 스스로 들어보도록',
+    tips:['실생활에서 비슷한 예시 떠올리기','예전에 배운 것과 닮은 예 찾아보기','내가 만든 예시가 맞는지 스스로 확인하기'],
+    structs:[{ type:'table', label:'📇 예시들 표로 모으기' }] },
+  { id:'refute',       emoji:'⚖️', label:'따져보기',   desc:'내 답이 틀린 데는 없는지 찾아요',
+    verb:'자기 답의 허점이나 반례를 스스로 찾아보도록',
+    tips:['내 답이 안 통하는 경우(반례)가 있는지 찾기','다른 사람이라면 뭐라고 반박할지 생각해보기','근거를 하나씩 짚어가며 확인하기'],
+    structs:[{ type:'compare', label:'⚖️ 내 생각 vs 반박 비교하기' }] },
+  { id:'organize',     emoji:'📊', label:'정리하기',   desc:'표나 그림으로 정리해요',
+    verb:'지금까지 알아낸 것을 표나 마인드맵으로 스스로 정리해보도록',
+    tips:['핵심 낱말 뽑아서 표 칸에 채우기','가운데 주제에서 가지치기(마인드맵)','순서·단계대로 요약해보기'],
+    structs:[{ type:'table', label:'📊 표로 정리하기' }, { type:'mindmap', label:'🧠 마인드맵으로 정리하기' }] },
+  { id:'check',        emoji:'🔗', label:'이유 찾기',   desc:'왜 그런지 계속 물어요',
+    verb:'원인과 결과를 순서대로 따라가 보도록',
+    tips:['"왜?"를 스스로 3번 반복해서 물어보기','원인과 결과를 화살표로 이어보기','다른 경우에도 같은 이유가 통하는지 확인하기'],
+    structs:[{ type:'chain', label:'🔗 원인→결과 순서로 보기' }] }
 ];
 const SUPPORT_LABEL = { high:'많이', mid:'보통', low:'조금' };
 const SUPPORT_PCT   = { high:100, mid:60, low:28 };
@@ -765,7 +782,9 @@ const STRUCT_SCHEMAS = {
   compare: { shape:'{"type":"compare","leftTitle":"내 생각","leftText":"…","rightTitle":"따져볼 점","rightText":"…"}',
              ask:s=>`학습자가 방금 말한 생각과, 거기서 따져볼 만한 반례나 다른 관점을 나란히 비교해줘.` },
   chain:   { shape:'{"type":"chain","steps":["1단계","2단계","3단계"]}',
-             ask:s=>`"${s.ctx.std}"에서 다룬 원인과 결과(또는 순서)를 3~5단계의 짧은 사슬로 정리해줘.` }
+             ask:s=> s.strategy==='think-aloud'
+               ? `학습자가 지금까지 말로 풀어낸 생각의 흐름을 학습자가 실제로 말한 순서 그대로 3~5단계 사슬로 정리해줘(새로운 내용을 지어내지 말 것).`
+               : `"${s.ctx.std}"에서 다룬 원인과 결과(또는 순서)를 3~5단계의 짧은 사슬로 정리해줘.` }
 };
 
 /* 학년은 3·4·5·6·중1·중2·중3·고1을 따로 고르게 하되,
@@ -1024,10 +1043,17 @@ function renderStart(){
   $('#st-role').value = 40; $('#st-role-val').textContent = roleValText(40);
   fillStartSubjects();
 }
+// 과목은 국어·영어·수학·사회·과학 5개만 남긴다. 고1은 원본 데이터 키가
+// "국어(공통)"/"통합사회"처럼 달라서, 화면 표시만 5개 이름으로 맞추고 실제 성취기준
+// 조회에 쓰는 <option value>는 원본 키 그대로 둔다(둘이 달라도 안전하게 동작).
+const SUBJECT_ALLOW = ['국어','영어','수학','사회','과학'];
+const SUBJECT_ALIAS = { '국어(공통)':'국어', '수학(공통)':'수학', '영어(공통)':'영어', '통합사회':'사회', '통합과학':'과학' };
 function fillStartSubjects(){
   const band = bandOf($('#st-band').value);
   const sub = $('#st-subject'); const prev = sub.value; sub.innerHTML='';
-  Object.keys(CURRICULUM_STANDARDS[band]||{}).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=k; sub.appendChild(o); });
+  Object.keys(CURRICULUM_STANDARDS[band]||{})
+    .filter(k => SUBJECT_ALLOW.includes(SUBJECT_ALIAS[k]||k))
+    .forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=SUBJECT_ALIAS[k]||k; sub.appendChild(o); });
   if(prev && [...sub.options].some(o=>o.value===prev)) sub.value = prev;
   fillStartStds();
 }
@@ -1049,7 +1075,8 @@ function syncStartGo(){
   if(stPick){ p.hidden=false; p.innerHTML = `오늘 배울 내용 · <b>${esc(stPick.code)}</b> ${esc(stPick.name)}`; } else p.hidden = true;
 }
 function startSession(){
-  const grade=$('#st-band').value, subj=$('#st-subject').value;
+  const grade=$('#st-band').value, subjKey=$('#st-subject').value;
+  const subj = SUBJECT_ALIAS[subjKey] || subjKey; // 화면·기록엔 항상 5개 이름 중 하나로 표시
   session = {
     id:uid(), startedAt:new Date().toISOString(), endedAt:null,
     ctx:{ grade, band:bandOf(grade), subject:subj, code:stPick.code, std:stPick.name, area:stPick.area||'' },
@@ -1248,8 +1275,12 @@ function priorPickHTML(){
     `</div>`;
 }
 function strategyPickHTML(){
-  return `<div class="inline-pick chips" data-pick="strategy">` + STRATS.map(s=>
-    `<button class="chip ${session.strategy===s.id?'is-selected':''}" data-strat="${s.id}">${s.label}<span style="opacity:.6"> · ${s.desc}</span></button>`
+  return `<div class="inline-pick strat-cards" data-pick="strategy">` + STRATS.map(s=>
+    `<button type="button" class="strat-card ${session.strategy===s.id?'is-selected':''}" data-strat="${s.id}">
+      <div class="sc-head">${s.emoji} ${esc(s.label)}</div>
+      <div class="sc-desc">${esc(s.desc)}</div>
+      <ul class="sc-tips">${s.tips.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>
+    </button>`
   ).join('') + `</div>`;
 }
 
@@ -1451,6 +1482,7 @@ function sysPrompt(instruction){
 `[이번 지시] ${instruction}`
   ].join('\n');
 }
+function hasListDump(s){ return [...String(s).matchAll(/(^|\n)\s*[1-9]\d?\.\s+/g)].length >= 2; }
 async function ai(instruction, kind){
   if(busy) return; busy=true;
   const box=$('#stream');
@@ -1458,7 +1490,18 @@ async function ai(instruction, kind){
   box.scrollTop=box.scrollHeight;
   try{
     const hist = session.turns.filter(t=>t.role!=='note').map(t=>({ role:t.role==='me'?'user':'assistant', content:t.text||'(표/마인드맵 결과)' }));
-    const text = await callLLM([{ role:'system', content:sysPrompt(instruction) }, ...hist].slice(-16));
+    const messages = [{ role:'system', content:sysPrompt(instruction) }, ...hist].slice(-16);
+    let text = await callLLM(messages);
+    // 번호 목록 덩어리(=과업 대행)가 보이면, 사후 필터로 잘라내기 전에 "제대로 다시" 한 번 더 시도한다.
+    // 이렇게 안 하면 대화 흐름상 꼭 필요한 다음 질문(예: 메타인지 첫 질문)까지 통째로 날아가
+    // 학습자에게 엉뚱한 안내가 나가는 문제가 있었다(실사용 관찰).
+    if(hasListDump(text)){
+      try{
+        const retrySys = sysPrompt(instruction + ' (경고: 방금 번호 목록으로 정리해서 대신 알려주려 했다. 그러지 말고, 번호 목록 없이 학습자에게 묻는 질문 딱 1문장만 다시 말하라.)');
+        const retryText = await callLLM([{ role:'system', content:retrySys }, ...hist].slice(-16));
+        if(!hasListDump(retryText)) text = retryText;
+      }catch(e){ /* 재시도 실패 시 원래 text를 그대로 후처리 필터에 맡긴다 */ }
+    }
     $('#pending')?.remove();
     pushAi(capLength(stripTaskDump(stripLeakedParams(stripMarkdown(text)))), kind==='prior-pick' ? 'prior-pick' : (kind==='strategy-pick' ? 'strategy-pick' : null));
     // 탐구 대화 중이면 순환 절차 표시를 "④ 내가 판단해요"로 넘겨, 방금 온 말을 판단하도록 안내한다.
@@ -1501,10 +1544,12 @@ function stripTaskDump(s){
   s = String(s);
   const markers = [...s.matchAll(/(^|\n)\s*[1-9]\d?\.\s+/g)];
   if(markers.length < 2) return s;
+  // ai()에서 이미 한 번 재시도했는데도 여기까지 왔다는 뜻이니, 맥락을 모르는 채로
+  // "정리해볼래?" 같은 특정 전략을 언급하지 말고 최대한 중립적인 문구로 되돌린다.
   let before = s.slice(0, markers[0].index).trim().replace(/[:：]\s*$/, '').trim();
-  if(before.length < 4) return '음, 그건 네가 한번 직접 정리해볼래? 뭐부터 써보고 싶어?';
+  if(before.length < 4) return '음, 그 부분은 네 생각을 먼저 들어볼까?';
   if(!/[.!?요다]$/.test(before)) before += '.';
-  return before + ' 너는 어떻게 정리해볼래?'; // 목록을 대신 만들어주는 대신, 학습자에게 되돌린다
+  return before + ' 너는 어떻게 생각해?';
 }
 // 방어적 후처리 4: 그래도 남은 응답이 너무 길면(여러 문단짜리 설명) 문장 경계에서 잘라
 // 짧은 대화 형태로 되돌린다.
@@ -1594,10 +1639,11 @@ function sendChat(){
   session.cycleNow = kindNow; renderCycleStrip();
   const strat = STRATS.find(s=>s.id===session.strategy);
   const verb = strat ? strat.verb : '스스로 생각해보도록';
+  const tipHint = strat && strat.tips && strat.tips.length ? ` 구체적으로는 예를 들어 "${strat.tips[Math.floor(Math.random()*strat.tips.length)]}"처럼 해보게 유도해.` : '';
   const structHint = strat && strat.structs.length ? ` 표나 마인드맵으로 정리하면 좋겠다 싶으면 "정리해볼까?"처럼 말로 제안만 하고, 직접 표를 그리지는 마(학습자가 버튼으로 요청하면 따로 만들어줄 거야).` : '';
   let instr;
   if(kindNow==='ask') instr = `학습자의 생각에 반응하고, 다음 사고를 끌어내는 소크라테스식 발문 1개를 던진다.`;
-  else if(kindNow==='apply') instr = `학습자의 답을 짧게 받아주고, 지금 고른 방법에 맞게 ${verb} 명시적으로 요청하는 질문 1개를 한다.${structHint}`;
+  else if(kindNow==='apply') instr = `학습자의 답을 짧게 받아주고, 지금 고른 방법에 맞게 ${verb} 명시적으로 요청하는 과업 1개를 낸다. 앞서 사전 진단에서 물었던 것과 똑같은 형태로 재탕하지 말고, 표면 소재(숫자·인물·상황)를 새로 바꾼 더 구체적인 새 상황에 적용해보게 한다(전이).${tipHint}${structHint}`;
   else instr = `학습자가 방금 한 이야기를 스스로 점검하도록 "그렇게 생각한 까닭이 뭐야?" 또는 "다시 봐도 그런 것 같아?" 같은 점검 질문 1개를 던진다.`;
   ai(instr);
 }
@@ -1851,7 +1897,7 @@ function init(){
       } else renderStream();
       return;
     }
-    const stc = e.target.closest('[data-pick="strategy"] .chip');
+    const stc = e.target.closest('[data-pick="strategy"] .strat-card');
     if(stc){
       session.strategy = stc.dataset.strat;
       session.strategyLabel = STRATS.find(s=>s.id===session.strategy).label;
