@@ -499,7 +499,7 @@
       </div>
       <hr style="border:none;border-top:1px solid var(--line)" />
       <div>
-        <label class="field-label">시작할 때 AI 도움 정도 <span style="color:var(--muted);font-weight:500">(대화 중에는 못 바꾸고, 잘 이해할수록 자동으로 줄어들어요)</span></label>
+        <label class="field-label">① 시작할 때 AI 힌트 크기 <span style="color:var(--muted);font-weight:500">(얼마나 자세히 알려줄지 — 대화 중엔 못 바꾸고, 잘 이해할수록 자동으로 줄어들어요)</span></label>
         <div class="choices" id="st-support" style="grid-template-columns:repeat(3,1fr)">
           <button class="choice" data-v="high">많이<small>구체적인 힌트</small></button>
           <button class="choice" data-v="mid">보통<small>방향만 살짝</small></button>
@@ -507,9 +507,9 @@
         </div>
       </div>
       <div>
-        <label class="field-label" style="margin-bottom:6px">AI가 얼마나 고쳐줄까요?</label>
+        <label class="field-label" style="margin-bottom:6px">② 오늘 나와 AI의 역할 분담 <span style="color:var(--muted);font-weight:500">(①과는 다른 결정이에요 — 누가 더 많이 할지 정해요. 대화 내내 헤더에 표시돼요)</span></label>
         <input type="range" class="range" id="st-role" min="0" max="100" step="10" value="40" />
-        <div class="range-ends"><span>← 힌트만 살짝</span><span id="st-role-val">힌트 위주 (40)</span><span>답까지 고쳐주기 →</span></div>
+        <div class="range-ends"><span>🙋 내가 주로 할래요</span><span id="st-role-val">힌트 위주로 도와줘요 (40)</span><span>✏️ AI가 첨삭까지 →</span></div>
       </div>
     </div>
     <div class="nav">
@@ -532,8 +532,11 @@
           <span class="phase-pill" id="phase-pill">먼저 이야기</span>
           <span id="chat-std">오늘 배울 내용</span>
         </div>
-        <div style="display:flex;gap:10px;align-items:center">
-          <span class="support-badge" title="처음에 정한 크기에서 시작해서, AI 응답을 '좋아요'로 표시할수록 자동으로 줄어들어요. 대화 중엔 직접 못 바꿔요.">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="support-badge" style="background:var(--purple-wash);border-color:#ddd6fe;color:var(--purple-ink)" title="세션 시작할 때 정한 역할 분담이에요(원리5) — 누가 더 많이 할지. 힌트 크기(원리1)와는 다른 결정이고, 대화 중엔 못 바꿔요.">
+            역할 <span id="role-badge-text">힌트 위주</span>
+          </span>
+          <span class="support-badge" title="세션 시작할 때 정한 힌트 크기예요(원리1) — AI 응답을 '좋아요'로 표시할수록 자동으로 줄어들어요. 대화 중엔 직접 못 바꿔요.">
             AI 도움 <span id="support-text">많이</span>
             <span class="bar"><i id="support-fill" style="width:100%"></i></span>
           </span>
@@ -617,40 +620,24 @@
     <div class="rail">
       <div class="eyebrow">혼자서 풀어보기</div>
       <h1 class="headline">이번엔 AI 없이, 내 힘으로 풀어요</h1>
-      <p class="subhead">여기서는 AI와 이야기할 수 없어요. 풀이 방법은 비슷하지만 내용만 바꾼 문제 두 개를 혼자 풀고, 왜 그렇게 풀었는지 적어요.</p>
+      <p class="subhead">여기서는 AI와 이야기할 수 없어요. 풀이 방법은 비슷하지만 내용만 바꾼 문제 네 개(비슷한 문제 둘, 다르게 바꾼 문제 둘)를 혼자 풀고, 왜 그렇게 풀었는지 적어요. AI가 채점해서, 처음에 봤던 사전 진단 점수와 나란히 비교해요.</p>
     </div>
     <div id="res-gate" class="card stack">
       <div class="callout warn"><b>지금은 AI 도움을 받을 수 없어요.</b> 이야기하며 배운 것이 나에게 얼마나 남았는지 확인하는 순서예요.</div>
       <div class="kv"><span>오늘 배운 내용</span><b id="res-std">-</b></div>
       <div class="kv"><span>이야기할 때 고른 공부 방법</span><b id="res-strat">-</b></div>
-      <button class="btn btn-primary" id="res-start">문제 받기</button>
+      <div class="kv"><span>공부 시작 전 사전 진단 점수</span><b id="res-prescore">-</b></div>
+      <button class="btn btn-primary" id="res-start">문제 받기 (4문항)</button>
     </div>
     <div id="res-quiz" hidden class="stack">
-      <div class="paper">
-        <div class="tab">문제 ① 비슷한 문제 · 푸는 방법은 같고 내용만 달라요</div>
-        <div class="body stack">
-          <p class="prompt" id="q-near">…</p>
-          <div><label class="field-label">내 풀이 / 답</label><textarea class="textarea" id="a-near"></textarea></div>
-          <div><label class="field-label">왜 그렇게 풀었는지 설명 (꼭 적어요)</label><textarea class="textarea" id="e-near" placeholder="맞았는지 틀렸는지는 상관없어요. 어떻게 생각했는지 적어요"></textarea></div>
-          <div><label class="field-label">이 답, 얼마나 자신 있어요?</label><input type="range" class="range" id="c-near" min="0" max="100" step="10" value="50" /><div class="range-val" id="c-near-val">50%</div></div>
-        </div>
-      </div>
-      <div class="paper">
-        <div class="tab">문제 ② 다르게 바꾼 문제 · 같은 개념을 다른 상황에 써 봐요</div>
-        <div class="body stack">
-          <p class="prompt" id="q-far">…</p>
-          <div><label class="field-label">내 풀이 / 답</label><textarea class="textarea" id="a-far"></textarea></div>
-          <div><label class="field-label">왜 그렇게 풀었는지 설명 (꼭 적어요)</label><textarea class="textarea" id="e-far" placeholder="어떻게 생각했는지 적어요"></textarea></div>
-          <div><label class="field-label">이 답, 얼마나 자신 있어요?</label><input type="range" class="range" id="c-far" min="0" max="100" step="10" value="50" /><div class="range-val" id="c-far-val">50%</div></div>
-        </div>
-      </div>
-      <div class="callout warn" id="res-warn" hidden>⚠ 두 문제의 풀이와 설명을 모두 적어야 낼 수 있어요.</div>
+      <div class="stack" id="res-items"></div>
+      <div class="callout warn" id="res-warn" hidden>⚠ 네 문제의 풀이와 설명을 모두 적어야 낼 수 있어요.</div>
       <div class="nav"><span class="filler"></span><button class="btn btn-primary" id="res-submit" disabled>내고 공부 전·후 비교 보기</button></div>
     </div>
     <div id="res-result" hidden class="card stack">
       <h4 style="font-size:15px;font-weight:800">네 가지로 살펴본 결과 (잘했다·못했다 판정은 안 해요)</h4>
       <table class="axis-tbl"><thead><tr><th>무엇을</th><th>이번 결과</th><th>공부할 때와 비교</th></tr></thead><tbody id="axis-body"></tbody></table>
-      <div class="callout">정답을 맞혔는지만 시스템이 정확히 확인해요. 설명을 잘 했는지, 배운 방법을 잘 옮겨 썼는지, 실력이 늘었는지는 <b>내가 스스로 판단할 몫</b>이라 자료만 보여주고 정하지 않아요.</div>
+      <div class="callout">정답 점수(사전·사후 진단)만 시스템이 같은 기준으로 채점해요. 설명을 잘 했는지, 배운 방법을 잘 옮겨 썼는지, 실력이 늘었는지는 <b>내가 스스로 판단할 몫</b>이라 자료만 보여주고 정하지 않아요.</div>
       <div>
         <label class="field-label">이 결과를 보고 — 전보다 나아진 것 같나요?</label>
         <div class="choices" id="res-judge" style="grid-template-columns:repeat(3,1fr)">
@@ -787,6 +774,14 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const uid = () => Math.random().toString(36).slice(2,9);
 const trim = (s,n) => (s && s.length>n) ? s.slice(0,n)+'…' : (s||'');
 const todayStr = () => new Date().toISOString().slice(0,10);
+// 원리3(대화과정의 기록 및 시각화): 서버(Redis)에 영구 저장되기 전에 전화번호·이메일·주민번호
+// 패턴을 비식별화한다. 목표·채팅·되짚기·잔여물 답변 등 모든 자유 서술 입력에 적용한다.
+function anonymize(str){
+  return String(str)
+    .replace(/01[016789]-?\d{3,4}-?\d{4}/g, '[전화번호 보호]')
+    .replace(/[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g, '[이메일 보호]')
+    .replace(/\d{6}-[1-4]\d{6}/g, '[주민번호 보호]');
+}
 
 /* ---------- persistence : 서버(Redis) 전용, localStorage 미사용 ---------- */
 let DB = { accounts:{}, currentUser:null };   // 메모리 캐시일 뿐, 진짜 저장은 서버
@@ -1047,8 +1042,14 @@ function startSession(){
   session = {
     id:uid(), startedAt:new Date().toISOString(), endedAt:null,
     ctx:{ grade, band:bandOf(grade), subject:subj, code:stPick.code, std:stPick.name, area:stPick.area||'' },
-    goal: $('#st-goal').value.trim(),
-    prior:{ score:null, note:'' }, meta:{ raw:'', u:'', s:'', c:'' },
+    goal: anonymize($('#st-goal').value.trim()),
+    // 원리6: 사전 활성화(note, 서술) + 점검 두 갈래 — ①AI 채점 진단(diagQs/diagAnswers/diagScore, 객관)
+    // ②자기 확신(score, 주관·자기효능감). 둘을 나란히 두어야 "얼마나 안다고 느끼는지"와
+    // "실제로 아는지"의 계산(칼리브레이션, 원리7 타당도 참고)을 잴 수 있다.
+    prior:{ score:null, note:'', diagQs:[], diagAnswers:[], diagIndex:0, diagScore:null, diagFeedback:'' },
+    // 원리7: 이해/전략/연결 질문에 대한 서술을 AI가 루브릭으로 채점(score/scoreDetail)해
+    // "메타인지 지식이 있다고 말한 것"과 "실제로 타당하게 알고 있는 것"을 구분한다.
+    meta:{ raw:'', u:'', s:'', c:'', score:null, scoreDetail:null, feedback:'' },
     strategy:null, strategyLabel:null, strategyReason:'',
     // AI 도움 정도는 여기(대화 시작 전)에서만 정한다. 대화 중에는 '좋아요' 판단이 쌓일 때만 자동으로 줄어든다.
     support: stSupport || 'high',
@@ -1058,7 +1059,9 @@ function startSession(){
     cycleIdx:0, cycleNow:'ask',
     turns:[],
     reflect:{ note:'', tags:{} },
-    residual:{ started:false, near:null, far:null, ans:{}, result:null, judge:null, comment:'', nextSupport:null }
+    // 원리13: 사전 진단(prior.diagScore)과 같은 채점 기준의 사후 진단(items 4문항, postScore)을
+    // 나란히 비교한다 — 이전에는 "자신감(주관)" vs "전이과제 정답(객관)"을 비교해 기준이 달랐다.
+    residual:{ started:false, items:[], result:null, postScore:null, judge:null, comment:'', nextSupport:null }
   };
   show('chat');
 }
@@ -1076,7 +1079,10 @@ function enterChat(){
     advancePrep();
   }
 }
-function paintSupport(){ $('#support-text').textContent = SUPPORT_LABEL[session.support]; $('#support-fill').style.width = SUPPORT_PCT[session.support]+'%'; }
+function paintSupport(){
+  $('#support-text').textContent = SUPPORT_LABEL[session.support]; $('#support-fill').style.width = SUPPORT_PCT[session.support]+'%';
+  $('#role-badge-text').textContent = roleShortLabel(session.roleSplit); // 원리5: 시작할 때 정한 역할 분담을 대화 내내 표시
+}
 function paintPhase(){
   const p = $('#phase-pill'); p.textContent = PHASES[session.phase]; p.classList.toggle('explore', session.phase!=='prep');
   const inPrepDialog = session.phase==='prep' && (session.prepStep==='prior' || session.prepStep==='meta');
@@ -1084,7 +1090,7 @@ function paintPhase(){
   bn.hidden = !inPrepDialog;
   if(session.prepStep==='prior'){
     $('#pn-title').textContent = '지금 아는 것 이야기 충분해요';
-    $('#pn-desc').textContent = '더 나눠도 좋아요. 준비됐으면 눌러서 다음(자신감 점수)으로 가요 — 넘어갈 때는 직접 정해요.';
+    $('#pn-desc').textContent = '더 나눠도 좋아요. 준비됐으면 눌러서 다음(사전 진단 4문항)으로 가요 — 넘어갈 때는 직접 정해요.';
   } else {
     $('#pn-title').textContent = '스스로 점검 충분해요';
     $('#pn-desc').textContent = '더 이야기해도 좋아요. 준비됐으면 눌러서 다음(방법 고르기)으로 가요 — 넘어갈 때는 직접 정해요.';
@@ -1106,14 +1112,15 @@ function paintPhase(){
 const PREP_LABELS = [
   { k:'greet',       t:'① 목표 확인' },
   { k:'prior',       t:'② 아는 것 나누기' },
-  { k:'priorscore',  t:'③ 자신감 점수' },
+  { k:'prediag',     t:'③ 사전 진단(4문항)' },
   { k:'meta',        t:'④ 스스로 점검' },
   { k:'ready',       t:'⑤ 방법 고르기' },
   { k:'reason',      t:'⑥ 이유 말하기' }
 ];
 function renderPrepStrip(){
   const box = $('#prep-strip'); if(!box) return;
-  const cur = session.prepStep==='init' ? 'greet' : session.prepStep;
+  // 'priorscore'(자신감 확인)는 ③사전 진단 하위 절차라 같은 노드로 표시한다.
+  const cur = session.prepStep==='init' ? 'greet' : (session.prepStep==='priorscore' ? 'prediag' : session.prepStep);
   const curIdx = Math.max(0, PREP_LABELS.findIndex(x=>x.k===cur));
   box.innerHTML = PREP_LABELS.map((c,i)=>{
     const cls = i<curIdx ? 'done' : i===curIdx ? 'now' : '';
@@ -1226,7 +1233,7 @@ function saveJudgeModal(){
   const v = chosen ? chosen.dataset.v : null;
   const wasAccept = t.judge==='accept';
   t.judge = v;
-  t.comment = v==='comment' ? $('#judge-comment').value.trim() : '';
+  t.comment = v==='comment' ? anonymize($('#judge-comment').value.trim()) : '';
   closeJudgeModal();
   if(v==='accept' && !wasAccept){
     session.acceptStreak++;
@@ -1299,17 +1306,88 @@ async function prepNext(){
   if(busy || session.phase!=='prep') return;
   if(session.prepStep==='prior'){
     if(!(session.prior.note||'').trim()){ modal('안내','먼저 지금 아는 것이나 관련된 경험을 한 번 이야기해 볼까요?'); return; }
-    session.prepStep='priorscore'; paintPhase();
-    // 원리6-②(점검): 방금 나눈 '내용'과는 다른 걸 묻는다는 걸 분명히 한다 — 아는 내용이 아니라 "정도(자신감)"를 숫자로.
-    // 이 점수는 잔여물 확인(원리13)에서 사후 점수와 비교하는 기준선이 되므로 그 이유도 짧게 알려준다.
-    await ai(`방금 나눠준 이야기를 한 문장으로 짚어주며 존중해줘. 그런 다음 "이제 방금 말한 내용 말고, 전체적으로 이 주제에 얼마나 자신 있는지를 숫자로 표현해볼까? 이 점수는 나중에 얼마나 늘었는지 비교할 때 쓸 거야"라고 알려주고 아래 다섯 개 중 하나를 골라 달라고 안내해. (아직 다음 단계로 넘어가지 마.)`, 'prior-pick');
+    session.prepStep='prediag'; session.prior.diagIndex=0; session.prior.diagAnswers=[]; paintPhase();
+    await startPreDiag();
   } else if(session.prepStep==='meta'){
     if(!(session.meta.raw||'').trim()){ modal('안내','스스로 점검하는 이야기를 조금 더 나눠 볼까요?'); return; }
     // 아직 phase는 'prep'으로 둔다 — 공부 방법을 고르고 그 이유를 말하는 것까지가 준비 단계다(원리8).
     // explore로 넘어가는 시점은 이유를 답한 직후(sendChat의 'reason' 단계)로 미룬다.
     session.prepStep='ready'; paintPhase();
+    await gradeMeta(); // 원리7 타당도: 서술 답변을 루브릭으로 채점해 '메타인지 지식 점수'를 남긴다
     await ai(`학습자가 스스로 점검한 내용을 존중하며 두세 문장으로 짧게 정리해주고, 이어서 "이제 본격적으로 알아보자. 아래에서 오늘 쓸 공부 방법을 하나 골라봐."라고 안내해줘. 어려운 말은 쓰지 마.`, 'strategy-pick');
   }
+}
+
+/* ===== 원리6-② 점검(사전 진단, 4문항): 자기보고("얼마나 안다고 느끼는지")가 아니라
+   AI가 실제 내용을 채점하는 객관 지표를 만든다. 사후(잔여물 확인)의 같은 채점 기준과
+   비교해 "실제로 늘었는지"를 판단할 수 있게 한다. 단답이든 긴 문장이든 형식은 상관없다. ===== */
+async function startPreDiag(){
+  if(busy) return; busy = true;
+  const box=$('#stream');
+  box.insertAdjacentHTML('beforeend', `<div class="msg ai" id="pending"><div class="av">AI</div><div class="bubble"><span class="loading"><i></i><i></i><i></i></span></div></div>`);
+  box.scrollTop = box.scrollHeight;
+  try{
+    const raw = await callLLM([
+      { role:'system', content:'너는 교육과정 성취기준 기반 간단 진단 문항 출제자다. 반드시 순수 JSON만 출력한다.' },
+      { role:'user', content:`성취기준: "${session.ctx.std}" (${session.ctx.grade||session.ctx.band} ${session.ctx.subject})
+학습자가 지금 이 내용을 얼마나 알고 있는지 확인할 개방형 질문 4개를 만들어라. 단답으로 답해도 되고 길게 설명해도 되게, 정답을 몰라도 시도해볼 수 있는 쉬운 말로.
+{"questions":["...","...","...","..."]}` }
+    ]);
+    const j = parseJSON(raw);
+    session.prior.diagQs = (Array.isArray(j.questions) && j.questions.length>=4) ? j.questions.slice(0,4).map(String) : null;
+  }catch(e){ session.prior.diagQs = null; }
+  if(!session.prior.diagQs){
+    session.prior.diagQs = [
+      `"${trim(session.ctx.std,30)}"에서 가장 중요하다고 생각하는 낱말이나 개념 하나를 말해볼까?`,
+      '그 개념을 너만의 말로 짧게 설명해볼래?',
+      '이 내용과 관련된 예를 하나 들어볼 수 있어?',
+      '이 내용이 실제로 왜 중요하거나 쓸모 있다고 생각해?'
+    ];
+  }
+  $('#pending')?.remove();
+  pushAi(stripMarkdown(`짧은 질문 4개로 지금 아는 정도를 살짝 확인해볼게. 정답을 몰라도 괜찮으니 편하게 답해줘 (1/4)\n\n${session.prior.diagQs[0]}`));
+  busy = false;
+}
+async function gradePreDiag(){
+  if(busy) return; busy = true;
+  const box=$('#stream');
+  box.insertAdjacentHTML('beforeend', `<div class="msg ai" id="pending"><div class="av">AI</div><div class="bubble"><span class="loading"><i></i><i></i><i></i></span></div></div>`);
+  box.scrollTop = box.scrollHeight;
+  try{
+    const raw = await callLLM([
+      { role:'system', content:'너는 채점 보조자다. 반드시 순수 JSON만 출력한다. 답이 짧아도 핵심이 맞으면 높게, 길어도 핵심이 없으면 낮게 채점한다.' },
+      { role:'user', content:`성취기준: "${session.ctx.std}"\n` +
+        session.prior.diagQs.map((q,i)=>`질문${i+1}: ${q}\n답${i+1}: ${session.prior.diagAnswers[i]||'(답 없음)'}`).join('\n') +
+        `\n각 답을 0~100점으로 채점하고, 학습자 전체에게 줄 짧은 격려 한 줄을 써라.\n{"scores":[0,0,0,0],"feedback":"..."}` }
+    ]);
+    const j = parseJSON(raw);
+    if(Array.isArray(j.scores) && j.scores.length===4){
+      session.prior.diagScore = Math.round(j.scores.reduce((a,b)=>a+(+b||0),0)/4);
+      session.prior.diagFeedback = String(j.feedback||'');
+    } else throw new Error('shape');
+  }catch(e){
+    session.prior.diagScore = null;
+    session.prior.diagFeedback = '지금 자동 채점을 못 했어요. 그래도 답해준 건 잘 남아 있어요.';
+  }
+  $('#pending')?.remove();
+  session.prepStep = 'priorscore'; paintPhase();
+  pushAi(stripMarkdown(`${session.prior.diagFeedback || '잘 답해줬어!'} 방금 문제들과는 별개로, 지금 전체적으로 이 주제에 얼마나 자신 있는지 아래에서 골라볼래?`), 'prior-pick');
+  busy = false;
+}
+/* ===== 원리7 타당도: 메타인지 서술(이해/전략/연결)을 루브릭으로 채점해 "안다고 말한 것"과
+   "타당하게 아는 것"을 구분한다. 관련 연구의 자기보고식 총점(MAI류)과 달리, 이번 학습 내용에
+   실제로 근거해 개별 채점하므로 그 순간의 이해에 더 밀착된 지표가 된다. ===== */
+async function gradeMeta(){
+  try{
+    const raw = await callLLM([
+      { role:'system', content:'너는 메타인지 지식 평가 보조자다. 반드시 순수 JSON만 출력한다.' },
+      { role:'user', content:`성취기준: "${session.ctx.std}"\n학습자가 스스로 점검하며 나눈 이야기: "${session.meta.raw}"\n다음 세 가지를 각각 0~100점으로 평가해라.\n1) understand: 자신의 이해 상태를 얼마나 정확하게 인식했는지\n2) strategy: 말한 공부 방법이 이 내용에 얼마나 적절한지\n3) connect: 다른 지식·경험과의 연결이 얼마나 타당한지\n{"understand":0,"strategy":0,"connect":0,"note":"학습자에게 줄 한 줄 총평"}` }
+    ]);
+    const j = parseJSON(raw);
+    session.meta.scoreDetail = { understand:+j.understand||0, strategy:+j.strategy||0, connect:+j.connect||0 };
+    session.meta.score = Math.round((session.meta.scoreDetail.understand+session.meta.scoreDetail.strategy+session.meta.scoreDetail.connect)/3);
+    session.meta.feedback = String(j.note||'');
+  }catch(e){ session.meta.score=null; session.meta.scoreDetail=null; session.meta.feedback=''; }
 }
 
 function sysPrompt(instruction){
@@ -1368,7 +1446,7 @@ function fade(){
   pushNote(`AI 도움을 "${SUPPORT_LABEL[session.support]}"(으)로 조금 줄였어요. 잘 이해하고 있는 것 같아서요. [AI 도움 정하기]에서 다시 올릴 수 있어요.`);
 }
 function sendChat(){
-  const el=$('#chat-input'); const v=el.value.trim();
+  const el=$('#chat-input'); const v=anonymize(el.value.trim());
   if(!v || busy) return;
   const delegate = session.phase==='explore' && $('#chk-delegate').checked;
   el.value=''; $('#chk-delegate').checked=false;
@@ -1386,6 +1464,18 @@ function sendChat(){
     if(step==='prior'){
       session.prior.note = (session.prior.note ? session.prior.note+' / ' : '') + v;
       ai(`지금은 [지금 아는 것 확인하기] 단계이고 여러 턴 이어진다. 학습자의 답에 반응하고, 아직 얕거나 더 끌어낼 여지가 있으면 그 주제 안에서 더 구체적으로 파고드는 후속 질문 1개를 던져. 절대로 다음 단계(자신감 점수, 공부 방법 고르기 등)로 먼저 넘어가지 마. 학습자가 충분하다고 느끼면 화면의 [다음으로] 버튼을 누른다. 질문 1개.`);
+      return;
+    }
+    if(step==='prediag'){
+      // 4문항을 순서대로 하나씩 묻고 답을 모은다. 형식(단답/긴 문장)은 상관없다.
+      session.prior.diagAnswers[session.prior.diagIndex] = v;
+      session.prior.diagIndex++;
+      if(session.prior.diagIndex < session.prior.diagQs.length){
+        const n = session.prior.diagIndex;
+        ai(`학습자의 답을 아주 짧게(맞다/틀리다 말하지 말고 "그렇구나" 정도로만) 받아준 다음, 다음 진단 질문을 그대로 물어봐: "${session.prior.diagQs[n]}" 맨 앞에 "(${n+1}/4)"를 붙이고, 질문은 이것 1개만, 다른 말 덧붙이지 마.`);
+      } else {
+        gradePreDiag();
+      }
       return;
     }
     if(step==='priorscore'){
@@ -1473,7 +1563,7 @@ function enterReflect(){
   $('#residual-cue').hidden = true;
 }
 function saveReflectAndFinish(goResidual){
-  session.reflect.note = $('#in-reflect').value.trim();
+  session.reflect.note = anonymize($('#in-reflect').value.trim());
   session.endedAt = new Date().toISOString();
   if(goResidual){ show('residual'); return; }
   commitSession();
@@ -1493,76 +1583,103 @@ function commitSession(){
 function enterResidual(){
   $('#res-std').textContent = `${session.ctx.code} · ${trim(session.ctx.std,44)}`;
   $('#res-strat').textContent = session.strategyLabel || '안 골랐어요';
+  $('#res-prescore').textContent = session.prior.diagScore!=null ? session.prior.diagScore+'점' : '측정 안 됨';
   const done = session.residual.result;
   $('#res-gate').hidden = session.residual.started;
   $('#res-quiz').hidden = !session.residual.started || !!done;
   $('#res-result').hidden = !done;
-  if(session.residual.near){ $('#q-near').textContent = session.residual.near; $('#q-far').textContent = session.residual.far; }
+  if(session.residual.items && session.residual.items.length) renderResidualQuiz();
   if(done) renderResidualResult();
 }
+/* 원리13: 근접전이 2문항 + 원거리전이 2문항 = 4문항. 사전 진단(startPreDiag)과 같은
+   0~100 채점 기준을 써서 "사전 진단 점수 → 사후 진단 점수"를 직접 비교할 수 있게 한다. */
 async function startResidual(){
   session.residual.started = true; enterResidual();
-  $('#q-near').textContent='문제를 만드는 중…'; $('#q-far').textContent='문제를 만드는 중…';
+  $('#res-items').innerHTML = `<p class="hint">문제를 만드는 중…</p>`;
   try{
     const raw = await callLLM([
       { role:'system', content:'너는 교육과정 성취기준 기반 평가 문항 출제자다. 반드시 순수 JSON만 출력한다.' },
       { role:'user', content:`성취기준: "${session.ctx.std}" (${session.ctx.grade||session.ctx.band} · ${session.ctx.subject})
 학습자가 대화에서 쓴 전략: ${session.strategyLabel||'없음'} / 목표: ${session.goal||'-'}
 대화에서 AI가 썼을 힌트 표현은 재사용하지 말고 표면 소재만 바꿔라.
-{"near":"근접 전이(구조 동일, 숫자·소재만 변경)","far":"원거리 전이(같은 개념을 다른 맥락에 적용)"} — 각 2~3문장, 한국어, 정답은 쓰지 말 것` }
+근접 전이(구조 동일, 숫자·소재만 변경) 문제 2개와 원거리 전이(같은 개념을 다른 맥락에 적용) 문제 2개, 총 4개를 만들어라. 정답은 쓰지 말 것.
+{"items":[{"tag":"근접","q":"..."},{"tag":"근접","q":"..."},{"tag":"원거리","q":"..."},{"tag":"원거리","q":"..."}]}` }
     ]);
     const j = parseJSON(raw);
-    if(!j || !j.near || !j.far) throw new Error('shape');
-    session.residual.near = String(j.near); session.residual.far = String(j.far);
+    if(!j || !Array.isArray(j.items) || j.items.length<4) throw new Error('shape');
+    session.residual.items = j.items.slice(0,4).map((it,i)=>({ id:'r'+i, tag: it.tag==='원거리'?'원거리':'근접', q:String(it.q), a:'', e:'', c:50, score:null, correct:null, note:'' }));
   }catch(e){
-    session.residual.near = `"${session.ctx.std}"와 같은 방법을 쓰는 새로운 상황을 하나 떠올려서, 숫자나 내용을 수업과 다르게 바꿔 스스로 답을 구해 보세요.`;
-    session.residual.far  = `같은 개념을 아주 다른 곳(생활 속이나 다른 과목)에 써야 하는 문제를 스스로 만들고 풀어 보세요.`;
+    session.residual.items = [
+      { id:'r0', tag:'근접', q:`"${trim(session.ctx.std,30)}"와 같은 방법을 쓰되 숫자나 소재만 다르게 바꾼 문제를 스스로 떠올려 풀어 보세요.`, a:'', e:'', c:50, score:null, correct:null, note:'' },
+      { id:'r1', tag:'근접', q:`같은 개념을 이번과는 다른 예시로 다시 한 번 설명해 보세요.`, a:'', e:'', c:50, score:null, correct:null, note:'' },
+      { id:'r2', tag:'원거리', q:`같은 개념을 생활 속 다른 상황에 적용해 보세요.`, a:'', e:'', c:50, score:null, correct:null, note:'' },
+      { id:'r3', tag:'원거리', q:`같은 개념을 다른 과목이나 주제와 연결해 설명해 보세요.`, a:'', e:'', c:50, score:null, correct:null, note:'' }
+    ];
   }
   enterResidual();
 }
-function residualValid(){ return ['a-near','e-near','a-far','e-far'].every(id=> $('#'+id).value.trim().length>=2); }
+function renderResidualQuiz(){
+  $('#res-items').innerHTML = session.residual.items.map((it,i)=>`
+    <div class="paper">
+      <div class="tab">문제 ${i+1} · ${it.tag} 전이 ${it.tag==='근접'?'— 푸는 방법은 같고 내용만 달라요':'— 같은 개념을 다른 상황에 써 봐요'}</div>
+      <div class="body stack">
+        <p class="prompt">${esc(it.q)}</p>
+        <div><label class="field-label">내 풀이 / 답</label><textarea class="textarea res-a" data-i="${i}">${esc(it.a)}</textarea></div>
+        <div><label class="field-label">왜 그렇게 풀었는지 설명 (꼭 적어요)</label><textarea class="textarea res-e" data-i="${i}" placeholder="맞았는지 틀렸는지는 상관없어요. 어떻게 생각했는지 적어요">${esc(it.e)}</textarea></div>
+        <div><label class="field-label">이 답, 얼마나 자신 있어요?</label><input type="range" class="range res-c" data-i="${i}" min="0" max="100" step="10" value="${it.c}" /><div class="range-val res-c-val" data-i="${i}">${it.c}%</div></div>
+      </div>
+    </div>
+  `).join('');
+  syncResSubmit();
+}
+function syncResSubmit(){
+  const ok = residualValid();
+  $('#res-submit').disabled = !ok; $('#res-warn').hidden = ok;
+}
+function residualValid(){
+  return session.residual.items.length===4 && session.residual.items.every(it => (it.a||'').trim().length>=2 && (it.e||'').trim().length>=2);
+}
 async function submitResidual(){
-  const ans = {
-    near:{ a:$('#a-near').value.trim(), e:$('#e-near').value.trim(), c:+$('#c-near').value },
-    far:{ a:$('#a-far').value.trim(), e:$('#e-far').value.trim(), c:+$('#c-far').value }
-  };
-  session.residual.ans = ans;
+  session.residual.items.forEach(it=>{ it.a = anonymize((it.a||'').trim()); it.e = anonymize((it.e||'').trim()); });
   $('#res-submit').disabled=true; $('#res-submit').textContent='확인하는 중…';
   let ev;
   try{
     const raw = await callLLM([
-      { role:'system', content:'너는 4축 루브릭 채점 보조자다. 반드시 순수 JSON만 출력한다. "역량 향상됨" 같은 확정 판정 문구는 쓰지 말고 근거만 서술한다.' },
-      { role:'user', content:`성취기준: "${session.ctx.std}"
-[근접전이] 문제:${session.residual.near}
- 답:${ans.near.a}
- 자기설명:${ans.near.e}
-[원거리전이] 문제:${session.residual.far}
- 답:${ans.far.a}
- 자기설명:${ans.far.e}
-{"procedural":{"nearCorrect":true|false,"farCorrect":true|false,"note":"1~2문장"},"selfExplain":{"level":"낮음|보통|높음","note":"1~2문장"},"transfer":{"applied":true|false,"note":"전략을 새 문제에도 스스로 적용했는지"}}` }
+      { role:'system', content:'너는 전이 과제 채점 보조자다. 반드시 순수 JSON만 출력한다. "역량 향상됨" 같은 확정 판정 문구는 쓰지 말고 근거만 서술한다.' },
+      { role:'user', content:`성취기준: "${session.ctx.std}"\n` +
+        session.residual.items.map((it,i)=>`[${i+1}. ${it.tag}전이] 문제:${it.q}\n 답:${it.a}\n 자기설명:${it.e}`).join('\n') +
+        `\n각 문항을 0~100점으로 채점하고(60점 이상이면 correct:true), 자기설명 수준과 배운 방법을 새 문제에도 썼는지를 전체적으로 평가해라.
+{"items":[{"score":0,"correct":true,"note":"1문장"},{"score":0,"correct":true,"note":"1문장"},{"score":0,"correct":true,"note":"1문장"},{"score":0,"correct":true,"note":"1문장"}],"selfExplain":{"level":"낮음|보통|높음","note":"1~2문장"},"transfer":{"applied":true|false,"note":"전략을 새 문제에도 스스로 적용했는지"}}` }
     ]);
     ev = parseJSON(raw);
-    if(!ev || !ev.procedural || !ev.selfExplain || !ev.transfer) throw new Error('shape');
+    if(!ev || !Array.isArray(ev.items) || ev.items.length!==4 || !ev.selfExplain || !ev.transfer) throw new Error('shape');
   }catch(e){
-    ev = { procedural:{nearCorrect:null,farCorrect:null,note:'지금 자동 확인이 안 돼요. 정답 여부는 선생님이 봐 주세요.'},
+    ev = { items: session.residual.items.map(()=>({score:null,correct:null,note:'지금 자동 확인이 안 돼요. 선생님이 봐 주세요.'})),
            selfExplain:{level:'보통',note:'설명은 잘 적었어요. 다만 지금 자동 확인은 못 했어요.'},
            transfer:{applied:null,note:'배운 방법을 옮겨 썼는지는 선생님이 봐 주세요.'} };
   }
+  session.residual.items.forEach((it,i)=>{ const r=ev.items[i]||{}; it.score=(typeof r.score==='number')?r.score:null; it.correct=(typeof r.correct==='boolean')?r.correct:null; it.note=String(r.note||''); });
+  const scores = session.residual.items.map(it=>it.score).filter(s=>s!=null);
+  session.residual.postScore = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : null;
+  // 메타인지 정확도(칼리브레이션): 자신감(0~100 슬라이더)과 실제 정답여부의 오차(Brier 스코어). 낮을수록 자기평가가 정확.
   const brier = (c,conf)=> (typeof c!=='boolean') ? null : Math.pow((conf/100)-(c?1:0),2);
-  const bs = [brier(ev.procedural.nearCorrect, ans.near.c), brier(ev.procedural.farCorrect, ans.far.c)].filter(x=>x!==null);
-  ev.metacog = { brier: bs.length ? bs.reduce((a,b)=>a+b,0)/bs.length : null };
+  const bs = session.residual.items.map(it=>brier(it.correct, it.c)).filter(x=>x!==null);
+  ev.metacogBrier = bs.length ? bs.reduce((a,b)=>a+b,0)/bs.length : null;
   session.residual.result = ev;
   $('#res-submit').textContent='내고 공부 전·후 비교 보기';
   enterResidual();
 }
 function renderResidualResult(){
   const ev = session.residual.result; if(!ev) return;
-  const yn = v => v===true?'맞았어요' : v===false?'다시 볼 부분 있어요' : '선생님이 봐요';
+  const pre = session.prior.diagScore, post = session.residual.postScore;
+  const preTxt = pre!=null ? pre+'점' : '측정 안 됨', postTxt = post!=null ? post+'점' : '측정 안 됨';
+  const deltaKind = (pre!=null && post!=null) ? (post>pre?'up':(post<pre?'down':'flat')) : 'na';
+  const itemLine = session.residual.items.map((it,i)=>`${i+1}.${it.tag} ${it.score!=null?it.score+'점':'-'}`).join(' · ');
   const rows = [
-    ['정답을 맞혔나', `비슷한 문제 ${yn(ev.procedural.nearCorrect)} · 바꾼 문제 ${yn(ev.procedural.farCorrect)}<div class="hint">${esc(ev.procedural.note||'')}</div>`, deltaChip(ev.procedural.nearCorrect===true&&ev.procedural.farCorrect===true?'up':'flat', '공부할 때 스스로 매긴 자신감 점수 '+(session.prior.score||'-')+'/5')],
+    ['정답을 얼마나 맞혔나 (사전 진단 → 사후 진단)', `${itemLine}<div class="hint">${esc(ev.items?.[0]?.note||'')}</div>`, deltaChip(deltaKind, `사전 진단 ${preTxt} → 사후 진단 ${postTxt}`)],
     ['설명을 잘 했나', `${esc(ev.selfExplain.level)}<div class="hint">${esc(ev.selfExplain.note||'')}</div>`, deltaChip('na','잘잘못은 정하지 않고 참고만 해요')],
     ['배운 방법을 썼나', `${ev.transfer.applied===true?'스스로 썼어요':ev.transfer.applied===false?'안 썼어요':'선생님이 봐요'}<div class="hint">${esc(ev.transfer.note||'')}</div>`, deltaChip('na','공부할 때 고른 방법: '+(session.strategyLabel||'안 골랐어요'))],
-    ['얼마나 자신 있었나', ev.metacog.brier===null?'지금은 확인 못 해요(정답 미확정)':`차이 ${ev.metacog.brier.toFixed(2)} <span class="hint">(0에 가까울수록, 자신감과 실제 결과가 잘 맞아요)</span>`, deltaChip('na','자신감 vs 실제 결과')]
+    ['자신감이 실제와 얼마나 맞았나', ev.metacogBrier==null?'지금은 확인 못 해요':`오차 ${ev.metacogBrier.toFixed(2)} <span class="hint">(0에 가까울수록 자신감과 실제 결과가 잘 맞아요)</span>`, deltaChip('na','사전 자신감 '+(session.prior.score||'-')+'/5 · 사전 진단 vs 자신감 오차는 아래 참고')]
   ];
   $('#axis-body').innerHTML = rows.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
   $$('#res-judge .choice').forEach(b=> b.classList.toggle('is-selected', b.dataset.v===session.residual.judge));
@@ -1572,12 +1689,13 @@ function renderResidualResult(){
   if(session.residual.judge){
     $('#res-report').hidden=false;
     const jl={accept:'"전보다 나아졌어요"라고 스스로 판단',hold:'"아직 잘 모르겠어요"로 남겨 둠',comment:'결과에 할 말을 남김'}[session.residual.judge];
-    $('#res-report').innerHTML = `<b>정리</b><br>· 정답: 비슷한 문제 ${yn(ev.procedural.nearCorrect)}, 바꾼 문제 ${yn(ev.procedural.farCorrect)}<br>· 설명: ${esc(ev.selfExplain.level)}<br>· 내 판단: ${jl}<br>${session.residual.nextSupport?`· 다음 공부 시작 AI 도움: ${SUPPORT_LABEL[session.residual.nextSupport]} (내가 골랐어요)`:'· 다음 공부 AI 도움: 아직 안 골랐어요'}`;
+    $('#res-report').innerHTML = `<b>정리</b><br>· 사전 진단 ${preTxt} → 사후 진단 ${postTxt}<br>· 설명: ${esc(ev.selfExplain.level)}<br>· 내 판단: ${jl}<br>${session.residual.nextSupport?`· 다음 공부 시작 AI 도움: ${SUPPORT_LABEL[session.residual.nextSupport]} (내가 골랐어요)`:'· 다음 공부 AI 도움: 아직 안 골랐어요'}`;
   }
 }
 function deltaChip(kind,label){
-  const t = kind==='up'?'▲ 결과가 좋아졌어요' : kind==='flat'?'· 참고 자료' : 'ⓘ 정하지 않아요';
-  return `<span class="delta ${kind}">${t}</span><div class="hint">${esc(label)}</div>`;
+  const cls = kind==='up' ? 'up' : kind==='na' ? 'na' : 'flat';
+  const t = kind==='up'?'▲ 사전보다 높아요' : kind==='down'?'▼ 사전보다 낮아요' : kind==='flat'?'· 사전과 비슷해요' : 'ⓘ 참고만 해요';
+  return `<span class="delta ${cls}">${t}</span><div class="hint">${esc(label)}</div>`;
 }
 
 /* ---------- LLM ---------- */
@@ -1686,8 +1804,11 @@ function init(){
   $('#btn-goto-residual').addEventListener('click', ()=> saveReflectAndFinish(true));
 
   $('#res-start').addEventListener('click', startResidual);
-  ['c-near','c-far'].forEach(id=> $('#'+id).addEventListener('input', e=> $('#'+id+'-val').textContent = e.target.value+'%'));
-  $('#res-quiz').addEventListener('input', ()=>{ const ok=residualValid(); $('#res-submit').disabled=!ok; $('#res-warn').hidden=ok; });
+  $('#res-items').addEventListener('input', e=>{
+    const a = e.target.closest('.res-a'); if(a){ session.residual.items[+a.dataset.i].a = a.value; syncResSubmit(); return; }
+    const ex = e.target.closest('.res-e'); if(ex){ session.residual.items[+ex.dataset.i].e = ex.value; syncResSubmit(); return; }
+    const c = e.target.closest('.res-c'); if(c){ const i=+c.dataset.i; session.residual.items[i].c = +c.value; const val=$(`.res-c-val[data-i="${i}"]`); if(val) val.textContent = c.value+'%'; }
+  });
   $('#res-submit').addEventListener('click', submitResidual);
   $('#res-judge').addEventListener('click', e=>{ const b=e.target.closest('.choice'); if(!b) return; session.residual.judge=b.dataset.v; renderResidualResult(); });
   $('#res-comment').addEventListener('input', e=>{ session.residual.comment = e.target.value; });
@@ -1708,7 +1829,8 @@ function init(){
     }catch(e){ /* 미로그인: auth 화면 유지 */ }
   })();
 }
-function roleValText(v){ return (v<=20?'힌트만 살짝':v<=40?'힌트 위주':v<=60?'반반':v<=80?'많이 고쳐주기':'거의 다 도와주기') + ` (${v})`; }
+function roleValText(v){ return (v<=20?'🙋 내가 거의 다 해요':v<=40?'힌트 위주로 도와줘요':v<=60?'같이 반반 해요':v<=80?'AI가 많이 도와줘요':'✏️ AI가 첨삭까지 해요') + ` (${v})`; }
+function roleShortLabel(v){ return v<=20?'내가 주로':v<=40?'힌트 위주':v<=60?'같이 반반':v<=80?'AI가 많이':'AI 첨삭까지'; }
 
 document.addEventListener('DOMContentLoaded', init);
 </script>
