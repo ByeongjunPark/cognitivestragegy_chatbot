@@ -841,7 +841,7 @@ const TASK_BLOCKS = [
 /* 원리7(메타인지적 지식 점검): 이해질문·전략질문·연결질문을 서로 다른 발문 스캐폴딩으로
    명확히 구별해서 순서대로 묻는다(Kramarski & Mevarech, 2003). */
 const SCAFFOLD_ORDER = [
-  { key:'understand', instr:`[원리7-① 이해 스캐폴딩] 아래 예시 중 하나를 골라 거의 그대로 1개만 물어봐: "방금 배운 걸 지금 얼마나 확신 있게 설명할 수 있어? 1~5점 정도로 말해볼래? 그리고 그 이유는?" 또는 "지금까지 설명한 것 중에서 스스로 확신이 안 서는 부분이 있다면 어디야? 그 이유도 같이 말해줄래?" 질문은 1개만.` },
+  { key:'understand', instr:`[원리7-① 이해 스캐폴딩] 학습자는 바로 직전에 자신감을 이미 숫자(1~5)로 골랐다. 그 숫자를 또 묻지 말고, 거의 그대로 이렇게만 물어봐: "지금까지 이야기한 것 중에서 스스로 확신이 안 서는 부분이 있다면 어디야? 그 이유도 같이 말해줄래?" 질문은 1개만.` },
   { key:'strategy',   instr:`[원리7-② 전략 스캐폴딩] 아래 예시 중 하나를 골라 거의 그대로 1개만 물어봐: "이 문제에 접근할 때 어떤 순서로 생각을 풀어갔는지 말해줄 수 있어? 그리고 그 방법을 선택한 이유는?" 또는 "지금 막혔다면, 이전에 비슷한 문제를 풀 때 썼던 방법 중에 적용해볼 만한 게 있을까?" 질문은 1개만.` },
   { key:'connect',    instr:`[원리7-③ 연결 스캐폴딩] 아래 예시 중 하나를 골라 거의 그대로 1개만 물어봐: "이 내용을 지난 시간에 배운 개념과 연결 지어보면 어떤 공통점이나 차이점이 보여?" 또는 "이걸 네 일상이나 실제 사례에 적용해본다면 구체적으로 어떤 상황을 예로 들 수 있을까?" 질문은 1개만.` }
 ];
@@ -850,12 +850,14 @@ const SUPPORT_PCT   = { high:100, mid:60, low:28 };
 const PHASES = { prep:'먼저 이야기', explore:'같이 알아가기', wrap:'마무리' };
 
 /* 탐구 대화 중 순환하는 절차(원리8 전략적용 → 원리9 점검 → 원리10 학습자 판단).
-   cycleNow 는 지금 이 루프에서 어디쯤 있는지를 나타내는 표시용 상태다. */
+   cycleNow 는 지금 이 루프에서 어디쯤 있는지를 나타내는 표시용 상태다.
+   나선형 순환(선택→시행→평가→조정→시행→평가→조정…)이 되도록 "④ 조정"을 실제 생성 단계로
+   넣어, 매 바퀴마다 "이 방법 계속 쓸까, 바꿔볼까"를 학습자가 의식적으로 결정하게 한다. */
 const CYCLE_LABELS = [
-  { k:'ask',   t:'① AI가 발문해요' },
-  { k:'apply', t:'② 방법대로 해봐요' },
-  { k:'check', t:'③ 점검 질문 받아요' },
-  { k:'judge', t:'④ 내가 판단해요' }
+  { k:'ask',    t:'① 질문을 받아요' },
+  { k:'apply',  t:'② 방법대로 해봐요(시행)' },
+  { k:'check',  t:'③ 점검하고 판단해요(평가)' },
+  { k:'adjust', t:'④ 계속할지 바꿀지 정해요(조정)' }
 ];
 /* 공부 방법별 구조화 산출물을 만들 때 AI에게 요구하는 JSON 스키마.
    마크다운 표·목록 대신 실제 표/마인드맵/비교/사슬 UI로 렌더링한다. */
@@ -1189,10 +1191,11 @@ function startSession(){
     id:uid(), startedAt:new Date().toISOString(), endedAt:null,
     ctx:{ grade, band:bandOf(grade), subject:subj, code:stPick.code, std:stPick.name, area:stPick.area||'' },
     goal: anonymize($('#st-goal').value.trim()),
-    // 원리6: 사전 활성화(note, 서술) + 점검 두 갈래 — ①AI 채점 진단(diagQs/diagAnswers/diagScore, 객관)
-    // ②자기 확신(score, 주관·자기효능감). 둘을 나란히 두어야 "얼마나 안다고 느끼는지"와
+    // 원리6: 사전 활성화(note, 서술) + 점검 두 갈래 — ①AI 채점 진단(diagScore, 객관 — "아는 것
+    // 나누기"에서 나눈 대화를 그대로 채점해 만든다. 별도 퀴즈를 새로 보지 않아 활성화와 중복되지
+    // 않는다) ②자기 확신(score, 주관·자기효능감). 둘을 나란히 두어야 "얼마나 안다고 느끼는지"와
     // "실제로 아는지"의 계산(칼리브레이션, 원리7 타당도 참고)을 잴 수 있다.
-    prior:{ score:null, note:'', diagQs:[], diagAnswers:[], diagIndex:0, diagScore:null, diagFeedback:'' },
+    prior:{ score:null, note:'', diagScore:null, diagFeedback:'' },
     // 원리7: 이해/전략/연결 질문에 대한 서술을 AI가 루브릭으로 채점(score/scoreDetail)해
     // "메타인지 지식이 있다고 말한 것"과 "실제로 타당하게 알고 있는 것"을 구분한다.
     meta:{ raw:'', u:'', s:'', c:'', score:null, scoreDetail:null, feedback:'' },
@@ -1265,22 +1268,23 @@ function paintPhase(){
   paintProcessBar();
 }
 
-/* ===== 준비 대화의 하위 단계 표시: 목표 확인 → 아는 것 나누기(활성화, 원리6-①) → 자신감 점수(점검, 원리6-②)
+/* ===== 준비 대화의 하위 단계 표시: 목표 확인 → 아는 것 나누기(활성화+점검, 원리6) → 자신감 점수
    → 스스로 점검(메타인지, 원리7) → 방법 고르기(원리8) → 이유 말하기(원리8) =====
-   ②는 "무엇을 아는지"(내용, 서술형) / ③은 "얼마나 자신 있는지"(정도, 숫자) — 서로 다른 걸 묻는다.
-   ③의 점수는 잔여물 확인(원리13)에서 사후 점수와 비교하는 기준선으로 재사용된다. */
+   "아는 것 나누기"에서 나눈 대화를 그대로 채점해 사전 진단 점수를 만들기 때문에, 활성화(대화)와
+   점검(채점)이 같은 한 단계 안에서 자연스럽게 이어진다(별도의 퀴즈로 다시 묻지 않아 중복이 없다).
+   자신감 점수는 "얼마나 자신 있는지"(정도, 숫자)를 물어 사전 진단 점수(내용 채점)와 나란히 두고,
+   잔여물 확인(원리13)에서 사후 점수와 비교하는 기준선으로 재사용된다. */
 const PREP_LABELS = [
   { k:'greet',       t:'① 목표 확인' },
   { k:'prior',       t:'② 아는 것 나누기' },
-  { k:'prediag',     t:'③ 사전 진단(4문항)' },
+  { k:'priorscore',  t:'③ 자신감 점수' },
   { k:'meta',        t:'④ 스스로 점검' },
-  { k:'ready',       t:'⑤ 방법 고르기' },
-  { k:'reason',      t:'⑥ 이유 말하기' }
+  { k:'ready',       t:'⑤ 방법 고르고 이유 말하기' }
 ];
 function renderPrepStrip(){
   const box = $('#prep-strip'); if(!box) return;
-  // 'priorscore'(자신감 확인)는 ③사전 진단 하위 절차라 같은 노드로 표시한다.
-  const cur = session.prepStep==='init' ? 'greet' : (session.prepStep==='priorscore' ? 'prediag' : session.prepStep);
+  // 'reason'(고른 이유 말하기)은 "방법 고르기"의 마무리 절차라 별도 단계로 세지 않고 같은 노드로 표시한다.
+  const cur = session.prepStep==='init' ? 'greet' : (session.prepStep==='reason' ? 'ready' : session.prepStep);
   const curIdx = Math.max(0, PREP_LABELS.findIndex(x=>x.k===cur));
   box.innerHTML = PREP_LABELS.map((c,i)=>{
     const cls = i<curIdx ? 'done' : i===curIdx ? 'now' : '';
@@ -1351,6 +1355,15 @@ function renderStream(){
   const box = $('#stream'); box.innerHTML='';
   session.turns.forEach(t=>{
     if(t.role==='note'){
+      if(t.kind==='prior-score'){
+        const sc = t.priorScore;
+        box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card">
+          <div class="msc-title">📋 사전 진단 결과 (참고용 · 맞다·틀리다가 아니에요)</div>
+          ${sc!=null ? `<div class="msc-row"><span>지금 아는 정도</span><span class="bar"><i style="width:${sc}%"></i></span><b>${sc}점</b></div>` : ''}
+          ${t.priorFeedback ? `<div class="msc-note">${esc(t.priorFeedback)}</div>` : ''}
+        </div></div>`);
+        return;
+      }
       if(t.kind==='meta-score' && t.meta){
         const row = (label,val)=>`<div class="msc-row"><span>${label}</span><span class="bar"><i style="width:${val}%"></i></span><b>${val}점</b></div>`;
         box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card">
@@ -1545,8 +1558,10 @@ async function prepNext(){
   if(busy || session.phase!=='prep') return;
   if(session.prepStep==='prior'){
     if(!(session.prior.note||'').trim()){ modal('안내','먼저 지금 아는 것이나 관련된 경험을 한 번 이야기해 볼까요?'); return; }
-    session.prepStep='prediag'; session.prior.diagIndex=0; session.prior.diagAnswers=[]; paintPhase();
-    await startPreDiag();
+    session.prepStep='priorscore'; paintPhase();
+    await gradePriorDiag(); // 원리6-②: 방금 나눈 "아는 것 나누기" 대화를 그대로 채점(중복 질문 없음)
+    pushPriorScoreCard(); // 계산만 하고 안 보여주면 진단이 아니다
+    await ai(`바로 위에 뜬 "사전 진단 결과" 카드를 짧게 언급하며(점수가 맞다 틀리다는 네가 정하지 마, 학습자가 스스로 판단하게), 이어서 "지금 전체적으로 이 주제에 얼마나 자신 있는지 아래에서 골라볼래?"라고 안내해. 어려운 말은 쓰지 마.`, 'prior-pick');
   } else if(session.prepStep==='meta'){
     if(!(session.meta.raw||'').trim()){ modal('안내','스스로 점검하는 이야기를 조금 더 나눠 볼까요?'); return; }
     // 아직 phase는 'prep'으로 둔다 — 공부 방법을 고르고 그 이유를 말하는 것까지가 준비 단계다(원리8).
@@ -1559,61 +1574,29 @@ async function prepNext(){
   }
 }
 
-/* ===== 원리6-② 점검(사전 진단, 4문항): 자기보고("얼마나 안다고 느끼는지")가 아니라
-   AI가 실제 내용을 채점하는 객관 지표를 만든다. 사후(잔여물 확인)의 같은 채점 기준과
-   비교해 "실제로 늘었는지"를 판단할 수 있게 한다. 단답이든 긴 문장이든 형식은 상관없다. ===== */
-async function startPreDiag(){
-  if(busy) return; busy = true;
-  const box=$('#stream');
-  box.insertAdjacentHTML('beforeend', `<div class="msg ai" id="pending"><div class="av">AI</div><div class="bubble"><span class="loading"><i></i><i></i><i></i></span></div></div>`);
-  box.scrollTop = box.scrollHeight;
+/* ===== 원리6-② 점검: 자기보고("얼마나 안다고 느끼는지")가 아니라 AI가 실제 내용을 채점하는
+   객관 지표를 만든다. 별도 퀴즈를 새로 내지 않고, "아는 것 나누기"(원리6-①)에서 학습자가 이미
+   자유롭게 나눈 대화 내용을 그대로 채점한다 — 그래야 활성화 대화와 점검이 중복되지 않는다.
+   사후(잔여물 확인)의 같은 0~100점 채점 기준과 비교해 "실제로 늘었는지"를 판단할 수 있게 한다. ===== */
+async function gradePriorDiag(){
   try{
     const raw = await callLLM([
-      { role:'system', content:'너는 교육과정 성취기준 기반 간단 진단 문항 출제자다. 반드시 순수 JSON만 출력한다.' },
-      { role:'user', content:`성취기준: "${session.ctx.std}" (${session.ctx.grade||session.ctx.band} ${session.ctx.subject})
-학습자가 지금 이 내용을 얼마나 알고 있는지 확인할 개방형 질문 4개를 만들어라. 단답으로 답해도 되고 길게 설명해도 되게, 정답을 몰라도 시도해볼 수 있는 쉬운 말로.
-{"questions":["...","...","...","..."]}` }
+      { role:'system', content:'너는 채점 보조자다. 반드시 순수 JSON만 출력한다. 학습자가 자유롭게 나눈 이야기만 보고, 그 내용이 성취기준과 얼마나 맞닿아 있고 타당한지를 평가한다. 짧아도 핵심이 맞으면 높게, 길어도 핵심이 없으면 낮게 채점한다.' },
+      { role:'user', content:`성취기준: "${session.ctx.std}" (${session.ctx.grade||session.ctx.band} ${session.ctx.subject})\n학습자가 "아는 것 나누기"에서 나눈 이야기: "${session.prior.note}"\n이 이야기만 보고 0~100점으로 채점하고, 학습자에게 줄 짧은 격려 한 줄을 써라.\n{"score":0,"feedback":"..."}` }
     ]);
     const j = parseJSON(raw);
-    session.prior.diagQs = (Array.isArray(j.questions) && j.questions.length>=4) ? j.questions.slice(0,4).map(String) : null;
-  }catch(e){ session.prior.diagQs = null; }
-  if(!session.prior.diagQs){
-    session.prior.diagQs = [
-      `"${trim(session.ctx.std,30)}"에서 가장 중요하다고 생각하는 낱말이나 개념 하나를 말해볼까?`,
-      '그 개념을 너만의 말로 짧게 설명해볼래?',
-      '이 내용과 관련된 예를 하나 들어볼 수 있어?',
-      '이 내용이 실제로 왜 중요하거나 쓸모 있다고 생각해?'
-    ];
-  }
-  $('#pending')?.remove();
-  pushAi(stripLeakedParams(stripMarkdown(`짧은 질문 4개로 지금 아는 정도를 살짝 확인해볼게. 정답을 몰라도 괜찮으니 편하게 답해줘 (1/4)\n\n${session.prior.diagQs[0]}`)));
-  busy = false;
-}
-async function gradePreDiag(){
-  if(busy) return; busy = true;
-  const box=$('#stream');
-  box.insertAdjacentHTML('beforeend', `<div class="msg ai" id="pending"><div class="av">AI</div><div class="bubble"><span class="loading"><i></i><i></i><i></i></span></div></div>`);
-  box.scrollTop = box.scrollHeight;
-  try{
-    const raw = await callLLM([
-      { role:'system', content:'너는 채점 보조자다. 반드시 순수 JSON만 출력한다. 답이 짧아도 핵심이 맞으면 높게, 길어도 핵심이 없으면 낮게 채점한다.' },
-      { role:'user', content:`성취기준: "${session.ctx.std}"\n` +
-        session.prior.diagQs.map((q,i)=>`질문${i+1}: ${q}\n답${i+1}: ${session.prior.diagAnswers[i]||'(답 없음)'}`).join('\n') +
-        `\n각 답을 0~100점으로 채점하고, 학습자 전체에게 줄 짧은 격려 한 줄을 써라.\n{"scores":[0,0,0,0],"feedback":"..."}` }
-    ]);
-    const j = parseJSON(raw);
-    if(Array.isArray(j.scores) && j.scores.length===4){
-      session.prior.diagScore = Math.round(j.scores.reduce((a,b)=>a+(+b||0),0)/4);
+    if(typeof j.score === 'number'){
+      session.prior.diagScore = Math.round(j.score);
       session.prior.diagFeedback = String(j.feedback||'');
     } else throw new Error('shape');
   }catch(e){
     session.prior.diagScore = null;
-    session.prior.diagFeedback = '지금 자동 채점을 못 했어요. 그래도 답해준 건 잘 남아 있어요.';
+    session.prior.diagFeedback = '지금 자동 확인은 못 했어요. 그래도 나눈 이야기는 잘 남아 있어요.';
   }
-  $('#pending')?.remove();
-  session.prepStep = 'priorscore'; paintPhase();
-  pushAi(stripLeakedParams(stripMarkdown(`${session.prior.diagFeedback || '잘 답해줬어!'} 방금 문제들과는 별개로, 지금 전체적으로 이 주제에 얼마나 자신 있는지 아래에서 골라볼래?`)), 'prior-pick');
-  busy = false;
+}
+function pushPriorScoreCard(){
+  session.turns.push({ id:uid(), role:'note', kind:'prior-score', text:'', priorScore:session.prior.diagScore, priorFeedback:session.prior.diagFeedback });
+  renderStream();
 }
 /* ===== 원리7 타당도: 메타인지 서술(이해/전략/연결)을 루브릭으로 채점해 "안다고 말한 것"과
    "타당하게 아는 것"을 구분한다. 관련 연구의 자기보고식 총점(MAI류)과 달리, 이번 학습 내용에
@@ -1678,8 +1661,6 @@ async function ai(instruction, kind){
     }
     $('#pending')?.remove();
     pushAi(capLength(stripTaskDump(stripLeakedParams(stripMarkdown(text)))), kind==='prior-pick' ? 'prior-pick' : (kind==='strategy-pick' ? 'strategy-pick' : null));
-    // 탐구 대화 중이면 순환 절차 표시를 "④ 내가 판단해요"로 넘겨, 방금 온 말을 판단하도록 안내한다.
-    if(session.phase==='explore' && kind!=='monitor'){ session.cycleNow = 'judge'; renderCycleStrip(); }
   }catch(err){
     $('#pending')?.remove();
     pushAi('⚠ ' + err.message);
@@ -1721,7 +1702,9 @@ function stripTaskDump(s){
   // ai()에서 이미 한 번 재시도했는데도 여기까지 왔다는 뜻이니, 맥락을 모르는 채로
   // "정리해볼래?" 같은 특정 전략을 언급하지 말고 최대한 중립적인 문구로 되돌린다.
   let before = s.slice(0, markers[0].index).trim().replace(/[:：]\s*$/, '').trim();
-  if(before.length < 4) return '음, 그 부분은 네 생각을 먼저 들어볼까?';
+  before = before.replace(/^[\s\-–—_*=]+|[\s\-–—_*=]+$/g, '').trim(); // 마크다운 구분선(---, ***) 잔재 제거
+  // 실제 글자(한글·영문·숫자)가 없으면 의미 있는 문장이 아니므로 안전한 대체 문구를 쓴다.
+  if(before.length < 4 || !/[가-힣a-zA-Z0-9]/.test(before)) return '음, 그 부분은 네 생각을 먼저 들어볼까?';
   if(!/[.!?요다]$/.test(before)) before += '.';
   return before + ' 너는 어떻게 생각해?';
 }
@@ -1780,21 +1763,6 @@ function sendChat(){
       ai(`지금은 [지금 아는 것 확인하기] 단계이고 여러 턴 이어진다. 학습자의 답에 반응하고, 아직 얕거나 더 끌어낼 여지가 있으면 그 주제 안에서 더 구체적으로 파고드는 후속 질문 1개를 던져. 절대로 다음 단계(자신감 점수, 공부 방법 고르기 등)로 먼저 넘어가지 마. 학습자가 충분하다고 느끼면 화면의 [다음으로] 버튼을 누른다. 질문 1개.`);
       return;
     }
-    if(step==='prediag'){
-      // 4문항을 순서대로 하나씩 묻고 답을 모은다. 형식(단답/긴 문장)은 상관없다.
-      // AI에게 "질문을 그대로 relay해줘"라고 시키면 예시·빈칸 템플릿을 덧붙이거나 다음 질문까지
-      // 한 번에 쏟아내는 경우가 있어(관찰됨), 다음 질문은 AI 호출 없이 그대로 직접 보여준다.
-      session.prior.diagAnswers[session.prior.diagIndex] = v;
-      session.prior.diagIndex++;
-      if(session.prior.diagIndex < session.prior.diagQs.length){
-        const n = session.prior.diagIndex;
-        const REACTIONS = ['그렇구나!','오, 좋아!','알겠어!','좋은 생각이야!'];
-        pushAi(`${REACTIONS[n % REACTIONS.length]} (${n+1}/4)\n\n${session.prior.diagQs[n]}`);
-      } else {
-        gradePreDiag();
-      }
-      return;
-    }
     if(step==='priorscore'){
       session.prior.note = (session.prior.note ? session.prior.note+' / ' : '') + v;
       ai(`짧게 반응만 하고, 내용이 아니라 전체적인 자신감을 아래 다섯 개 중 하나로 눌러 달라고 한 문장으로 다시 안내해. 다음 단계로 넘어가지 마.`, 'prior-pick');
@@ -1834,9 +1802,11 @@ function sendChat(){
     ai('학습자가 답을 맡기려는 질문을 했다. 정답을 바로 주지 말고 스스로 접근하도록 힌트/되묻기 1개로 응답한다.');
     return;
   }
-  const order = ['ask','apply','check'];
-  const kindNow = order[(session.cycleIdx||0) % 3];
-  session.cycleIdx = ((session.cycleIdx||0) + 1) % 3;
+  // 나선형 순환(원리8·9): 시행(apply)→평가(check)→조정(adjust)이 매 바퀴 반복되며, 조정 단계에서
+  // 학습자가 "계속 쓸지 바꿀지"를 의식적으로 결정한다(실행은 위쪽 [🔄 방법 바꾸기]에서 직접 함).
+  const order = ['ask','apply','check','adjust'];
+  const kindNow = order[(session.cycleIdx||0) % 4];
+  session.cycleIdx = ((session.cycleIdx||0) + 1) % 4;
   session.cycleNow = kindNow; renderCycleStrip();
   const strat = currentApplyStrat();
   if(kindNow==='apply') session.stratTurnIdx = (session.stratTurnIdx||0) + 1; // 다음 apply 턴엔 다른 방법 차례로
@@ -1846,7 +1816,8 @@ function sendChat(){
   let instr;
   if(kindNow==='ask') instr = `학습자의 생각에 반응하고, 다음 사고를 끌어내는 소크라테스식 발문 1개를 던진다.`;
   else if(kindNow==='apply') instr = `학습자의 답을 짧게 받아주고, 지금 방법(${strat?strat.label:'선택한 방법'})에 맞게 ${verb} 명시적으로 요청하는 과업 1개를 낸다. 앞서 사전 진단에서 물었던 것과 똑같은 형태로 재탕하지 말고, 표면 소재(숫자·인물·상황)를 새로 바꾼 더 구체적인 새 상황에 적용해보게 한다(전이).${tipHint}${structHint}`;
-  else instr = `학습자가 방금 한 이야기를 스스로 점검하도록 "그렇게 생각한 까닭이 뭐야?" 또는 "다시 봐도 그런 것 같아?" 같은 점검 질문 1개를 던진다.`;
+  else if(kindNow==='check') instr = `학습자가 방금 한 이야기를 스스로 점검하도록 "그렇게 생각한 까닭이 뭐야?" 또는 "다시 봐도 그런 것 같아?" 같은 점검 질문 1개를 던진다.`;
+  else instr = `방금까지의 시행·점검 결과를 짧게 되짚어주고, "지금 이 방법(${strat?strat.label:'선택한 방법'})이 잘 맞는 것 같아? 계속 써볼까, 다른 방법으로 바꿔볼까?" 같은 취지로 1개만 물어봐. 계속할지 바꿀지는 학습자가 정하고, 바꾸고 싶다고 하면 위쪽 [🔄 방법 바꾸기]에서 직접 고르면 된다고 짧게 안내해. 절대 네가 대신 정하지 마.`;
   ai(instr);
 }
 
@@ -1977,7 +1948,7 @@ function enterResidual(){
   if(session.residual.items && session.residual.items.length) renderResidualQuiz();
   if(done) renderResidualResult();
 }
-/* 원리13: 근접전이 2문항 + 원거리전이 2문항 = 4문항. 사전 진단(startPreDiag)과 같은
+/* 원리13: 근접전이 2문항 + 원거리전이 2문항 = 4문항. 사전 진단(gradePriorDiag)과 같은
    0~100 채점 기준을 써서 "사전 진단 점수 → 사후 진단 점수"를 직접 비교할 수 있게 한다. */
 async function startResidual(){
   session.residual.started = true; enterResidual();
