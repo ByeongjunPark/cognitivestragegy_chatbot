@@ -188,11 +188,6 @@
   .msg.me .bubble{background:var(--primary);color:#fff}
   .msg.note{max-width:100%;justify-content:center}
   .msg.note .bubble{background:var(--info-wash);border:1px solid #dbe4ff;color:#1e3a8a;font-size:12px;font-weight:600;text-align:center;border-radius:999px;padding:7px 15px}
-  .judge{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
-  .judge button{border:1px solid var(--line-strong);background:#fff;border-radius:8px;padding:5px 11px;font-size:12px;font-weight:700;color:var(--ink-2);transition:.14s}
-  .judge button:hover{border-color:var(--muted);color:var(--ink)}
-  .judge button.on{border-color:var(--accent);background:var(--accent-wash);color:var(--accent-ink)}
-  .judge .cmt{width:100%;margin-top:8px}
   .inline-pick{margin-top:10px}
   .compose{border-top:1px solid var(--line);padding:13px 15px;background:var(--surface-2);display:flex;flex-direction:column;gap:9px}
   .compose .row{display:flex;gap:10px}
@@ -248,6 +243,60 @@
   .kv{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px dashed var(--line);gap:12px}
   .kv:last-child{border:0}
   .kv b{text-align:right}
+
+  /* ===== 진행 단계 바 (대화 시작 전 - 대화 중 - 대화 이후) ===== */
+  .process-bar{display:flex;align-items:center;gap:0;margin:0 2px 20px;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+  .pb-step{display:flex;align-items:center;gap:9px;flex:1;min-width:0}
+  .pb-dot{width:26px;height:26px;border-radius:50%;background:#eef1f3;color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:none;transition:.2s}
+  .pb-step.done .pb-dot{background:var(--accent-wash);color:var(--accent-ink)}
+  .pb-step.active .pb-dot{background:var(--accent);color:#fff}
+  .pb-label{min-width:0}
+  .pb-label b{display:block;font-size:12.5px;font-weight:800;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pb-step.active .pb-label b, .pb-step.done .pb-label b{color:var(--ink)}
+  .pb-label small{display:block;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pb-line{flex:0 0 28px;height:2px;background:var(--line-strong);margin:0 6px}
+  .pb-line.done{background:var(--accent)}
+  @media(max-width:700px){ .pb-label small{display:none} .pb-line{flex-basis:14px} }
+
+  .cycle-wrap{border-bottom:1px solid var(--line);background:var(--surface-2);padding:12px 18px}
+  .cycle-title{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin-bottom:8px}
+  .cycle-strip{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+  .cycle-node{font-size:11.5px;font-weight:700;color:var(--ink-2);background:#fff;border:1px solid var(--line-strong);border-radius:999px;padding:5px 10px;transition:.2s}
+  .cycle-node.now{background:var(--accent);border-color:var(--accent);color:#fff}
+  .cycle-arrow{color:var(--muted);font-size:12px;padding:0 1px}
+
+  /* ===== AI 응답 판단하기 (단일 버튼 + 모달) ===== */
+  .judge-trigger{border:1px solid var(--line-strong);background:#fff;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:700;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px;transition:.14s}
+  .judge-trigger:hover{border-color:var(--muted);color:var(--ink)}
+  .judge-trigger.st-accept{border-color:#a9e2c6;background:var(--accent-wash);color:var(--accent-ink)}
+  .judge-trigger.st-hold{border-color:#f3d19b;background:#fdf3e3;color:#92620a}
+  .judge-trigger.st-comment{border-color:#c8d6f7;background:var(--info-wash);color:#1e3a8a}
+  .comment-pill{margin-top:8px;background:var(--info-wash);border:1px solid #dbe4ff;border-radius:9px;padding:9px 11px;font-size:12.5px;color:#1e3a8a}
+  .modal-lg{max-width:520px}
+  .modal-quote{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink-2);margin:12px 0;max-height:160px;overflow-y:auto;white-space:pre-wrap}
+
+  /* ===== 공부 방법별 구조화 산출물 (표 / 마인드맵 / 비교 / 인과사슬) ===== */
+  .quick-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .quick-actions button{border:1px dashed var(--line-strong);background:#fff;border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:700;color:var(--accent-ink);transition:.14s}
+  .quick-actions button:hover{border-style:solid;border-color:var(--accent);background:var(--accent-wash)}
+  .struct-box{margin-top:10px;border:1px solid var(--line-strong);border-radius:12px;overflow:hidden;background:#fff}
+  .struct-box .struct-head{background:var(--surface-2);border-bottom:1px solid var(--line);padding:7px 12px;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.03em}
+  .struct-table{width:100%;border-collapse:collapse;font-size:13px}
+  .struct-table th,.struct-table td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  .struct-table th{background:var(--accent-wash);color:var(--accent-ink);font-weight:800}
+  .struct-mindmap{padding:16px;display:flex;flex-direction:column;align-items:center;gap:0}
+  .mm-root{background:var(--primary);color:#fff;border-radius:999px;padding:9px 18px;font-weight:800;font-size:13px}
+  .mm-stem{width:2px;height:14px;background:var(--line-strong)}
+  .mm-children{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .mm-node{background:var(--accent-wash);border:1px solid #cdeadd;color:var(--accent-ink);border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:700;max-width:180px;text-align:center}
+  .struct-compare{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+  .struct-compare .col{background:#fff;padding:12px 14px}
+  .struct-compare .col h5{font-size:11.5px;font-weight:800;color:var(--muted);margin-bottom:8px;letter-spacing:.03em}
+  .struct-compare .col p{font-size:13px;line-height:1.55}
+  .struct-chain{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:14px}
+  .chain-step{background:var(--surface-2);border:1px solid var(--line-strong);border-radius:10px;padding:9px 12px;font-size:12.5px;max-width:170px}
+  .chain-arrow{color:var(--accent);font-weight:800}
+
   [hidden]{display:none!important}
 </style>
 </head>
@@ -265,6 +314,9 @@
       <button class="icon-btn" id="btn-logout" hidden>나가기</button>
     </div>
   </header>
+
+  <!-- ============ 진행 단계: 대화 시작 전 - 대화 중 - 대화 이후 ============ -->
+  <div class="process-bar" id="process-bar" hidden></div>
 
   <!-- ============ 진입 · 로그인/회원가입 ============ -->
   <section class="screen" data-screen="auth">
@@ -381,6 +433,20 @@
         <label class="field-label" for="st-goal">오늘 나의 목표 <span style="color:var(--muted);font-weight:500">(안 써도 돼요 — 이야기하면서 정할 수 있어요)</span></label>
         <input class="input" id="st-goal" placeholder="예: 이걸 내 말로 설명할 수 있게 되기" autocomplete="off" />
       </div>
+      <hr style="border:none;border-top:1px solid var(--line)" />
+      <div>
+        <label class="field-label">시작할 때 AI 도움 정도 <span style="color:var(--muted);font-weight:500">(대화 중에는 못 바꾸고, 잘 이해할수록 자동으로 줄어들어요)</span></label>
+        <div class="choices" id="st-support" style="grid-template-columns:repeat(3,1fr)">
+          <button class="choice" data-v="high">많이<small>구체적인 힌트</small></button>
+          <button class="choice" data-v="mid">보통<small>방향만 살짝</small></button>
+          <button class="choice" data-v="low">조금<small>되묻는 질문 위주</small></button>
+        </div>
+      </div>
+      <div>
+        <label class="field-label" style="margin-bottom:6px">AI가 얼마나 고쳐줄까요?</label>
+        <input type="range" class="range" id="st-role" min="0" max="100" step="10" value="40" />
+        <div class="range-ends"><span>← 힌트만 살짝</span><span id="st-role-val">힌트 위주 (40)</span><span>답까지 고쳐주기 →</span></div>
+      </div>
     </div>
     <div class="nav">
       <button class="btn btn-ghost" id="st-back">← 내 공부방</button>
@@ -403,37 +469,21 @@
           <span id="chat-std">오늘 배울 내용</span>
         </div>
         <div style="display:flex;gap:10px;align-items:center">
-          <span class="support-badge" title="AI가 잘 이해했다고 표시할수록 도움이 조금씩 줄어들어요">
+          <span class="support-badge" title="처음에 정한 크기에서 시작해서, AI 응답을 '좋아요'로 표시할수록 자동으로 줄어들어요. 대화 중엔 직접 못 바꿔요.">
             AI 도움 <span id="support-text">많이</span>
             <span class="bar"><i id="support-fill" style="width:100%"></i></span>
           </span>
-          <button class="btn btn-sm" id="btn-role-adj">AI 도움 정하기</button>
         </div>
       </div>
-      <div id="role-panel" style="border-bottom:1px solid var(--line);background:#fff;padding:15px 18px;display:flex;flex-direction:column;gap:12px" hidden>
-        <div>
-          <label class="field-label" style="margin-bottom:6px">AI가 얼마나 도와줄까요?</label>
-          <input type="range" class="range" id="rng-role" min="0" max="100" step="10" value="40" />
-          <div class="range-ends"><span>← 힌트만 살짝</span><span id="role-val">힌트 위주 (40)</span><span>답까지 고쳐주기 →</span></div>
-        </div>
-        <div>
-          <label class="field-label" style="margin-bottom:6px">AI 도움 크기</label>
-          <div class="choices" id="support-pick" style="grid-template-columns:repeat(3,1fr)">
-            <button class="choice" data-v="high">많이</button>
-            <button class="choice" data-v="mid">보통</button>
-            <button class="choice" data-v="low">조금</button>
-          </div>
-        </div>
-        <div class="nav" style="margin:0">
-          <span class="filler"></span>
-          <button class="btn btn-sm" id="role-cancel">취소</button>
-          <button class="btn btn-sm btn-primary" id="role-apply" style="margin-left:8px">정하기</button>
-        </div>
+      <div class="cycle-wrap" id="cycle-wrap" hidden>
+        <div class="cycle-title">지금 방법 <b id="cycle-strat-name" style="color:var(--ink)"></b>으로 이렇게 순서를 돌아요</div>
+        <div class="cycle-strip" id="cycle-strip"></div>
       </div>
       <div class="stream" id="stream"></div>
       <div class="compose">
         <button class="stuck" id="btn-prep-next" hidden style="border-color:var(--accent);color:var(--accent-ink)">✅ 이 정도면 됐어요 · 다음으로 →</button>
         <button class="stuck" id="btn-stuck" hidden>🧭 막혔어요 (같이 점검해 주세요)</button>
+        <div class="quick-actions" id="quick-actions" hidden></div>
         <div class="row">
           <input class="input" id="chat-input" placeholder="편하게 말해도 돼요. 내 생각이나 예상을 먼저 적어 보세요." autocomplete="off" />
           <button class="btn btn-primary" id="chat-send">보내기</button>
@@ -562,6 +612,31 @@
   </div>
 </div>
 
+<!-- ============ AI 응답 판단하기 (단일 버튼 → 모달) ============ -->
+<div class="modal-scrim" id="judge-scrim">
+  <div class="modal modal-lg stack">
+    <div>
+      <div style="font-weight:800;font-size:15px">AI가 한 말, 어떻게 생각해요?</div>
+      <p class="hint">판단은 내가 하는 거예요. AI가 정답인지 아닌지 정해주지 않아요.</p>
+    </div>
+    <div class="modal-quote" id="judge-quote"></div>
+    <div class="choices" id="judge-choices" style="grid-template-columns:repeat(3,1fr)">
+      <button class="choice" data-v="accept">👍 좋아요</button>
+      <button class="choice" data-v="hold">🤔 잘 모르겠어요</button>
+      <button class="choice" data-v="comment">💭 다른 생각</button>
+    </div>
+    <div id="judge-comment-wrap" hidden>
+      <label class="field-label" for="judge-comment">어떤 다른 생각이 들었어요?</label>
+      <textarea class="textarea" id="judge-comment" placeholder="내 생각을 적어요"></textarea>
+    </div>
+    <div class="nav" style="margin:0">
+      <button class="btn btn-ghost" id="judge-cancel">취소</button>
+      <span class="filler"></span>
+      <button class="btn btn-primary" id="judge-save">저장하기</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    메타인지·AI활용 성찰 지원 시스템 — v3
@@ -581,16 +656,47 @@ const FIXED_API_KEY = "";
 const MODEL = "solar-pro";
 
 const PICS = ['🍎','🍌','🍇','🍓','🍉','🥕','🐶','🐱','🐰','🦁','🐼','🐢','🚀','🚗','⚽','🎈','📚','🎸','🌈','⭐','🍕','🎨','🔑','🧭'];
+/* 공부 방법(인지전략)마다: 대화 중 명시적으로 유도할 동사(verb), 그리고 줄글로 표현하기 힘든
+   결과물을 실제 표/마인드맵/비교/사슬 어포던스로 뽑아낼 수 있는 구조화 산출물(structs)을 함께 정의한다. */
 const STRATS = [
-  { id:'think-aloud', label:'생각 말하기', desc:'내 생각을 소리 내어 말해요' },
-  { id:'example',      label:'예시로 알기', desc:'예를 들어 달라고 해요' },
-  { id:'refute',       label:'따져보기',   desc:'내 답이 틀린 데는 없는지 찾아요' },
-  { id:'organize',     label:'정리하기',   desc:'표나 그림으로 정리해요' },
-  { id:'check',        label:'이유 찾기',   desc:'왜 그런지 계속 물어요' }
+  { id:'think-aloud', label:'생각 말하기', desc:'내 생각을 소리 내어 말해요', verb:'네 생각과 예상을 그대로 소리 내어 말해보도록', structs:[] },
+  { id:'example',      label:'예시로 알기', desc:'예를 들어 달라고 해요', verb:'구체적인 예시를 스스로 들어보도록', structs:[
+    { type:'table', label:'📇 예시들 표로 모으기' }
+  ] },
+  { id:'refute',       label:'따져보기',   desc:'내 답이 틀린 데는 없는지 찾아요', verb:'자기 답의 허점이나 반례를 스스로 찾아보도록', structs:[
+    { type:'compare', label:'⚖️ 내 생각 vs 반박 비교하기' }
+  ] },
+  { id:'organize',     label:'정리하기',   desc:'표나 그림으로 정리해요', verb:'지금까지 알아낸 것을 표나 마인드맵으로 스스로 정리해보도록', structs:[
+    { type:'table', label:'📊 표로 정리하기' }, { type:'mindmap', label:'🧠 마인드맵으로 정리하기' }
+  ] },
+  { id:'check',        label:'이유 찾기',   desc:'왜 그런지 계속 물어요', verb:'원인과 결과를 순서대로 따라가 보도록', structs:[
+    { type:'chain', label:'🔗 원인→결과 순서로 보기' }
+  ] }
 ];
 const SUPPORT_LABEL = { high:'많이', mid:'보통', low:'조금' };
 const SUPPORT_PCT   = { high:100, mid:60, low:28 };
 const PHASES = { prep:'먼저 이야기', explore:'같이 알아가기', wrap:'마무리' };
+
+/* 탐구 대화 중 순환하는 절차(원리8 전략적용 → 원리9 점검 → 원리10 학습자 판단).
+   cycleNow 는 지금 이 루프에서 어디쯤 있는지를 나타내는 표시용 상태다. */
+const CYCLE_LABELS = [
+  { k:'ask',   t:'① AI가 발문해요' },
+  { k:'apply', t:'② 방법대로 해봐요' },
+  { k:'check', t:'③ 점검 질문 받아요' },
+  { k:'judge', t:'④ 내가 판단해요' }
+];
+/* 공부 방법별 구조화 산출물을 만들 때 AI에게 요구하는 JSON 스키마.
+   마크다운 표·목록 대신 실제 표/마인드맵/비교/사슬 UI로 렌더링한다. */
+const STRUCT_SCHEMAS = {
+  table:   { shape:'{"type":"table","headers":["열1","열2"],"rows":[["…","…"],["…","…"]]}',
+             ask:s=>`지금까지 나눈 이야기를 바탕으로 "${s.ctx.std}"와 관련된 내용을 표로 정리해줘. 표는 3~5행 정도로.` },
+  mindmap: { shape:'{"type":"mindmap","root":"가운데 낱말","children":["가지1","가지2","가지3"]}',
+             ask:s=>`"${s.ctx.std}"를 가운데 낱말로 두고, 지금까지 나눈 이야기에서 나온 관련 낱말·생각을 3~5개 가지로 뽑아줘.` },
+  compare: { shape:'{"type":"compare","leftTitle":"내 생각","leftText":"…","rightTitle":"따져볼 점","rightText":"…"}',
+             ask:s=>`학습자가 방금 말한 생각과, 거기서 따져볼 만한 반례나 다른 관점을 나란히 비교해줘.` },
+  chain:   { shape:'{"type":"chain","steps":["1단계","2단계","3단계"]}',
+             ask:s=>`"${s.ctx.std}"에서 다룬 원인과 결과(또는 순서)를 3~5단계의 짧은 사슬로 정리해줘.` }
+};
 
 /* 학년은 3·4·5·6·중1·중2·중3·고1을 따로 고르게 하되,
    2022 개정 교육과정 성취기준은 '학년군' 단위(3~4 / 5~6 / 중1~3 / 고1 공통)로
@@ -658,6 +764,7 @@ function show(name){
   const authed = !!DB.currentUser;
   $('#who').hidden = !authed; $('#btn-home').hidden = !authed; $('#btn-logout').hidden = !authed;
   if (authed) $('#who').textContent = DB.currentUser + ' 님';
+  paintProcessBar();
   if (name === 'home') renderHome();
   if (name === 'start') renderStart();
   if (name === 'chat') enterChat();
@@ -796,6 +903,12 @@ function renderStart(){
     GRADES.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; b.appendChild(o); });
     b.value = '초등학교 5학년';
   }
+  // 지난 공부의 "다음엔 이 정도로" 선택을 이번 시작값 기본으로 이어받는다(대화 중엔 못 바꾸므로 여기서만 정함).
+  const acc = account();
+  const lastSess = acc && acc.sessions.length ? acc.sessions[acc.sessions.length-1] : null;
+  stSupport = (lastSess && lastSess.residual && lastSess.residual.nextSupport) || 'high';
+  $$('#st-support .choice').forEach(x=> x.classList.toggle('is-selected', x.dataset.v===stSupport));
+  $('#st-role').value = 40; $('#st-role-val').textContent = roleValText(40);
   fillStartSubjects();
 }
 function fillStartSubjects(){
@@ -806,6 +919,7 @@ function fillStartSubjects(){
   fillStartStds();
 }
 let stPick = null;
+let stSupport = 'high';
 function fillStartStds(){
   const band=bandOf($('#st-band').value), subj=$('#st-subject').value;
   const q = $('#st-filter').value.trim();
@@ -828,10 +942,13 @@ function startSession(){
     ctx:{ grade, band:bandOf(grade), subject:subj, code:stPick.code, std:stPick.name, area:stPick.area||'' },
     goal: $('#st-goal').value.trim(),
     prior:{ score:null, note:'' }, meta:{ raw:'', u:'', s:'', c:'' },
-    strategy:null, strategyLabel:null,
-    support: (account().sessions.slice(-1)[0] || {}).nextSupport || 'high',
-    roleSplit:40, acceptStreak:0, stuckCount:0,
+    strategy:null, strategyLabel:null, strategyReason:'',
+    // AI 도움 정도는 여기(대화 시작 전)에서만 정한다. 대화 중에는 '좋아요' 판단이 쌓일 때만 자동으로 줄어든다.
+    support: stSupport || 'high',
+    roleSplit: +$('#st-role').value || 40,
+    acceptStreak:0, stuckCount:0,
     phase:'prep', prepStep:'init', awaitPick:null,
+    cycleIdx:0, cycleNow:'ask',
     turns:[],
     reflect:{ note:'', tags:{} },
     residual:{ started:false, near:null, far:null, ans:{}, result:null, judge:null, comment:'', nextSupport:null }
@@ -846,7 +963,6 @@ let busy = false;
 function enterChat(){
   $('#chat-std').textContent = `${session.ctx.subject} · ${trim(session.ctx.std,40)}`;
   paintSupport(); paintPhase();
-  $('#rng-role').value = session.roleSplit;
   renderStream();
   if(!session.turns.length){
     pushNote(`공부 시작 · [${session.ctx.grade||session.ctx.band} ${session.ctx.subject}] ${trim(session.ctx.std,44)}`);
@@ -865,6 +981,48 @@ function paintPhase(){
   $('#btn-stuck').hidden = session.phase!=='explore';
   $('#delegate-wrap').hidden = session.phase!=='explore';
   $('#chat-finish').hidden = session.phase==='prep';
+  $('#cycle-wrap').hidden = session.phase!=='explore';
+  if(session.phase==='explore'){ renderCycleStrip(); renderQuickActions(); }
+  paintProcessBar();
+}
+
+/* ===== 순환 절차 표시: AI 발문 → 방법대로 해보기 → 점검 질문 → 내가 판단 → (다시 반복) ===== */
+function renderCycleStrip(){
+  const strat = STRATS.find(s=>s.id===session.strategy);
+  $('#cycle-strat-name').textContent = strat ? strat.label : '(아직 안 골랐어요)';
+  const now = session.cycleNow || 'ask';
+  $('#cycle-strip').innerHTML = CYCLE_LABELS.map((c,i)=>{
+    const label = c.k==='apply' && strat ? `② ${strat.label}로 해봐요` : c.t;
+    const arrow = i<CYCLE_LABELS.length-1 ? '<span class="cycle-arrow">→</span>' : '<span class="cycle-arrow">↻</span>';
+    return `<span class="cycle-node ${c.k===now?'now':''}">${esc(label)}</span>${arrow}`;
+  }).join('');
+}
+/* ===== 공부 방법별 구조화 산출물(표/마인드맵/비교/사슬) 빠른 버튼 ===== */
+function currentStructs(){ const s=STRATS.find(x=>x.id===session.strategy); return s?s.structs:[]; }
+function renderQuickActions(){
+  const list = currentStructs();
+  const box = $('#quick-actions');
+  box.hidden = list.length===0;
+  box.innerHTML = list.map(a=>`<button data-type="${a.type}" data-label="${esc(a.label)}">${a.label}</button>`).join('');
+}
+/* ===== 상단 진행 단계: 대화 시작 전 - 대화 중 - 대화 이후 ===== */
+function paintProcessBar(){
+  const bar = $('#process-bar'); if(!bar) return;
+  const scr = document.querySelector('.screen.is-active')?.dataset.screen;
+  if(!['start','chat','reflect','residual'].includes(scr)){ bar.hidden = true; return; }
+  bar.hidden = false;
+  const stage = scr==='start' ? 0 : scr==='chat' ? 1 : 2;
+  const midDesc = !session ? '무엇을 배울지 정하는 중' : session.phase==='prep' ? '먼저 이야기 나누는 중' : '방법대로 같이 알아가는 중';
+  const steps = [
+    { t:'① 대화 시작 전', d:'배울 내용·AI 도움 정도 정하기' },
+    { t:'② 대화 중', d: midDesc },
+    { t:'③ 대화 이후', d: scr==='residual' ? '혼자서 풀어보며 확인' : '되짚어보기' }
+  ];
+  bar.innerHTML = steps.map((s,i)=>{
+    const cls = i<stage ? 'done' : i===stage ? 'active' : '';
+    const line = i<steps.length-1 ? `<span class="pb-line ${i<stage?'done':''}"></span>` : '';
+    return `<div class="pb-step ${cls}"><span class="pb-dot">${i<stage?'✓':i+1}</span><span class="pb-label"><b>${s.t}</b><small>${esc(s.d)}</small></span></div>${line}`;
+  }).join('');
 }
 function pushNote(text){ session.turns.push({ id:uid(), role:'note', text }); renderStream(); }
 function pushMe(text, delegate){ session.turns.push({ id:uid(), role:'me', text, phase:session.phase, delegate:!!delegate, initiative: delegate?'ai':'self' }); renderStream(); }
@@ -878,26 +1036,17 @@ function renderStream(){
     let extra='';
     if(!mine){
       const j=t.judge;
-      extra = `<div class="judge" data-id="${t.id}">
-        <button data-v="accept" class="${j==='accept'?'on':''}">좋아요</button>
-        <button data-v="hold" class="${j==='hold'?'on':''}">잘 모르겠어요</button>
-        <button data-v="comment" class="${j==='comment'?'on':''}">다른 생각</button>
-        ${j==='comment' ? (t.commentSaved ? `
-          <div class="cmt" style="width:100%;margin-top:8px;background:var(--accent-wash);border:1px solid #cdeadd;border-radius:9px;padding:9px 11px">
-            <div style="font-size:12.5px;color:var(--accent-ink)"><b>내 코멘트:</b> ${esc(t.comment)}</div>
-            <button class="btn btn-sm cmt-edit" data-id="${t.id}" style="margin-top:6px;padding:3px 10px">고치기</button>
-          </div>` : `
-          <div style="width:100%;margin-top:8px">
-            <textarea class="input textarea cmt" data-id="${t.id}" placeholder="이 말에 대한 내 생각을 적어요">${esc(t.comment||'')}</textarea>
-            <div style="text-align:right;margin-top:6px"><button class="btn btn-sm btn-primary cmt-save" data-id="${t.id}">코멘트 저장하기</button></div>
-          </div>`) : ''}
-      </div>`;
+      const stCls = j==='accept'?'st-accept':j==='hold'?'st-hold':j==='comment'?'st-comment':'';
+      const label = j==='accept'?'👍 좋아요':j==='hold'?'🤔 잘 모르겠어요':j==='comment'?'💭 다른 생각':'🔍 판단하기';
+      extra = `<button type="button" class="judge-trigger ${stCls}" data-id="${t.id}">${label}</button>`;
+      if(j==='comment' && (t.comment||'').trim()) extra += `<div class="comment-pill"><b>내 다른 생각:</b> ${esc(t.comment)}</div>`;
       if(t.kind==='prior-pick') extra += priorPickHTML();
       if(t.kind==='strategy-pick') extra += strategyPickHTML();
     }
+    const body = t.structured ? renderStructHTML(t.structured) : `<div class="bubble">${esc(t.text)}</div>`;
     box.insertAdjacentHTML('beforeend',
       `<div class="msg ${mine?'me':'ai'}"><div class="av">${mine?'나':'AI'}</div><div style="flex:1">
-        <div class="bubble">${esc(t.text)}</div>
+        ${body}
         ${mine && t.delegate ? '<div class="hint">· AI에게 답을 맡긴 질문</div>' : ''}
         ${extra}
       </div></div>`);
@@ -913,6 +1062,85 @@ function strategyPickHTML(){
   return `<div class="inline-pick chips" data-pick="strategy">` + STRATS.map(s=>
     `<button class="chip ${session.strategy===s.id?'is-selected':''}" data-strat="${s.id}">${s.label}<span style="opacity:.6"> · ${s.desc}</span></button>`
   ).join('') + `</div>`;
+}
+
+/* ===== AI 응답 판단하기: 단일 버튼 → 모달 ===== */
+let activeJudgeId = null;
+function openJudgeModal(id){
+  const t = session.turns.find(x=>x.id===id); if(!t) return;
+  activeJudgeId = id;
+  $('#judge-quote').textContent = t.text || '(정리한 표·마인드맵을 보고 판단해요)';
+  $$('#judge-choices .choice').forEach(b=> b.classList.toggle('is-selected', b.dataset.v===t.judge));
+  $('#judge-comment-wrap').hidden = t.judge!=='comment';
+  $('#judge-comment').value = t.comment || '';
+  $('#judge-scrim').classList.add('open');
+}
+function closeJudgeModal(){ $('#judge-scrim').classList.remove('open'); activeJudgeId = null; }
+function saveJudgeModal(){
+  if(!activeJudgeId) return;
+  const t = session.turns.find(x=>x.id===activeJudgeId); if(!t){ closeJudgeModal(); return; }
+  const chosen = $('#judge-choices .choice.is-selected');
+  const v = chosen ? chosen.dataset.v : null;
+  const wasAccept = t.judge==='accept';
+  t.judge = v;
+  t.comment = v==='comment' ? $('#judge-comment').value.trim() : '';
+  closeJudgeModal();
+  if(v==='accept' && !wasAccept){
+    session.acceptStreak++;
+    if(session.acceptStreak>=2){ session.acceptStreak=0; renderStream(); fade(); return; }
+  } else if(v!=='accept'){
+    session.acceptStreak = 0;
+  }
+  renderStream();
+}
+
+/* ===== 공부 방법별 구조화 산출물: 표 / 마인드맵 / 비교 / 사슬 렌더링 ===== */
+function renderStructHTML(s){
+  const p = s.payload || {};
+  if(s.type==='table' && Array.isArray(p.headers) && Array.isArray(p.rows)){
+    return `<div class="struct-box"><div class="struct-head">📊 표로 정리한 내용</div>
+      <table class="struct-table"><thead><tr>${p.headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
+      <tbody>${p.rows.map(r=>`<tr>${(r||[]).map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  }
+  if(s.type==='mindmap' && p.root){
+    const kids = (p.children||[]).map(c=>`<div class="mm-node">${esc(typeof c==='string'?c:(c.label||''))}</div>`).join('');
+    return `<div class="struct-box"><div class="struct-head">🧠 마인드맵으로 정리한 내용</div>
+      <div class="struct-mindmap"><div class="mm-root">${esc(p.root)}</div><div class="mm-stem"></div><div class="mm-children">${kids}</div></div></div>`;
+  }
+  if(s.type==='compare'){
+    return `<div class="struct-box"><div class="struct-head">⚖️ 나란히 비교한 내용</div>
+      <div class="struct-compare"><div class="col"><h5>${esc(p.leftTitle||'내 생각')}</h5><p>${esc(p.leftText||'')}</p></div>
+      <div class="col"><h5>${esc(p.rightTitle||'따져볼 점')}</h5><p>${esc(p.rightText||'')}</p></div></div></div>`;
+  }
+  if(s.type==='chain' && Array.isArray(p.steps)){
+    return `<div class="struct-box"><div class="struct-head">🔗 순서대로 본 내용</div>
+      <div class="struct-chain">${p.steps.map((st,i)=>`<div class="chain-step">${esc(st)}</div>${i<p.steps.length-1?'<span class="chain-arrow">→</span>':''}`).join('')}</div></div>`;
+  }
+  return `<div class="bubble">⚠ 정리한 내용을 표시하지 못했어요.</div>`;
+}
+async function requestStructured(type, label){
+  if(busy || session.phase!=='explore') return;
+  busy = true;
+  pushMe(`(${label})`, false);
+  const box=$('#stream');
+  box.insertAdjacentHTML('beforeend', `<div class="msg ai" id="pending"><div class="av">AI</div><div class="bubble"><span class="loading"><i></i><i></i><i></i></span></div></div>`);
+  box.scrollTop = box.scrollHeight;
+  try{
+    const schema = STRUCT_SCHEMAS[type];
+    const hist = session.turns.filter(t=>t.role==='me'||t.role==='ai').slice(-10).map(t=>({ role:t.role==='me'?'user':'assistant', content:t.text||'(표/마인드맵 결과)' }));
+    const raw = await callLLM([
+      { role:'system', content: sysPrompt(`[출력 형식] 설명 문장이나 마크다운 없이, 반드시 아래 모양의 순수 JSON 하나만 출력해라(다른 텍스트 금지): ${schema.shape}`) },
+      ...hist,
+      { role:'user', content: schema.ask(session) }
+    ]);
+    const payload = parseJSON(raw);
+    $('#pending')?.remove();
+    session.turns.push({ id:uid(), role:'ai', text:'', structured:{ type, payload }, phase:session.phase, kind:null, support:session.support, judge:null, comment:'' });
+    renderStream();
+  }catch(e){
+    $('#pending')?.remove();
+    pushAi('⚠ 정리하는 데 실패했어요: ' + e.message);
+  } finally { busy = false; }
 }
 
 /* --- 준비 대화: 각 점검(사전지식·스스로 점검)은 여러 턴 이어지고,
@@ -932,7 +1160,9 @@ async function prepNext(){
     await ai(`좋아, 잘 이야기했어. 그럼 지금 이 주제를 얼마나 이해했다고 느끼는지 아래 1~5 버튼으로 눌러줘. (아직 다음 단계로 넘어가지 마.)`, 'prior-pick');
   } else if(session.prepStep==='meta'){
     if(!(session.meta.raw||'').trim()){ modal('안내','스스로 점검하는 이야기를 조금 더 나눠 볼까요?'); return; }
-    session.prepStep='ready'; session.phase='explore'; paintPhase();
+    // 아직 phase는 'prep'으로 둔다 — 공부 방법을 고르고 그 이유를 말하는 것까지가 준비 단계다(원리8).
+    // explore로 넘어가는 시점은 이유를 답한 직후(sendChat의 'reason' 단계)로 미룬다.
+    session.prepStep='ready'; paintPhase();
     await ai(`학습자가 스스로 점검한 내용을 존중하며 두세 문장으로 짧게 정리해주고, 이어서 "이제 본격적으로 알아보자. 아래에서 오늘 쓸 공부 방법을 하나 골라봐."라고 안내해줘. 어려운 말은 쓰지 마.`, 'strategy-pick');
   }
 }
@@ -946,9 +1176,11 @@ function sysPrompt(instruction){
 `[학습목표] ${session.goal || '(아직 미정)'}`,
 `[역할 분담] 0(힌트만)~100(첨삭까지) 중 현재 ${session.roleSplit}. 이 수치에 맞춰 개입 강도 조절.`,
 `[지원강도(비계)] ${session.support} — high: 구체적 힌트 / mid: 방향만 / low: 되묻는 질문 위주.`,
-`[학습자가 고른 인지전략] ${stratLabel}`,
+`[학습자가 고른 공부 방법(인지전략)] ${stratLabel}`,
+`[그 방법을 고른 이유] ${session.strategyReason || '(아직 없음)'}`,
 `규칙: 질문은 한 번에 1개, 3~5문장 이내로 짧게. 정답 여부·이해 수준·수용 여부를 당신이 최종 판정하지 말고 학습자에게 돌려주세요. 학습자가 대화를 끝내기 전에는 되돌아보기(성찰) 질문을 먼저 꺼내지 마세요.`,
 `말투 규칙: 초등학교 3학년도 알아들을 만큼 쉬운 낱말로 말하세요. '메타인지·인지전략·성찰·전이·비계·스캐폴딩' 같은 어려운 학술 용어는 쓰지 말고, 꼭 필요하면 쉬운 말로 풀어서 설명하세요.`,
+`서식 규칙(반드시 지킬 것): 마크다운 문법을 절대 쓰지 마세요. 별표(**, *), 밑줄(__), 샵(#), 대시나 별표로 시작하는 목록(-, *), 번호 목록(1. 2.), 코드블록(백틱)을 쓰지 말고 꾸미지 않은 자연스러운 문장(과 필요하면 줄바꿈)만 쓰세요. 강조하고 싶으면 말로 풀어서 강조하세요(예: '정말 중요한 건' 처럼).`,
 `[이번 지시] ${instruction}`
   ].join('\n');
 }
@@ -958,14 +1190,30 @@ async function ai(instruction, kind){
   box.insertAdjacentHTML('beforeend', `<div class="msg ai" id="pending"><div class="av">AI</div><div class="bubble"><span class="loading"><i></i><i></i><i></i></span></div></div>`);
   box.scrollTop=box.scrollHeight;
   try{
-    const hist = session.turns.filter(t=>t.role!=='note').map(t=>({ role:t.role==='me'?'user':'assistant', content:t.text }));
+    const hist = session.turns.filter(t=>t.role!=='note').map(t=>({ role:t.role==='me'?'user':'assistant', content:t.text||'(표/마인드맵 결과)' }));
     const text = await callLLM([{ role:'system', content:sysPrompt(instruction) }, ...hist].slice(-16));
     $('#pending')?.remove();
-    pushAi(text.trim(), kind==='prior-pick' ? 'prior-pick' : (kind==='strategy-pick' ? 'strategy-pick' : null));
+    pushAi(stripMarkdown(text), kind==='prior-pick' ? 'prior-pick' : (kind==='strategy-pick' ? 'strategy-pick' : null));
+    // 탐구 대화 중이면 순환 절차 표시를 "④ 내가 판단해요"로 넘겨, 방금 온 말을 판단하도록 안내한다.
+    if(session.phase==='explore' && kind!=='monitor'){ session.cycleNow = 'judge'; renderCycleStrip(); }
   }catch(err){
     $('#pending')?.remove();
     pushAi('⚠ ' + err.message);
   }finally{ busy=false; }
+}
+// 마크다운 문법이 새어 나온 경우를 대비한 방어적 후처리(프롬프트 규칙이 뚫렸을 때의 안전망)
+function stripMarkdown(s){
+  return String(s)
+    .replace(/```[a-zA-Z]*\n?/g, '').replace(/```/g, '')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/(^|[\s(])\*([^*\n]+?)\*(?=[\s).,!?]|$)/g, '$1$2')
+    .replace(/(^|[\s(])_([^_\n]+?)_(?=[\s).,!?]|$)/g, '$1$2')
+    .replace(/^\s{0,3}[-*+]\s+/gm, '· ')
+    .replace(/^\s{0,3}\d+\.\s+/gm, m => m)
+    .replace(/`([^`]+)`/g, '$1')
+    .trim();
 }
 function fade(){
   if(session.support==='high') session.support='mid';
@@ -1005,12 +1253,33 @@ function sendChat(){
       ai(`지금은 [스스로 점검하기] 단계이고 여러 턴 이어진다. 아래 세 가지를 한 번에 다 묻지 말고 한 턴에 하나씩만 자연스럽게 물어: (1) 이 주제에서 이미 이해하고 있다고 느끼는 부분 (2) 나한테 잘 맞는 공부법 (3) 이건 내가 아는 다른 무엇과 연결되는지. 학습자의 답에 반응하며 아직 안 물은 것을 이어서 물어. 세 가지를 다 짚었으면 "이 정도면 준비된 것 같아, 아래 [다음으로]를 눌러도 좋아"라고만 안내하고 절대 공부 방법 고르기로 먼저 넘어가지 마. 한 턴에 질문 1개.`);
       return;
     }
+    if(step==='reason'){
+      // 원리8: 인지 전략 최종 선택의 "근거"를 학습자 스스로 말하게 한다. 이 이유가 이후 대화 전체의 시스템 프롬프트에 계속 실린다.
+      session.strategyReason = v;
+      session.prepStep='ready'; session.phase='explore'; session.cycleIdx=1; session.cycleNow='ask'; paintPhase();
+      const strat = STRATS.find(s=>s.id===session.strategy);
+      ai(`학습자가 "${session.strategyLabel}" 방법을 고른 이유("${v}")를 존중하며 짧게 반응해줘(그 이유가 맞다 틀리다 평가하지 마). 그 이유와 오늘 배울 내용을 연결해서, ${strat?strat.verb:'스스로 생각하도록'} 유도하는 첫 질문을 1개 던져.`);
+      return;
+    }
     return;
   }
-  // explore
-  ai(delegate
-    ? '학습자가 답을 맡기려는 질문을 했다. 정답을 바로 주지 말고 스스로 접근하도록 힌트/되묻기 1개로 응답한다.'
-    : '학습자의 생각에 반응하고, 다음 사고를 끌어내는 발문 1개를 던진다.');
+  // explore: 발문(ask) → 방법대로 해보기(apply) → 점검 질문(check) 이 순서로 순환한다 (원리8·9·10 루프).
+  if(delegate){
+    ai('학습자가 답을 맡기려는 질문을 했다. 정답을 바로 주지 말고 스스로 접근하도록 힌트/되묻기 1개로 응답한다.');
+    return;
+  }
+  const order = ['ask','apply','check'];
+  const kindNow = order[(session.cycleIdx||0) % 3];
+  session.cycleIdx = ((session.cycleIdx||0) + 1) % 3;
+  session.cycleNow = kindNow; renderCycleStrip();
+  const strat = STRATS.find(s=>s.id===session.strategy);
+  const verb = strat ? strat.verb : '스스로 생각해보도록';
+  const structHint = strat && strat.structs.length ? ` 표나 마인드맵으로 정리하면 좋겠다 싶으면 "정리해볼까?"처럼 말로 제안만 하고, 직접 표를 그리지는 마(학습자가 버튼으로 요청하면 따로 만들어줄 거야).` : '';
+  let instr;
+  if(kindNow==='ask') instr = `학습자의 생각에 반응하고, 다음 사고를 끌어내는 소크라테스식 발문 1개를 던진다.`;
+  else if(kindNow==='apply') instr = `학습자의 답을 짧게 받아주고, 지금 고른 방법에 맞게 ${verb} 명시적으로 요청하는 질문 1개를 한다.${structHint}`;
+  else instr = `학습자가 방금 한 이야기를 스스로 점검하도록 "그렇게 생각한 까닭이 뭐야?" 또는 "다시 봐도 그런 것 같아?" 같은 점검 질문 1개를 던진다.`;
+  ai(instr);
 }
 
 /* ============================================================
@@ -1213,6 +1482,8 @@ function init(){
   });
   $('#st-back').addEventListener('click', ()=> show('home'));
   $('#st-go').addEventListener('click', ()=>{ if(stPick) startSession(); });
+  $('#st-support').addEventListener('click', e=>{ const b=e.target.closest('.choice'); if(!b) return; stSupport=b.dataset.v; $$('#st-support .choice').forEach(x=>x.classList.toggle('is-selected',x===b)); });
+  $('#st-role').addEventListener('input', e=> $('#st-role-val').textContent = roleValText(+e.target.value));
 
   $('#chat-send').addEventListener('click', sendChat);
   $('#chat-input').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
@@ -1221,25 +1492,6 @@ function init(){
     session.stuckCount++;
     pushMe('지금 막혔어. 어디서 막혔는지 같이 점검해줘.', false);
     ai('학습자가 "막혔어요" 신호를 보냈다. (1) 어디서 이해가 끊겼는지 짚어 보는 질문 1개 (2) 지금 방법 대신 해 볼 다른 공부 방법 1~2개 제안. 최종 선택은 학습자가 한다. 쉬운 말로.');
-  });
-  $('#btn-role-adj').addEventListener('click', ()=>{
-    const p=$('#role-panel');
-    if(!p.hidden){ p.hidden=true; return; }
-    $('#rng-role').value = session.roleSplit;
-    $('#role-val').textContent = roleValText(session.roleSplit);
-    $$('#support-pick .choice').forEach(b=> b.classList.toggle('is-selected', b.dataset.v===session.support));
-    p._pick = { split:session.roleSplit, support:session.support };
-    p.hidden=false;
-  });
-  $('#rng-role').addEventListener('input', e=>{ const p=$('#role-panel'); if(p._pick) p._pick.split=+e.target.value; $('#role-val').textContent=roleValText(+e.target.value); });
-  $('#support-pick').addEventListener('click', e=>{ const b=e.target.closest('.choice'); if(!b) return; const p=$('#role-panel'); if(p._pick) p._pick.support=b.dataset.v; $$('#support-pick .choice').forEach(x=>x.classList.toggle('is-selected',x===b)); });
-  $('#role-cancel').addEventListener('click', ()=> $('#role-panel').hidden=true);
-  $('#role-apply').addEventListener('click', ()=>{
-    const p=$('#role-panel'); const pk=p._pick||{};
-    const changed = pk.split!==session.roleSplit || pk.support!==session.support;
-    session.roleSplit = pk.split ?? session.roleSplit; session.support = pk.support || session.support;
-    paintSupport(); p.hidden=true;
-    if(changed) pushNote(`AI가 도와줄 정도(${session.roleSplit})와 AI 도움 크기("${SUPPORT_LABEL[session.support]}")를 내가 직접 정했어요.`);
   });
   $('#stream').addEventListener('click', e=>{
     const pr = e.target.closest('[data-pick="prior"] .chip');
@@ -1255,41 +1507,26 @@ function init(){
     if(stc){
       session.strategy = stc.dataset.strat;
       session.strategyLabel = STRATS.find(s=>s.id===session.strategy).label;
-      renderStream();
+      session.prepStep = 'reason'; // 원리8: 방법을 왜 골랐는지 먼저 구체적으로 물어본다
+      renderStream(); paintPhase();
       pushMe(`"${session.strategyLabel}" 방법으로 해볼게.`, false);
-      ai(`학습자가 공부 방법 "${session.strategyLabel}"을(를) 골랐다. 그 방법에 맞춰 오늘 배울 내용에 대한 첫 질문을 1개 던진다. 쉬운 말로.`);
+      ai(`학습자가 공부 방법 "${session.strategyLabel}"을(를) 골랐다. 무엇을 배울지 질문하기 전에, "그 방법을 고른 이유가 뭐야?"라고만 쉬운 말로 딱 1가지 물어봐.`);
       return;
     }
-    const cs = e.target.closest('.cmt-save');
-    if(cs){
-      const t = session.turns.find(x=>x.id===cs.dataset.id); if(!t) return;
-      const ta = cs.closest('.judge')?.querySelector('textarea.cmt');
-      t.comment = (ta ? ta.value : (t.comment||'')).trim();
-      t.commentSaved = !!t.comment;
-      renderStream();
-      return;
-    }
-    const ce = e.target.closest('.cmt-edit');
-    if(ce){
-      const t = session.turns.find(x=>x.id===ce.dataset.id); if(!t) return;
-      t.commentSaved = false; renderStream();
-      return;
-    }
-    const jb = e.target.closest('.judge button');
-    if(jb){
-      const id = jb.closest('.judge').dataset.id;
-      const t = session.turns.find(x=>x.id===id); if(!t) return;
-      const v = jb.dataset.v;
-      t.judge = (t.judge===v) ? null : v;
-      if(t.judge!=='comment'){ t.commentSaved = false; }
-      if(t.judge==='accept'){ session.acceptStreak++; if(session.acceptStreak>=2){ session.acceptStreak=0; renderStream(); fade(); return; } }
-      else session.acceptStreak = 0;
-      renderStream();
-    }
+    const jt = e.target.closest('.judge-trigger');
+    if(jt){ openJudgeModal(jt.dataset.id); return; }
   });
-  $('#stream').addEventListener('input', e=>{
-    const ta = e.target.closest('textarea.cmt');
-    if(ta){ const t = session.turns.find(x=>x.id===ta.dataset.id); if(t) t.comment = ta.value; } // 저장 전 초안 유지
+  $('#judge-choices').addEventListener('click', e=>{
+    const b=e.target.closest('.choice'); if(!b) return;
+    $$('#judge-choices .choice').forEach(x=>x.classList.toggle('is-selected', x===b));
+    $('#judge-comment-wrap').hidden = b.dataset.v!=='comment';
+  });
+  $('#judge-save').addEventListener('click', saveJudgeModal);
+  $('#judge-cancel').addEventListener('click', closeJudgeModal);
+  $('#judge-scrim').addEventListener('click', e=>{ if(e.target.id==='judge-scrim') closeJudgeModal(); });
+  $('#quick-actions').addEventListener('click', e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    requestStructured(b.dataset.type, b.dataset.label);
   });
   $('#btn-prep-next').addEventListener('click', prepNext);
   $('#chat-finish').addEventListener('click', ()=> show('reflect'));
