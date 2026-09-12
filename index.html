@@ -319,7 +319,24 @@
   .cycle-strip{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
   .cycle-node{font-size:11.5px;font-weight:700;color:var(--ink-2);background:#fff;border:1px solid var(--line-strong);border-radius:999px;padding:5px 10px;transition:.2s}
   .cycle-node.now{background:var(--accent);border-color:var(--accent);color:#fff}
+  .cycle-node.done{background:var(--accent-wash);border-color:#cdeadd;color:var(--accent-ink)}
   .cycle-arrow{color:var(--muted);font-size:12px;padding:0 1px}
+
+  /* ===== 다음으로 넘어가기: 눈에 잘 띄는 버튼 ===== */
+  .prep-next-btn{width:100%;display:flex;align-items:center;gap:13px;text-align:left;background:var(--accent-wash);border:1.5px solid #a9e2c6;border-radius:14px;padding:13px 16px;transition:.15s}
+  .prep-next-btn:hover{background:#d9f3e7;border-color:var(--accent)}
+  .prep-next-btn .pn-ic{font-size:23px;flex:none}
+  .prep-next-btn .pn-text{flex:1;min-width:0}
+  .prep-next-btn .pn-text b{display:block;font-size:13.5px;font-weight:800;color:var(--accent-ink)}
+  .prep-next-btn .pn-text small{display:block;font-size:11.5px;color:var(--ink-2);margin-top:2px;font-weight:500;line-height:1.4}
+  .prep-next-btn .pn-arrow{font-size:12.5px;font-weight:800;color:#fff;background:var(--accent);border-radius:999px;padding:6px 12px;flex:none;white-space:nowrap}
+
+  /* ===== 이해도 자기점검: 숫자 대신 이모지+한마디로 ===== */
+  .understand-pick{display:flex;flex-direction:column;gap:7px;margin-top:10px;max-width:340px}
+  .u-chip{display:flex;align-items:center;gap:11px;border:1px solid var(--line-strong);background:#fff;border-radius:12px;padding:9px 14px;font-size:12.5px;font-weight:700;color:var(--ink-2);text-align:left;transition:.14s;width:100%}
+  .u-chip:hover{border-color:var(--accent);background:var(--surface-2)}
+  .u-chip.is-selected{border-color:var(--accent);background:var(--accent-wash);color:var(--accent-ink)}
+  .u-chip .u-emoji{font-size:19px;flex:none}
 
   /* ===== AI 응답 판단하기 (단일 버튼 + 모달) ===== */
   .judge-trigger{border:1px solid var(--line-strong);background:#fff;border-radius:999px;padding:6px 13px;font-size:12px;font-weight:700;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px;transition:.14s}
@@ -522,13 +539,21 @@
           </span>
         </div>
       </div>
+      <div class="cycle-wrap" id="prep-wrap" hidden>
+        <div class="cycle-title">지금 이 순서로 이야기 나누고 있어요</div>
+        <div class="cycle-strip" id="prep-strip"></div>
+      </div>
       <div class="cycle-wrap" id="cycle-wrap" hidden>
         <div class="cycle-title">지금 방법 <b id="cycle-strat-name" style="color:var(--ink)"></b>으로 이렇게 순서를 돌아요</div>
         <div class="cycle-strip" id="cycle-strip"></div>
       </div>
       <div class="stream" id="stream"></div>
       <div class="compose">
-        <button class="stuck" id="btn-prep-next" hidden style="border-color:var(--accent);color:var(--accent-ink)">✅ 이 정도면 됐어요 · 다음으로 →</button>
+        <button type="button" class="prep-next-btn" id="btn-prep-next" hidden>
+          <span class="pn-ic">✅</span>
+          <span class="pn-text"><b id="pn-title">다음으로 넘어갈까요?</b><small id="pn-desc">지금까지 충분히 이야기했다면 눌러요. 더 이야기해도 괜찮아요.</small></span>
+          <span class="pn-arrow">다음 →</span>
+        </button>
         <button class="stuck" id="btn-stuck" hidden>🧭 막혔어요 (같이 점검해 주세요)</button>
         <div class="quick-actions" id="quick-actions" hidden></div>
         <div class="row">
@@ -1057,15 +1082,41 @@ function paintPhase(){
   const inPrepDialog = session.phase==='prep' && (session.prepStep==='prior' || session.prepStep==='meta');
   const bn = $('#btn-prep-next');
   bn.hidden = !inPrepDialog;
-  bn.textContent = session.prepStep==='prior'
-    ? '✅ 지금 아는 것 이야기 충분해요 · 다음으로 →'
-    : '✅ 스스로 점검 충분해요 · 다음으로 →';
+  if(session.prepStep==='prior'){
+    $('#pn-title').textContent = '지금 아는 것 이야기 충분해요';
+    $('#pn-desc').textContent = '더 나눠도 좋아요. 준비됐으면 눌러서 다음(이해도 확인)으로 가요 — 넘어갈 때는 직접 정해요.';
+  } else {
+    $('#pn-title').textContent = '스스로 점검 충분해요';
+    $('#pn-desc').textContent = '더 이야기해도 좋아요. 준비됐으면 눌러서 다음(방법 고르기)으로 가요 — 넘어갈 때는 직접 정해요.';
+  }
   $('#btn-stuck').hidden = session.phase!=='explore';
   $('#delegate-wrap').hidden = session.phase!=='explore';
   $('#chat-finish').hidden = session.phase==='prep';
   $('#cycle-wrap').hidden = session.phase!=='explore';
+  $('#prep-wrap').hidden = session.phase!=='prep';
   if(session.phase==='explore'){ renderCycleStrip(); renderQuickActions(); }
+  else if(session.phase==='prep'){ renderPrepStrip(); }
   paintProcessBar();
+}
+
+/* ===== 준비 대화의 하위 단계 표시: 목표 확인 → 아는 것 나누기 → 이해도 확인 → 스스로 점검 → 방법 고르기 → 이유 말하기 ===== */
+const PREP_LABELS = [
+  { k:'greet',       t:'① 목표 확인' },
+  { k:'prior',       t:'② 아는 것 나누기' },
+  { k:'priorscore',  t:'③ 이해도 확인' },
+  { k:'meta',        t:'④ 스스로 점검' },
+  { k:'ready',       t:'⑤ 방법 고르기' },
+  { k:'reason',      t:'⑥ 이유 말하기' }
+];
+function renderPrepStrip(){
+  const box = $('#prep-strip'); if(!box) return;
+  const cur = session.prepStep==='init' ? 'greet' : session.prepStep;
+  const curIdx = Math.max(0, PREP_LABELS.findIndex(x=>x.k===cur));
+  box.innerHTML = PREP_LABELS.map((c,i)=>{
+    const cls = i<curIdx ? 'done' : i===curIdx ? 'now' : '';
+    const arrow = i<PREP_LABELS.length-1 ? '<span class="cycle-arrow">→</span>' : '';
+    return `<span class="cycle-node ${cls}">${cls==='done'?'✓ ':''}${c.t}</span>${arrow}`;
+  }).join('');
 }
 
 /* ===== 순환 절차 표시: AI 발문 → 방법대로 해보기 → 점검 질문 → 내가 판단 → (다시 반복) ===== */
@@ -1135,10 +1186,17 @@ function renderStream(){
   });
   box.scrollTop = box.scrollHeight;
 }
+const UNDERSTAND_LEVELS = [
+  { n:1, emoji:'😵', label:'아직 하나도 모르겠어요' },
+  { n:2, emoji:'😅', label:'조금 헷갈려요' },
+  { n:3, emoji:'🙂', label:'반쯤 알 것 같아요' },
+  { n:4, emoji:'😊', label:'꽤 잘 알아요' },
+  { n:5, emoji:'🤩', label:'완전 잘 알아요' }
+];
 function priorPickHTML(){
-  return `<div class="inline-pick chips" data-pick="prior">` +
-    [1,2,3,4,5].map(n=>`<button class="chip ${session.prior.score===n?'is-selected':''}" data-n="${n}">${n}</button>`).join('') +
-    `<span class="hint" style="width:100%">지금 얼마나 이해했는지 눌러요 (1: 잘 모르겠어요 ~ 5: 잘 알아요)</span></div>`;
+  return `<div class="understand-pick" data-pick="prior">` +
+    UNDERSTAND_LEVELS.map(u=>`<button type="button" class="u-chip ${session.prior.score===u.n?'is-selected':''}" data-n="${u.n}"><span class="u-emoji">${u.emoji}</span><span>${u.label}</span></button>`).join('') +
+    `</div>`;
 }
 function strategyPickHTML(){
   return `<div class="inline-pick chips" data-pick="strategy">` + STRATS.map(s=>
@@ -1576,7 +1634,7 @@ function init(){
     ai('학습자가 "막혔어요" 신호를 보냈다. (1) 어디서 이해가 끊겼는지 짚어 보는 질문 1개 (2) 지금 방법 대신 해 볼 다른 공부 방법 1~2개 제안. 최종 선택은 학습자가 한다. 쉬운 말로.');
   });
   $('#stream').addEventListener('click', e=>{
-    const pr = e.target.closest('[data-pick="prior"] .chip');
+    const pr = e.target.closest('[data-pick="prior"] .u-chip');
     if(pr){
       session.prior.score = +pr.dataset.n;
       if(session.prepStep==='priorscore'){
