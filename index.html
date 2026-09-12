@@ -17,6 +17,10 @@
     --primary:#1b1e21; --on-primary:#ffffff;
     --warn:#c2410c; --warn-wash:#fdf1ea;
     --info:#1d4ed8; --info-wash:#eef2ff;
+    --purple:#8b5cf6; --purple-ink:#6d28d9; --purple-wash:#f3f0fe;
+    --pink:#ec4899; --pink-ink:#be185d; --pink-wash:#fdf0f7;
+    --amber:#f59e0b; --amber-ink:#b45309; --amber-wash:#fef6e7;
+    --teal:#14b8a6; --teal-ink:#0d7d70; --teal-wash:#e8fbf8;
     --radius:18px; --radius-sm:12px; --radius-xs:9px;
     --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px -16px rgba(16,24,40,.10);
     --font:'Pretendard','Pretendard Variable',-apple-system,BlinkMacSystemFont,system-ui,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
@@ -208,10 +212,62 @@
   .bar-row .track{flex:1;height:9px;background:#eef1f3;border-radius:999px;overflow:hidden}
   .bar-row .track > i{display:block;height:100%;background:var(--accent);border-radius:999px}
   .bar-row .num{width:24px;text-align:right;font-weight:800;color:var(--ink)}
-  .sess-item{border:1px solid var(--line-strong);border-radius:12px;padding:13px 15px;display:flex;justify-content:space-between;gap:12px;align-items:center;transition:.14s}
-  .sess-item:hover{border-color:var(--accent);background:var(--surface-2)}
-  .sess-item .t{font-size:13px;font-weight:700}
-  .sess-item .d{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .sess-item{border:1px solid var(--line-strong);border-left:4px solid var(--accent);border-radius:12px;padding:13px 15px 13px 13px;display:flex;justify-content:space-between;gap:12px;align-items:center;transition:.16s}
+  .sess-item:hover{border-color:var(--accent);background:var(--surface-2);transform:translateX(2px)}
+  .sess-item .t{font-size:13.5px;font-weight:800;display:flex;align-items:center;gap:7px}
+  .sess-item .d{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .sess-item .note{font-size:12px;color:var(--ink-2);max-width:38%;text-align:right}
+
+  /* ===== 내 공부방(홈) 대시보드: 학생 눈높이 시각 개선 ===== */
+  .home-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .btn-lg{padding:14px 24px;font-size:15px;border-radius:14px;box-shadow:0 8px 20px -8px rgba(18,160,95,.55)}
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;flex:1;min-width:280px}
+  @media(max-width:820px){ .stat-row{grid-template-columns:repeat(2,1fr)} }
+  .stat-tile{border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;border:1px solid transparent}
+  .stat-tile .ic{font-size:20px;line-height:1}
+  .stat-tile .num{font-size:22px;font-weight:800;letter-spacing:-.02em}
+  .stat-tile .lab{font-size:11.5px;font-weight:700;opacity:.82}
+  .stat-tile.c-green{background:var(--accent-wash);color:var(--accent-ink)}
+  .stat-tile.c-purple{background:var(--purple-wash);color:var(--purple-ink)}
+  .stat-tile.c-amber{background:var(--amber-wash);color:var(--amber-ink)}
+  .stat-tile.c-pink{background:var(--pink-wash);color:var(--pink-ink)}
+
+  .home-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin:16px 0}
+  @media(max-width:820px){ .home-grid{grid-template-columns:1fr} }
+  .home-grid .span-2{grid-column:1/-1}
+  .widget{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow)}
+  .widget-head{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+  .widget-head .badge-ic{width:38px;height:38px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .widget-head h4{font-size:14px;font-weight:800}
+  .widget-head small{display:block;font-size:11.5px;color:var(--muted);font-weight:500;margin-top:1px}
+  .badge-ic.c-green{background:var(--accent-wash);color:var(--accent-ink)}
+  .badge-ic.c-purple{background:var(--purple-wash);color:var(--purple-ink)}
+  .badge-ic.c-amber{background:var(--amber-wash);color:var(--amber-ink)}
+  .badge-ic.c-teal{background:var(--teal-wash);color:var(--teal-ink)}
+  .badge-ic.c-pink{background:var(--pink-wash);color:var(--pink-ink)}
+
+  .strat-row{display:flex;align-items:center;gap:10px;font-size:13px;margin:9px 0}
+  .strat-row .emoji{font-size:18px;width:24px;text-align:center;flex:none}
+  .strat-row .lab{width:76px;flex:none;color:var(--ink-2);font-weight:700}
+  .strat-row .track{flex:1;height:11px;background:#eef1f3;border-radius:999px;overflow:hidden}
+  .strat-row .track > i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),#5fd6a1)}
+  .strat-row .num{width:26px;text-align:right;font-weight:800;color:var(--ink)}
+  .strat-row.top .lab{color:var(--accent-ink)}
+  .strat-row .crown{font-size:13px}
+
+  .support-row{display:flex;align-items:center;gap:9px;font-size:12.5px;margin:8px 0}
+  .support-row .lab{width:52px;flex:none;color:var(--muted);font-weight:700}
+  .support-dot{width:11px;height:11px;border-radius:50%;flex:none}
+  .support-row .pill{font-size:11.5px;font-weight:800;padding:3px 10px;border-radius:999px}
+
+  .meta-card{border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:12px;padding:11px 13px;margin-bottom:9px;background:var(--surface-2)}
+  .meta-card:last-child{margin-bottom:0}
+  .meta-card .d{font-size:11px;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:5px}
+  .meta-card .txt{font-size:12.5px;color:var(--ink);margin-top:5px;line-height:1.5}
+
+  .empty-state{text-align:center;padding:26px 10px;color:var(--muted)}
+  .empty-state .big{font-size:30px;margin-bottom:8px}
+  .empty-state p{font-size:12.5px;line-height:1.5}
   .timeline{display:flex;gap:12px;overflow-x:auto;padding:6px 2px 12px}
   .tl-card{flex:none;width:200px;border:1px solid var(--line-strong);border-radius:12px;padding:13px;background:var(--surface)}
   .tl-card .role{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
@@ -356,51 +412,42 @@
     <div class="rail">
       <div class="eyebrow">내 공부방</div>
       <h1 class="headline"><span id="home-name">친구</span>님, 지금까지 공부한 걸 모아 봤어요</h1>
-      <p class="subhead">공부할 때마다 대화·공부 방법·스스로 답한 내용이 여기에 쌓여요. 아래에서 그동안의 모습을 보고, 준비되면 새 공부를 시작해요.</p>
+      <p class="subhead" id="home-summary-line">공부할 때마다 대화·공부 방법·스스로 답한 내용이 여기에 쌓여요. 아래에서 그동안의 모습을 보고, 준비되면 새 공부를 시작해요.</p>
     </div>
 
-    <div class="card stack">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-        <div>
-          <div style="font-size:13px;font-weight:800">지금까지 요약</div>
-          <div class="hint" id="home-summary-line">아직 끝낸 공부가 없어요.</div>
-        </div>
-        <button class="btn btn-accent" id="btn-new-session">+ 새 공부 시작하기</button>
+    <div class="home-top">
+      <div class="stat-row">
+        <div class="stat-tile c-green"><span class="ic">✅</span><span class="num" id="agg-sessions">0</span><span class="lab">끝낸 공부</span></div>
+        <div class="stat-tile c-purple"><span class="ic">💬</span><span class="num" id="agg-turns">0</span><span class="lab">주고받은 말</span></div>
+        <div class="stat-tile c-amber"><span class="ic">🧭</span><span class="num" id="agg-stuck">0</span><span class="lab">막혔어요</span></div>
+        <div class="stat-tile c-pink"><span class="ic" id="agg-top-emoji">🏆</span><span class="num" id="agg-top-strategy" style="font-size:15px">-</span><span class="lab">제일 좋아하는 방법</span></div>
       </div>
+      <button class="btn btn-accent btn-lg" id="btn-new-session">✨ 새 공부 시작하기</button>
+    </div>
 
-      <div class="grid-2">
-        <div class="box">
-          <h4>내가 자주 쓴 공부 방법</h4>
-          <div id="agg-strategy"><p class="hint">아직 없어요</p></div>
-        </div>
-        <div class="box">
-          <h4>내가 생각한 것 vs AI가 알려준 것</h4>
-          <canvas id="agg-pie" height="150"></canvas>
-        </div>
+    <div class="home-grid">
+      <div class="widget span-2">
+        <div class="widget-head"><span class="badge-ic c-green">🧩</span><div><h4>내가 자주 쓴 공부 방법</h4><small>어떤 방법을 좋아하는지 한눈에 봐요</small></div></div>
+        <div id="agg-strategy"></div>
       </div>
+      <div class="widget">
+        <div class="widget-head"><span class="badge-ic c-purple">💭</span><div><h4>내 생각 vs AI 도움</h4><small>누가 더 이끌었는지 봐요</small></div></div>
+        <canvas id="agg-pie" height="170"></canvas>
+        <p class="hint" id="agg-pie-caption" style="text-align:center;margin-top:10px"></p>
+      </div>
+      <div class="widget">
+        <div class="widget-head"><span class="badge-ic c-amber">🪜</span><div><h4>AI 도움 크기 변화</h4><small>공부할수록 점점 스스로!</small></div></div>
+        <div id="agg-support"></div>
+      </div>
+      <div class="widget span-2">
+        <div class="widget-head"><span class="badge-ic c-teal">🧠</span><div><h4>내가 스스로 점검하며 답한 내용</h4><small>공부 시작 전에 나눈 이야기 모음</small></div></div>
+        <div id="agg-meta"></div>
+      </div>
+    </div>
 
-      <div class="grid-2">
-        <div class="box">
-          <h4>공부할 때마다 AI 도움 크기가 어떻게 바뀌었나</h4>
-          <div id="agg-support"><p class="hint">아직 없어요</p></div>
-        </div>
-        <div class="box">
-          <h4>한눈에 보기</h4>
-          <div class="metric"><span>"막혔어요" 누른 횟수</span><b id="agg-stuck">0</b></div>
-          <div class="metric"><span>끝낸 공부</span><b id="agg-sessions">0</b></div>
-          <div class="metric"><span>주고받은 말 횟수</span><b id="agg-turns">0</b></div>
-        </div>
-      </div>
-
-      <div class="box">
-        <h4>내가 스스로 점검하며 답한 내용</h4>
-        <div id="agg-meta"><p class="hint">아직 없어요</p></div>
-      </div>
-
-      <div>
-        <div style="font-size:13px;font-weight:800;margin-bottom:10px">지난 공부 기록</div>
-        <div class="stack" id="sess-list" style="gap:8px"><p class="hint">아직 기록이 없어요.</p></div>
-      </div>
+    <div class="widget">
+      <div class="widget-head"><span class="badge-ic c-pink">📚</span><div><h4>지난 공부 기록</h4><small>눌러서 무엇을 배웠는지 다시 떠올려 봐요</small></div></div>
+      <div class="stack" id="sess-list" style="gap:10px"></div>
     </div>
   </section>
 
@@ -659,17 +706,17 @@ const PICS = ['🍎','🍌','🍇','🍓','🍉','🥕','🐶','🐱','🐰','�
 /* 공부 방법(인지전략)마다: 대화 중 명시적으로 유도할 동사(verb), 그리고 줄글로 표현하기 힘든
    결과물을 실제 표/마인드맵/비교/사슬 어포던스로 뽑아낼 수 있는 구조화 산출물(structs)을 함께 정의한다. */
 const STRATS = [
-  { id:'think-aloud', label:'생각 말하기', desc:'내 생각을 소리 내어 말해요', verb:'네 생각과 예상을 그대로 소리 내어 말해보도록', structs:[] },
-  { id:'example',      label:'예시로 알기', desc:'예를 들어 달라고 해요', verb:'구체적인 예시를 스스로 들어보도록', structs:[
+  { id:'think-aloud', emoji:'🗣️', label:'생각 말하기', desc:'내 생각을 소리 내어 말해요', verb:'네 생각과 예상을 그대로 소리 내어 말해보도록', structs:[] },
+  { id:'example',      emoji:'📇', label:'예시로 알기', desc:'예를 들어 달라고 해요', verb:'구체적인 예시를 스스로 들어보도록', structs:[
     { type:'table', label:'📇 예시들 표로 모으기' }
   ] },
-  { id:'refute',       label:'따져보기',   desc:'내 답이 틀린 데는 없는지 찾아요', verb:'자기 답의 허점이나 반례를 스스로 찾아보도록', structs:[
+  { id:'refute',       emoji:'⚖️', label:'따져보기',   desc:'내 답이 틀린 데는 없는지 찾아요', verb:'자기 답의 허점이나 반례를 스스로 찾아보도록', structs:[
     { type:'compare', label:'⚖️ 내 생각 vs 반박 비교하기' }
   ] },
-  { id:'organize',     label:'정리하기',   desc:'표나 그림으로 정리해요', verb:'지금까지 알아낸 것을 표나 마인드맵으로 스스로 정리해보도록', structs:[
+  { id:'organize',     emoji:'📊', label:'정리하기',   desc:'표나 그림으로 정리해요', verb:'지금까지 알아낸 것을 표나 마인드맵으로 스스로 정리해보도록', structs:[
     { type:'table', label:'📊 표로 정리하기' }, { type:'mindmap', label:'🧠 마인드맵으로 정리하기' }
   ] },
-  { id:'check',        label:'이유 찾기',   desc:'왜 그런지 계속 물어요', verb:'원인과 결과를 순서대로 따라가 보도록', structs:[
+  { id:'check',        emoji:'🔗', label:'이유 찾기',   desc:'왜 그런지 계속 물어요', verb:'원인과 결과를 순서대로 따라가 보도록', structs:[
     { type:'chain', label:'🔗 원인→결과 순서로 보기' }
   ] }
 ];
@@ -846,6 +893,12 @@ async function doAuth(){
 /* ============================================================
    내 학습터 (누적)
    ============================================================ */
+const SUBJECT_EMOJI = { 국어:'📖', 수학:'🔢', 영어:'🔤', 사회:'🌍', 과학:'🔬', 도덕:'🤝', 실과:'🧰', 정보:'💻',
+  '기술·가정':'🧰', 체육:'⚽', 음악:'🎵', 미술:'🎨', 한문:'📜', 제2외국어:'🗺️', 교양:'✨',
+  '국어(공통)':'📖','수학(공통)':'🔢','기본수학':'🔢','영어(공통)':'🔤','기본영어':'🔤',
+  통합사회:'🌍', 한국사:'🏛️', 통합과학:'🔬', 과학탐구실험:'🧪' };
+function emptyState(icon, text){ return `<div class="empty-state"><div class="big">${icon}</div><p>${text}</p></div>`; }
+
 let aggPie = null;
 function renderHome(){
   const acc = account(); if(!acc) return show('auth');
@@ -853,44 +906,73 @@ function renderHome(){
   const S = acc.sessions;
   $('#agg-sessions').textContent = S.length;
 
-  // strategy frequency
+  // 공부 방법 빈도 + 제일 좋아하는 방법
   const sc = {};
   S.forEach(s=>{ if(s.strategyLabel) sc[s.strategyLabel] = (sc[s.strategyLabel]||0)+1; });
-  const scMax = Math.max(1, ...Object.values(sc));
+  const scMax = Math.max(1, ...Object.values(sc), 0);
+  const topLabel = Object.keys(sc).sort((a,b)=>sc[b]-sc[a])[0];
+  const topStrat = STRATS.find(st=>st.label===topLabel);
+  $('#agg-top-strategy').textContent = topLabel || '아직 없어요';
+  $('#agg-top-emoji').textContent = topStrat ? topStrat.emoji : '🏆';
   $('#agg-strategy').innerHTML = Object.keys(sc).length
-    ? STRATS.map(st=>{ const n=sc[st.label]||0; return `<div class="bar-row"><span class="lab">${st.label}</span><span class="track"><i style="width:${n/scMax*100}%"></i></span><span class="num">${n}</span></div>`; }).join('')
-    : '<p class="hint">아직 없어요</p>';
+    ? STRATS.map(st=>{
+        const n = sc[st.label]||0;
+        const isTop = st.label===topLabel && n>0;
+        return `<div class="strat-row${isTop?' top':''}"><span class="emoji">${st.emoji}</span><span class="lab">${st.label}</span><span class="track"><i style="width:${n/scMax*100}%"></i></span><span class="num">${n}</span>${isTop?'<span class="crown">🏆</span>':''}</div>`;
+      }).join('')
+    : emptyState('🌱', '아직 골라본 방법이 없어요.<br>첫 공부에서 골라볼까요?');
 
-  // initiative pie (cumulative)
+  // 내 생각 vs AI 도움 (누적)
   let self=0, ai=0, stuck=0, turns=0;
   S.forEach(s=>{ (s.turns||[]).forEach(t=>{ if(t.role==='me'){ turns++; ((t.initiative||'self')==='self'?self++:ai++); } }); stuck += s.stuckCount||0; });
   $('#agg-stuck').textContent = stuck;
   $('#agg-turns').textContent = turns;
-  if(aggPie) aggPie.destroy();
-  aggPie = new Chart($('#agg-pie'), {
-    type:'doughnut',
-    data:{ labels:['내가 생각한 것','AI가 알려준 것'], datasets:[{ data:[self,ai], backgroundColor:['#12a05f','#f0a13a'], borderWidth:0 }] },
-    options:{ plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, boxWidth:10 } } }, cutout:'62%' }
-  });
+  const pieCanvas = $('#agg-pie');
+  if(turns===0){
+    pieCanvas.hidden = true;
+    $('#agg-pie-caption').innerHTML = '';
+    if(!pieCanvas.parentElement.querySelector('.empty-state')){
+      pieCanvas.insertAdjacentHTML('beforebegin', emptyState('💬','대화를 나누면 여기에 그래프가 생겨요'));
+    }
+  } else {
+    pieCanvas.hidden = false;
+    const ph = pieCanvas.parentElement.querySelector('.empty-state'); if(ph) ph.remove();
+    const pct = Math.round(self/turns*100);
+    $('#agg-pie-caption').innerHTML = `내 생각 <b style="color:var(--purple-ink)">${pct}%</b> · AI 도움 <b style="color:var(--amber-ink)">${100-pct}%</b>`;
+    if(aggPie) aggPie.destroy();
+    aggPie = new Chart(pieCanvas, {
+      type:'doughnut',
+      data:{ labels:['내가 생각한 것','AI가 알려준 것'], datasets:[{ data:[self,ai], backgroundColor:['#8b5cf6','#f59e0b'], borderWidth:0 }] },
+      options:{ plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, boxWidth:10 } } }, cutout:'62%' }
+    });
+  }
 
-  // support trend
+  // AI 도움 크기 변화 (색깔 점으로)
+  const SUPPORT_DOT = { high:'var(--warn)', mid:'var(--amber)', low:'var(--accent)' };
+  const SUPPORT_PILLBG = { high:'var(--warn-wash)', mid:'var(--amber-wash)', low:'var(--accent-wash)' };
+  const SUPPORT_PILLINK = { high:'#9a3412', mid:'var(--amber-ink)', low:'var(--accent-ink)' };
   $('#agg-support').innerHTML = S.length
-    ? S.map((s,i)=>`<div class="bar-row"><span class="lab">${i+1}번째</span><span class="track"><i style="width:${SUPPORT_PCT[s.support]||0}%"></i></span><span class="num">${SUPPORT_LABEL[s.support]||'-'}</span></div>`).join('')
-    : '<p class="hint">아직 없어요</p>';
+    ? S.map((s,i)=>`<div class="support-row"><span class="lab">${i+1}번째</span><span class="support-dot" style="background:${SUPPORT_DOT[s.support]||'#ccc'}"></span><span class="pill" style="background:${SUPPORT_PILLBG[s.support]};color:${SUPPORT_PILLINK[s.support]}">${SUPPORT_LABEL[s.support]||'-'}</span></div>`).join('')
+    : emptyState('🪜', '아직 기록이 없어요');
 
-  // metacognition responses
+  // 스스로 점검하며 답한 내용
   const metas = S.filter(s=>s.meta && (s.meta.raw||s.meta.u));
   $('#agg-meta').innerHTML = metas.length
-    ? metas.map(s=>`<div class="kv" style="display:block;border-bottom:1px dashed var(--line);padding:10px 0"><b style="display:block;text-align:left;font-size:12px;color:var(--muted)">${s.startedAt.slice(0,10)} · ${esc(trim(s.ctx.std,40))}</b><div style="font-size:12.5px;color:var(--ink-2);margin-top:4px">${esc(s.meta.raw || [s.meta.u,s.meta.s,s.meta.c].filter(Boolean).join(' / '))}</div></div>`).join('')
-    : '<p class="hint">아직 없어요</p>';
+    ? metas.slice().reverse().map(s=>`<div class="meta-card"><div class="d">🗓️ ${s.startedAt.slice(0,10)} · ${SUBJECT_EMOJI[s.ctx.subject]||'📘'} ${esc(trim(s.ctx.std,36))}</div><div class="txt">${esc(s.meta.raw || [s.meta.u,s.meta.s,s.meta.c].filter(Boolean).join(' / '))}</div></div>`).join('')
+    : emptyState('🧠', '아직 없어요');
 
-  // session list
+  // 지난 공부 기록
   $('#sess-list').innerHTML = S.length
-    ? S.slice().reverse().map(s=>`<div class="sess-item"><div><div class="t">${esc(trim(s.ctx.std,52))}</div><div class="d">${s.startedAt.slice(0,10)} · ${s.ctx.grade||s.ctx.band} ${s.ctx.subject} · 주고받은 말 ${(s.turns||[]).filter(t=>t.role!=='note').length}번 · 공부 방법 ${s.strategyLabel||'-'} · AI 도움 ${SUPPORT_LABEL[s.support]||'-'}</div></div><div class="hint">${esc(trim(s.reflect&&s.reflect.note,40)) || '돌아보기 안 씀'}</div></div>`).join('')
-    : '<p class="hint">아직 기록이 없어요.</p>';
+    ? S.slice().reverse().map(s=>{
+        const emo = SUBJECT_EMOJI[s.ctx.subject] || '📘';
+        const turnsN = (s.turns||[]).filter(t=>t.role!=='note').length;
+        const note = esc(trim(s.reflect&&s.reflect.note,34)) || '돌아보기 안 씀';
+        return `<div class="sess-item"><div><div class="t">${emo} ${esc(trim(s.ctx.std,48))}</div><div class="d">${s.startedAt.slice(0,10)} · ${s.ctx.grade||s.ctx.band} ${s.ctx.subject} · 💬${turnsN} · ${STRATS.find(x=>x.label===s.strategyLabel)?.emoji||''} ${s.strategyLabel||'-'} · AI 도움 ${SUPPORT_LABEL[s.support]||'-'}</div></div><div class="note">${note}</div></div>`;
+      }).join('')
+    : emptyState('📖', '아직 기록이 없어요.<br>새 공부를 시작하면 여기에 쌓여요!');
 
   $('#home-summary-line').textContent = S.length
-    ? `끝낸 공부 ${S.length}번 · 주고받은 말 ${turns}번 · 가장 많이 쓴 방법 ${Object.keys(sc).sort((a,b)=>sc[b]-sc[a])[0]||'-'}`
+    ? `끝낸 공부 ${S.length}번 · 주고받은 말 ${turns}번 · 가장 많이 쓴 방법 ${topLabel||'-'}`
     : '아직 끝낸 공부가 없어요. 새 공부를 시작해 볼까요?';
 }
 
