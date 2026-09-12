@@ -1084,7 +1084,7 @@ function paintPhase(){
   bn.hidden = !inPrepDialog;
   if(session.prepStep==='prior'){
     $('#pn-title').textContent = '지금 아는 것 이야기 충분해요';
-    $('#pn-desc').textContent = '더 나눠도 좋아요. 준비됐으면 눌러서 다음(이해도 확인)으로 가요 — 넘어갈 때는 직접 정해요.';
+    $('#pn-desc').textContent = '더 나눠도 좋아요. 준비됐으면 눌러서 다음(자신감 점수)으로 가요 — 넘어갈 때는 직접 정해요.';
   } else {
     $('#pn-title').textContent = '스스로 점검 충분해요';
     $('#pn-desc').textContent = '더 이야기해도 좋아요. 준비됐으면 눌러서 다음(방법 고르기)으로 가요 — 넘어갈 때는 직접 정해요.';
@@ -1099,11 +1099,14 @@ function paintPhase(){
   paintProcessBar();
 }
 
-/* ===== 준비 대화의 하위 단계 표시: 목표 확인 → 아는 것 나누기 → 이해도 확인 → 스스로 점검 → 방법 고르기 → 이유 말하기 ===== */
+/* ===== 준비 대화의 하위 단계 표시: 목표 확인 → 아는 것 나누기(활성화, 원리6-①) → 자신감 점수(점검, 원리6-②)
+   → 스스로 점검(메타인지, 원리7) → 방법 고르기(원리8) → 이유 말하기(원리8) =====
+   ②는 "무엇을 아는지"(내용, 서술형) / ③은 "얼마나 자신 있는지"(정도, 숫자) — 서로 다른 걸 묻는다.
+   ③의 점수는 잔여물 확인(원리13)에서 사후 점수와 비교하는 기준선으로 재사용된다. */
 const PREP_LABELS = [
   { k:'greet',       t:'① 목표 확인' },
   { k:'prior',       t:'② 아는 것 나누기' },
-  { k:'priorscore',  t:'③ 이해도 확인' },
+  { k:'priorscore',  t:'③ 자신감 점수' },
   { k:'meta',        t:'④ 스스로 점검' },
   { k:'ready',       t:'⑤ 방법 고르기' },
   { k:'reason',      t:'⑥ 이유 말하기' }
@@ -1297,7 +1300,9 @@ async function prepNext(){
   if(session.prepStep==='prior'){
     if(!(session.prior.note||'').trim()){ modal('안내','먼저 지금 아는 것이나 관련된 경험을 한 번 이야기해 볼까요?'); return; }
     session.prepStep='priorscore'; paintPhase();
-    await ai(`좋아, 잘 이야기했어. 그럼 지금 이 주제를 얼마나 이해했다고 느끼는지 아래 1~5 버튼으로 눌러줘. (아직 다음 단계로 넘어가지 마.)`, 'prior-pick');
+    // 원리6-②(점검): 방금 나눈 '내용'과는 다른 걸 묻는다는 걸 분명히 한다 — 아는 내용이 아니라 "정도(자신감)"를 숫자로.
+    // 이 점수는 잔여물 확인(원리13)에서 사후 점수와 비교하는 기준선이 되므로 그 이유도 짧게 알려준다.
+    await ai(`방금 나눠준 이야기를 한 문장으로 짚어주며 존중해줘. 그런 다음 "이제 방금 말한 내용 말고, 전체적으로 이 주제에 얼마나 자신 있는지를 숫자로 표현해볼까? 이 점수는 나중에 얼마나 늘었는지 비교할 때 쓸 거야"라고 알려주고 아래 다섯 개 중 하나를 골라 달라고 안내해. (아직 다음 단계로 넘어가지 마.)`, 'prior-pick');
   } else if(session.prepStep==='meta'){
     if(!(session.meta.raw||'').trim()){ modal('안내','스스로 점검하는 이야기를 조금 더 나눠 볼까요?'); return; }
     // 아직 phase는 'prep'으로 둔다 — 공부 방법을 고르고 그 이유를 말하는 것까지가 준비 단계다(원리8).
@@ -1380,12 +1385,12 @@ function sendChat(){
     }
     if(step==='prior'){
       session.prior.note = (session.prior.note ? session.prior.note+' / ' : '') + v;
-      ai(`지금은 [지금 아는 것 확인하기] 단계이고 여러 턴 이어진다. 학습자의 답에 반응하고, 아직 얕거나 더 끌어낼 여지가 있으면 그 주제 안에서 더 구체적으로 파고드는 후속 질문 1개를 던져. 절대로 다음 단계(이해도 점수, 공부 방법 고르기 등)로 먼저 넘어가지 마. 학습자가 충분하다고 느끼면 화면의 [다음으로] 버튼을 누른다. 질문 1개.`);
+      ai(`지금은 [지금 아는 것 확인하기] 단계이고 여러 턴 이어진다. 학습자의 답에 반응하고, 아직 얕거나 더 끌어낼 여지가 있으면 그 주제 안에서 더 구체적으로 파고드는 후속 질문 1개를 던져. 절대로 다음 단계(자신감 점수, 공부 방법 고르기 등)로 먼저 넘어가지 마. 학습자가 충분하다고 느끼면 화면의 [다음으로] 버튼을 누른다. 질문 1개.`);
       return;
     }
     if(step==='priorscore'){
       session.prior.note = (session.prior.note ? session.prior.note+' / ' : '') + v;
-      ai(`짧게 반응만 하고, 아래 1~5 버튼으로 지금 이해한 정도를 눌러 달라고 한 문장으로 안내해. 다음 단계로 넘어가지 마.`, 'prior-pick');
+      ai(`짧게 반응만 하고, 내용이 아니라 전체적인 자신감을 아래 다섯 개 중 하나로 눌러 달라고 한 문장으로 다시 안내해. 다음 단계로 넘어가지 마.`, 'prior-pick');
       return;
     }
     if(step==='meta'){
@@ -1554,7 +1559,7 @@ function renderResidualResult(){
   const ev = session.residual.result; if(!ev) return;
   const yn = v => v===true?'맞았어요' : v===false?'다시 볼 부분 있어요' : '선생님이 봐요';
   const rows = [
-    ['정답을 맞혔나', `비슷한 문제 ${yn(ev.procedural.nearCorrect)} · 바꾼 문제 ${yn(ev.procedural.farCorrect)}<div class="hint">${esc(ev.procedural.note||'')}</div>`, deltaChip(ev.procedural.nearCorrect===true&&ev.procedural.farCorrect===true?'up':'flat', '공부할 때 스스로 매긴 이해도 '+(session.prior.score||'-')+'/5')],
+    ['정답을 맞혔나', `비슷한 문제 ${yn(ev.procedural.nearCorrect)} · 바꾼 문제 ${yn(ev.procedural.farCorrect)}<div class="hint">${esc(ev.procedural.note||'')}</div>`, deltaChip(ev.procedural.nearCorrect===true&&ev.procedural.farCorrect===true?'up':'flat', '공부할 때 스스로 매긴 자신감 점수 '+(session.prior.score||'-')+'/5')],
     ['설명을 잘 했나', `${esc(ev.selfExplain.level)}<div class="hint">${esc(ev.selfExplain.note||'')}</div>`, deltaChip('na','잘잘못은 정하지 않고 참고만 해요')],
     ['배운 방법을 썼나', `${ev.transfer.applied===true?'스스로 썼어요':ev.transfer.applied===false?'안 썼어요':'선생님이 봐요'}<div class="hint">${esc(ev.transfer.note||'')}</div>`, deltaChip('na','공부할 때 고른 방법: '+(session.strategyLabel||'안 골랐어요'))],
     ['얼마나 자신 있었나', ev.metacog.brier===null?'지금은 확인 못 해요(정답 미확정)':`차이 ${ev.metacog.brier.toFixed(2)} <span class="hint">(0에 가까울수록, 자신감과 실제 결과가 잘 맞아요)</span>`, deltaChip('na','자신감 vs 실제 결과')]
@@ -1639,7 +1644,7 @@ function init(){
       session.prior.score = +pr.dataset.n;
       if(session.prepStep==='priorscore'){
         session.prepStep='meta'; renderStream(); paintPhase();
-        ai(`이해한 정도 잘 알려줬어. 이제 스스로 점검을 해보자. 먼저 한 가지만 물어봐: "이 주제에서 이미 이해하고 있다고 느끼는 부분이 뭐야?" (나머지 두 가지는 다음 턴에 이어서 물을 거야.) 질문 1개.`);
+        ai(`자신감 점수 잘 알려줬어. 이제 스스로 점검을 해보자(방금 고른 점수와는 다른, 조금 더 구체적인 질문들이야). 먼저 한 가지만 물어봐: "이 주제에서 이미 이해하고 있다고 느끼는 부분이 뭐야?" (나머지 두 가지는 다음 턴에 이어서 물을 거야.) 질문 1개.`);
       } else renderStream();
       return;
     }
