@@ -400,6 +400,36 @@
   .ck-btn.on-know{border-color:var(--accent);background:var(--accent-wash);color:var(--accent-ink)}
   .ck-btn.on-confused{border-color:var(--amber);background:var(--amber-wash);color:var(--amber-ink)}
 
+  /* ===== 이해 전략(원리9): 이해도 체크포인트 — 확신도 + 근거를 함께 받는다 ===== */
+  .checkpoint-card{background:var(--amber-wash)!important;border-color:#f3d19b!important}
+  .checkpoint-card .msc-title{color:var(--amber-ink)!important}
+
+  /* ===== 조직화(원리8): 마인드맵 직접 조작 위젯 — 관계·배치는 전부 학습자가 조작 ===== */
+  .mm-toolbar{display:flex;gap:6px;padding:9px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .mm-btn{border:1px solid var(--line-strong);background:#fff;border-radius:8px;padding:6px 11px;font-size:12px;font-weight:700;color:var(--ink-2);transition:.14s}
+  .mm-btn:hover{border-color:var(--muted)}
+  .mm-btn:disabled{opacity:.4;cursor:not-allowed}
+  .mm-btn.on{border-color:var(--info);background:var(--info-wash);color:#1e3a8a}
+  .mindmap-editor{padding:10px}
+  .mm-canvas{position:relative;width:100%;height:360px;border:1px solid var(--line);border-radius:10px;overflow:hidden;touch-action:none;
+    background-image:linear-gradient(var(--surface-2) 1px,transparent 1px),linear-gradient(90deg,var(--surface-2) 1px,transparent 1px);
+    background-size:24px 24px;background-color:#fff}
+  .mm-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .mm-svg line{stroke:var(--line-strong);stroke-width:2px}
+  .mm-node2{position:absolute;transform:translate(-50%,-50%);background:var(--accent-wash);border:1.5px solid #cdeadd;color:var(--accent-ink);
+    border-radius:12px;padding:7px 12px;font-size:12.5px;font-weight:700;max-width:150px;text-align:center;cursor:grab;user-select:none;
+    box-shadow:0 2px 5px rgba(16,24,40,.08);line-height:1.3}
+  .mm-node2.root{background:var(--primary);color:#fff;border-color:var(--primary);font-size:13.5px;z-index:2}
+  .mm-node2.selected{outline:3px solid var(--warn);outline-offset:1px}
+  .mm-node2.connecting{outline:3px solid var(--info);outline-offset:1px}
+  .mm-node2:active{cursor:grabbing}
+  .mm-edge-label{position:absolute;transform:translate(-50%,-50%);background:#fff;border:1px solid var(--line-strong);border-radius:999px;
+    padding:2px 8px;font-size:10.5px;font-weight:700;color:var(--ink-2);cursor:pointer;white-space:nowrap;pointer-events:auto}
+  .mm-edit-popover{position:fixed;z-index:60;background:#fff;border:1px solid var(--line-strong);border-radius:10px;padding:6px;
+    box-shadow:0 8px 24px -8px rgba(16,24,40,.32);display:flex;gap:6px}
+  .mm-edit-popover input{border:1px solid var(--line-strong);border-radius:7px;padding:5px 8px;font-size:12.5px;width:160px}
+  .mm-edit-popover button{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:7px;padding:4px 10px;font-weight:800}
+
   /* ===== 원리5: 과업 분담 블록(대화 시작 전, 클릭으로 옮기기) ===== */
   .block-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   @media(max-width:620px){.block-cols{grid-template-columns:1fr}}
@@ -564,6 +594,11 @@
           <h5 style="font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.03em;margin-bottom:9px">🔒 항상 내가 하는 일 (옮길 수 없어요 — AI에게 넘길 수 없는 일이에요)</h5>
           <div id="tb-locked"></div>
         </div>
+      </div>
+      <div>
+        <label class="field-label" for="st-checkpoint">④ 이해도 체크포인트 간격 <span style="color:var(--muted);font-weight:500">(선생님 설정 — 몇 번 주고받을 때마다 "얼마나 이해했는지" 확인할지)</span></label>
+        <input type="number" class="input" id="st-checkpoint" min="2" max="10" value="4" style="max-width:140px" />
+        <p class="hint">대화 중 자동으로 뜨는 이해도 체크포인트에서는 점수만이 아니라 <b>그 이유도 꼭</b> 적어야 다음으로 갈 수 있어요.</p>
       </div>
     </div>
     <div class="nav">
@@ -864,8 +899,13 @@ const CYCLE_LABELS = [
 const STRUCT_SCHEMAS = {
   table:   { shape:'{"type":"table","headers":["열1","열2"],"rows":[["…","…"],["…","…"]]}',
              ask:s=>`지금까지 나눈 이야기를 바탕으로 "${s.ctx.std}"와 관련된 내용을 표로 정리해줘. 표는 3~5행 정도로.` },
+  // 원리1 적응적 페이딩: AI 도움이 클수록(high) 후보 낱말을 더 많이, 학습자가 숙련될수록(low) 적게
+  // 준다. 후보들 사이의 관계·순서·위계는 절대 제안하지 않는다 — 그건 학습자가 직접 판단할 몫이다.
   mindmap: { shape:'{"type":"mindmap","root":"가운데 낱말","children":["가지1","가지2","가지3"]}',
-             ask:s=>`"${s.ctx.std}"를 가운데 낱말로 두고, 지금까지 나눈 이야기에서 나온 관련 낱말·생각을 3~5개 가지로 뽑아줘.` },
+             ask:s=>{
+               const n = s.support==='low' ? '2~3개' : s.support==='mid' ? '3~4개' : '4~5개';
+               return `"${s.ctx.std}"를 가운데 낱말로 두고, 지금까지 나눈 이야기에서 나온 관련 낱말·생각 후보를 ${n} 뽑아줘. 후보들 사이의 관계·순서·위계는 절대 판단하거나 암시하지 마(예: 순서대로 나열하지 말 것) — 그냥 후보 낱말 목록만 준다.`;
+             } },
   compare: { shape:'{"type":"compare","leftTitle":"내 생각","leftText":"…","rightTitle":"따져볼 점","rightText":"…"}',
              ask:s=>`학습자가 방금 말한 생각과, 거기서 따져볼 만한 반례나 다른 관점을 나란히 비교해줘.` },
   chain:   { shape:'{"type":"chain","steps":["1단계","2단계","3단계"]}',
@@ -1209,6 +1249,10 @@ function startSession(){
     acceptStreak:0, holdStreak:0, stuckCount:0,
     phase:'prep', prepStep:'init', awaitPick:null,
     cycleIdx:0, cycleNow:'ask',
+    // 이해 전략(원리9 이해 점검): 선생님이 정한 간격마다 확신도+근거 체크포인트를 자동 삽입한다.
+    // "설명해봐"(1차 인지 확인)와 구분되도록, 내용이 아니라 "내 이해 상태에 대한 판단·근거"를 묻는다.
+    checkpointInterval: Math.max(2, Math.min(10, +$('#st-checkpoint').value || 4)),
+    checkpoints:[], turnsSinceCheckpoint:0, pendingCheckpoint:false,
     turns:[],
     reflect:{ note:'', noteA:'', tags:{}, step:'delegate' },
     // 원리13: 사전 진단(prior.diagScore)과 같은 채점 기준의 사후 진단(items 4문항, postScore)을
@@ -1224,8 +1268,11 @@ function startSession(){
 let busy = false;
 let pendingStrategyPick = [];      // 방법 카드 다중 선택 중 임시 상태(확정 전)
 let strategyPickMode = 'initial';  // 'initial'(처음 고르기) | 'change'(원리9: 대화 중 바꾸기)
+let mmSelected = null;    // 마인드맵에서 선택된 노드 {tid, nodeId}
+let mmConnectFrom = null; // 마인드맵 연결선 긋기 모드 {tid, nodeId|null}
 function enterChat(){
   $('#chat-std').textContent = `${session.ctx.subject} · ${trim(session.ctx.std,40)}`;
+  mmSelected = null; mmConnectFrom = null; closeMmPopover();
   paintSupport(); paintPhase();
   renderStream();
   if(!session.turns.length){
@@ -1253,7 +1300,7 @@ function paintPhase(){
   bn.hidden = !inPrepDialog;
   if(session.prepStep==='prior'){
     $('#pn-title').textContent = '지금 아는 것 이야기 충분해요';
-    $('#pn-desc').textContent = '더 나눠도 좋아요. 준비됐으면 눌러서 다음(사전 진단 4문항)으로 가요 — 넘어갈 때는 직접 정해요.';
+    $('#pn-desc').textContent = '더 나눠도 좋아요. 준비됐으면 눌러서 다음(사전 진단 채점·자신감 점수)으로 가요 — 넘어갈 때는 직접 정해요.';
   } else {
     $('#pn-title').textContent = '스스로 점검 충분해요';
     $('#pn-desc').textContent = '더 이야기해도 좋아요. 준비됐으면 눌러서 다음(방법 고르기)으로 가요 — 넘어갈 때는 직접 정해요.';
@@ -1265,7 +1312,18 @@ function paintPhase(){
   $('#prep-wrap').hidden = session.phase!=='prep';
   if(session.phase==='explore'){ renderCycleStrip(); renderQuickActions(); }
   else if(session.phase==='prep'){ renderPrepStrip(); }
+  syncComposeLock();
   paintProcessBar();
+}
+// 이해도 체크포인트가 안 풀렸으면(근거 미입력) 다음 대화로 못 넘어가게 잠근다.
+function syncComposeLock(){
+  const locked = !!(session && session.pendingCheckpoint);
+  ['chat-send','chat-input','btn-stuck','btn-change-strategy'].forEach(id=>{ const el=$('#'+id); if(el) el.disabled = locked; });
+  const qa = $('#quick-actions');
+  qa.style.pointerEvents = locked ? 'none' : '';
+  qa.style.opacity = locked ? '.4' : '';
+  const bn = $('#btn-prep-next');
+  if(locked) bn.disabled = true; else bn.disabled = false;
 }
 
 /* ===== 준비 대화의 하위 단계 표시: 목표 확인 → 아는 것 나누기(활성화+점검, 원리6) → 자신감 점수
@@ -1355,6 +1413,26 @@ function renderStream(){
   const box = $('#stream'); box.innerHTML='';
   session.turns.forEach(t=>{
     if(t.role==='note'){
+      if(t.kind==='checkpoint'){
+        if(t.answered){
+          box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card">
+            <div class="msc-title">🧭 이해도 체크포인트 (완료)</div>
+            <div class="msc-row"><span>내가 준 점수</span><span class="bar"><i style="width:${t.score*20}%"></i></span><b>${t.score}점</b></div>
+            <div class="msc-note"><b>이유:</b> ${esc(t.reason)}</div>
+          </div></div>`);
+        } else {
+          const canSubmit = t.score && (t.reason||'').trim().length>=2;
+          box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card checkpoint-card">
+            <div class="msc-title">🧭 잠깐! 이해도 체크포인트</div>
+            <p style="font-size:13px;color:var(--ink);margin:2px 0 8px">지금까지 내용을 얼마나 확실히 이해했다고 느껴?</p>
+            <div class="understand-pick" data-cp-score="${t.id}">${UNDERSTAND_LEVELS.map(u=>`<button type="button" class="u-chip ${t.score===u.n?'is-selected':''}" data-n="${u.n}"><span class="u-emoji">${u.emoji}</span><span>${u.label}</span></button>`).join('')}</div>
+            <label class="field-label" style="margin-top:10px">그 점수를 준 이유는 뭐야? <span style="color:var(--muted);font-weight:500">(꼭 적어야 다음으로 갈 수 있어요)</span></label>
+            <textarea class="textarea cp-reason" data-cp="${t.id}" rows="2" placeholder="이유를 적어줘">${esc(t.reason||'')}</textarea>
+            <div style="text-align:right;margin-top:8px"><button type="button" class="btn btn-sm btn-primary cp-submit" data-cp="${t.id}" ${canSubmit?'':'disabled'}>확인하고 계속하기</button></div>
+          </div></div>`);
+        }
+        return;
+      }
       if(t.kind==='prior-score'){
         const sc = t.priorScore;
         box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card">
@@ -1488,10 +1566,8 @@ function renderStructHTML(tid, s){
       <table class="struct-table"><thead><tr>${p.headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
       <tbody>${p.rows.map(r=>`<tr>${(r||[]).map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   }
-  if(s.type==='mindmap' && p.root){
-    const kids = (p.children||[]).map(c=>`<div class="mm-node">${esc(typeof c==='string'?c:(c.label||''))}</div>`).join('');
-    return `<div class="struct-box"><div class="struct-head">🧠 마인드맵으로 정리한 내용</div>
-      <div class="struct-mindmap"><div class="mm-root">${esc(p.root)}</div><div class="mm-stem"></div><div class="mm-children">${kids}</div></div></div>`;
+  if(s.type==='mindmap' && Array.isArray(p.nodes)){
+    return renderMindmapHTML(tid, p);
   }
   if(s.type==='compare'){
     return `<div class="struct-box"><div class="struct-head">⚖️ 나란히 비교한 내용</div>
@@ -1520,6 +1596,121 @@ function renderStructHTML(tid, s){
   }
   return `<div class="bubble">⚠ 정리한 내용을 표시하지 못했어요.</div>`;
 }
+
+/* ===== 조직화(원리8): 마인드맵 직접 조작 위젯 =====
+   AI는 중심 낱말 1개 + 후보 낱말만 준다(관계·위계 없음, 무작위 배치). 낱말 이동, 연결선 긋기,
+   관계 이름 붙이기, 낱말 추가/삭제는 전부 학습자가 직접 조작해야 하며 AI가 대신 하지 않는다. */
+function mmInitPayload(root, children){
+  const nodes = [{ id:'n0', text:root, x:50, y:44 }];
+  const n = Math.max(children.length, 1);
+  children.forEach((c,i)=>{
+    const angle = (2*Math.PI*i/n) + (Math.random()*0.6-0.3); // 각도를 살짝 흔들어 위계처럼 안 보이게
+    const r = 30 + Math.random()*10;
+    const x = Math.max(8, Math.min(92, 50 + Math.cos(angle)*r));
+    const y = Math.max(10, Math.min(88, 44 + Math.sin(angle)*r*0.9));
+    nodes.push({ id:'n'+(i+1), text:c, x, y });
+  });
+  return { nodes, edges:[] };
+}
+function renderMindmapHTML(tid, payload){
+  const nodes = payload.nodes||[], edges = payload.edges||[];
+  const byId = id => nodes.find(n=>n.id===id);
+  const lines = edges.map(e=>{ const a=byId(e.from), b=byId(e.to); if(!a||!b) return ''; return `<line data-eid="${e.id}" x1="${a.x}%" y1="${a.y}%" x2="${b.x}%" y2="${b.y}%" />`; }).join('');
+  const labels = edges.map(e=>{
+    const a=byId(e.from), b=byId(e.to); if(!a||!b) return '';
+    return `<div class="mm-edge-label" data-eid="${e.id}" style="left:${(a.x+b.x)/2}%;top:${(a.y+b.y)/2}%">${e.label?esc(e.label):'+ 이름 붙이기'}</div>`;
+  }).join('');
+  const connectingHere = mmConnectFrom && mmConnectFrom.tid===tid;
+  const nodeDivs = nodes.map(n=>{
+    const cls = ['mm-node2'];
+    if(n.id==='n0') cls.push('root');
+    if(mmSelected && mmSelected.tid===tid && mmSelected.nodeId===n.id) cls.push('selected');
+    if(connectingHere && mmConnectFrom.nodeId===n.id) cls.push('connecting');
+    return `<div class="${cls.join(' ')}" data-nid="${n.id}" style="left:${n.x}%;top:${n.y}%">${esc(n.text)}</div>`;
+  }).join('');
+  return `<div class="struct-box">
+    <div class="struct-head">🧠 마인드맵 — 낱말을 옮기고, 연결선을 긋고, 관계 이름을 붙여보세요</div>
+    <div class="mm-toolbar" data-tid="${tid}">
+      <button type="button" class="mm-btn" data-act="add">+ 낱말 추가</button>
+      <button type="button" class="mm-btn ${connectingHere?'on':''}" data-act="connect">🔗 연결선 긋기${connectingHere && mmConnectFrom.nodeId==null ? ' (첫 낱말 눌러요)' : connectingHere ? ' (둘째 낱말 눌러요)' : ''}</button>
+      <button type="button" class="mm-btn" data-act="del" ${mmSelected&&mmSelected.tid===tid?'':'disabled'}>선택한 낱말 지우기</button>
+    </div>
+    <div class="mindmap-editor"><div class="mm-canvas" data-tid="${tid}">
+      <svg class="mm-svg">${lines}</svg>
+      ${labels}
+      ${nodeDivs}
+    </div></div>
+    <p class="hint" style="padding:0 12px 10px">낱말을 눌러서 선택하거나 드래그로 옮겨요. "연결선 긋기"를 켜고 낱말 두 개를 차례로 누르면 선이 이어져요. 선 가운데 이름표를 누르면 관계 이름을 붙일 수 있어요.</p>
+  </div>`;
+}
+function mmNodeAt(tid, nodeId){
+  const t = session.turns.find(x=>x.id===tid);
+  const nodes = t && t.structured && t.structured.payload && t.structured.payload.nodes;
+  return nodes ? nodes.find(n=>n.id===nodeId) : null;
+}
+function mmEdgesOf(tid){
+  const t = session.turns.find(x=>x.id===tid);
+  return (t && t.structured && t.structured.payload && t.structured.payload.edges) || [];
+}
+function mmUpdateEdgeDom(tid, nodeId){
+  const canvas = document.querySelector(`.mm-canvas[data-tid="${tid}"]`); if(!canvas) return;
+  const t = session.turns.find(x=>x.id===tid); if(!t || !t.structured) return;
+  const nodes = t.structured.payload.nodes;
+  const byId = id => nodes.find(n=>n.id===id);
+  mmEdgesOf(tid).forEach(e=>{
+    if(e.from!==nodeId && e.to!==nodeId) return;
+    const a=byId(e.from), b=byId(e.to); if(!a||!b) return;
+    const line = canvas.querySelector(`line[data-eid="${e.id}"]`);
+    if(line){ line.setAttribute('x1',a.x+'%'); line.setAttribute('y1',a.y+'%'); line.setAttribute('x2',b.x+'%'); line.setAttribute('y2',b.y+'%'); }
+    const lbl = canvas.querySelector(`.mm-edge-label[data-eid="${e.id}"]`);
+    if(lbl){ lbl.style.left = ((a.x+b.x)/2)+'%'; lbl.style.top = ((a.y+b.y)/2)+'%'; }
+  });
+}
+// 드래그 없이 "클릭"으로 끝난 경우: 연결선 긋기 모드면 시작/끝점 지정, 아니면 단순 선택 토글.
+function mmHandleNodeClick(tid, nodeId){
+  if(mmConnectFrom && mmConnectFrom.tid===tid){
+    if(mmConnectFrom.nodeId===null){ mmConnectFrom.nodeId = nodeId; renderStream(); return; }
+    if(mmConnectFrom.nodeId!==nodeId){
+      const t = session.turns.find(x=>x.id===tid);
+      const payload = t.structured.payload;
+      const dup = payload.edges.some(e=>(e.from===mmConnectFrom.nodeId&&e.to===nodeId)||(e.from===nodeId&&e.to===mmConnectFrom.nodeId));
+      if(!dup) payload.edges.push({ id:uid(), from:mmConnectFrom.nodeId, to:nodeId, label:'' });
+    }
+    mmConnectFrom = null;
+    renderStream();
+    return;
+  }
+  mmSelected = (mmSelected && mmSelected.tid===tid && mmSelected.nodeId===nodeId) ? null : { tid, nodeId };
+  renderStream();
+}
+// 노드/연결선 이름 입력용 인라인 팝오버(네이티브 prompt() 대신 앱 톤에 맞춘 최소 입력창).
+function closeMmPopover(){ document.querySelectorAll('.mm-edit-popover').forEach(p=>p.remove()); }
+function mmEditPopover(x, y, initial, onConfirm){
+  closeMmPopover();
+  const pop = document.createElement('div');
+  pop.className = 'mm-edit-popover';
+  const vw = window.innerWidth || 1000;
+  pop.style.left = Math.min(x, vw-200)+'px'; pop.style.top = y+'px';
+  pop.innerHTML = `<input type="text" maxlength="40" /><button type="button" data-ok>✓</button>`;
+  document.body.appendChild(pop);
+  const input = pop.querySelector('input');
+  input.value = initial; input.focus(); input.select();
+  let done = false;
+  const finish = commit => {
+    if(done) return; done = true;
+    const val = input.value.trim();
+    pop.remove();
+    document.removeEventListener('mousedown', onOutside, true);
+    if(commit) onConfirm(val);
+  };
+  function onOutside(ev){ if(!pop.contains(ev.target)) finish(false); }
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ e.preventDefault(); finish(true); }
+    else if(e.key==='Escape'){ finish(false); }
+  });
+  pop.querySelector('[data-ok]').addEventListener('click', ()=>finish(true));
+  setTimeout(()=> document.addEventListener('mousedown', onOutside, true), 0);
+}
 async function requestStructured(type, label){
   if(busy || session.phase!=='explore') return;
   busy = true;
@@ -1535,7 +1726,10 @@ async function requestStructured(type, label){
       ...hist,
       { role:'user', content: schema.ask(session) }
     ]);
-    const payload = parseJSON(raw);
+    let payload = parseJSON(raw);
+    // 마인드맵: AI가 준 것은 "중심 낱말 + 후보 낱말"뿐이다. 배치·관계·순서는 여기서부터
+    // 전부 학습자 몫이라, 관계를 암시하지 않는 무작위 배치로 변환해 저장한다(원리2·8).
+    if(type==='mindmap') payload = mmInitPayload(String(payload.root||'중심 낱말'), Array.isArray(payload.children)?payload.children.map(String):[]);
     $('#pending')?.remove();
     session.turns.push({ id:uid(), role:'ai', text:'', structured:{ type, payload }, phase:session.phase, kind:null, support:session.support, judge:null, comment:'' });
     renderStream();
@@ -1661,10 +1855,30 @@ async function ai(instruction, kind){
     }
     $('#pending')?.remove();
     pushAi(capLength(stripTaskDump(stripLeakedParams(stripMarkdown(text)))), kind==='prior-pick' ? 'prior-pick' : (kind==='strategy-pick' ? 'strategy-pick' : null));
+    maybeInsertCheckpoint(kind);
   }catch(err){
     $('#pending')?.remove();
     pushAi('⚠ ' + err.message);
   }finally{ busy=false; }
+}
+function checkpointEffectiveInterval(){
+  const base = session.checkpointInterval || 4;
+  if(session.support==='low') return base + 2;   // 숙련될수록(비계 낮음) 체크를 덜 자주 — 적응적 페이딩
+  if(session.support==='high') return Math.max(2, base - 1); // 아직 서툴수록 더 자주
+  return base;
+}
+// 이해 전략(원리9 이해 점검): "설명해봐"(1차 인지 확인)가 아니라 "내 이해 상태에 대한 판단과
+// 근거"를 정기적으로 자동으로 묻는다. 지원강도(원리1 페이딩) 신호를 그대로 재사용해, 아직
+// 서툴 때는 더 자주·숙련될수록 덜 자주 뜨게 한다.
+function maybeInsertCheckpoint(kind){
+  if(session.phase!=='explore' || kind==='monitor' || session.pendingCheckpoint) return;
+  session.turnsSinceCheckpoint = (session.turnsSinceCheckpoint||0) + 1;
+  if(session.turnsSinceCheckpoint < checkpointEffectiveInterval()) return;
+  session.turnsSinceCheckpoint = 0;
+  session.pendingCheckpoint = true;
+  session.turns.push({ id:uid(), role:'note', kind:'checkpoint', answered:false, score:null, reason:'' });
+  renderStream();
+  syncComposeLock();
 }
 // 마크다운 문법이 새어 나온 경우를 대비한 방어적 후처리(프롬프트 규칙이 뚫렸을 때의 안전망)
 function stripMarkdown(s){
@@ -2177,6 +2391,103 @@ function init(){
     }
     const jt = e.target.closest('.judge-trigger');
     if(jt){ openJudgeModal(jt.dataset.id); return; }
+    // ----- 이해도 체크포인트(원리9 이해 점검) -----
+    const cpChip = e.target.closest('[data-cp-score] .u-chip');
+    if(cpChip){
+      const cpId = cpChip.closest('[data-cp-score]').dataset.cpScore;
+      const t = session.turns.find(x=>x.id===cpId); if(!t) return;
+      t.score = +cpChip.dataset.n;
+      renderStream();
+      return;
+    }
+    const cpSubmit = e.target.closest('.cp-submit');
+    if(cpSubmit){
+      if(cpSubmit.disabled) return;
+      const cpId = cpSubmit.dataset.cp;
+      const t = session.turns.find(x=>x.id===cpId); if(!t) return;
+      t.answered = true;
+      session.checkpoints.push({ turnId:t.id, score:t.score, reason:t.reason, at:new Date().toISOString() });
+      session.pendingCheckpoint = false;
+      renderStream(); syncComposeLock();
+      return;
+    }
+    // ----- 조직화: 마인드맵 직접 조작 위젯(원리8) -----
+    const mmBtn = e.target.closest('.mm-btn');
+    if(mmBtn){
+      const tid = mmBtn.closest('.mm-toolbar').dataset.tid;
+      const t = session.turns.find(x=>x.id===tid); if(!t || !t.structured) return;
+      const payload = t.structured.payload;
+      const act = mmBtn.dataset.act;
+      if(act==='add'){
+        const rect = mmBtn.getBoundingClientRect();
+        mmEditPopover(rect.left, rect.bottom+6, '', val=>{
+          if(!val) return;
+          payload.nodes.push({ id:'n'+uid(), text:anonymize(val).slice(0,40), x:20+Math.random()*60, y:20+Math.random()*60 });
+          renderStream();
+        });
+      } else if(act==='connect'){
+        mmConnectFrom = (mmConnectFrom && mmConnectFrom.tid===tid) ? null : { tid, nodeId:null };
+        mmSelected = null;
+        renderStream();
+      } else if(act==='del'){
+        if(!mmSelected || mmSelected.tid!==tid) return;
+        if(mmSelected.nodeId==='n0'){ modal('안내','중심 낱말은 지울 수 없어요.'); return; }
+        payload.nodes = payload.nodes.filter(n=>n.id!==mmSelected.nodeId);
+        payload.edges = payload.edges.filter(ed=>ed.from!==mmSelected.nodeId && ed.to!==mmSelected.nodeId);
+        mmSelected = null;
+        renderStream();
+      }
+      return;
+    }
+    const mmLbl = e.target.closest('.mm-edge-label');
+    if(mmLbl){
+      const canvas = mmLbl.closest('.mm-canvas'); const tid = canvas.dataset.tid; const eid = mmLbl.dataset.eid;
+      const t = session.turns.find(x=>x.id===tid); if(!t) return;
+      const edge = t.structured.payload.edges.find(x=>x.id===eid); if(!edge) return;
+      const rect = mmLbl.getBoundingClientRect();
+      mmEditPopover(rect.left, rect.bottom+4, edge.label||'', val=>{ edge.label = anonymize(val).slice(0,24); renderStream(); });
+      return;
+    }
+    const mmCanvasBg = e.target.closest('.mm-canvas');
+    if(mmCanvasBg && e.target===mmCanvasBg){
+      mmSelected = null; mmConnectFrom = null; renderStream();
+      return;
+    }
+  });
+  $('#stream').addEventListener('input', e=>{
+    const cpReason = e.target.closest('.cp-reason');
+    if(cpReason){
+      const cpId = cpReason.dataset.cp;
+      const t = session.turns.find(x=>x.id===cpId); if(!t) return;
+      t.reason = cpReason.value;
+      const btn = document.querySelector(`.cp-submit[data-cp="${cpId}"]`);
+      if(btn) btn.disabled = !(t.score && t.reason.trim().length>=2);
+    }
+  });
+  $('#stream').addEventListener('pointerdown', e=>{
+    const nodeEl = e.target.closest('.mm-node2'); if(!nodeEl) return;
+    const canvas = nodeEl.closest('.mm-canvas'); if(!canvas) return;
+    const tid = canvas.dataset.tid, nid = nodeEl.dataset.nid;
+    const node = mmNodeAt(tid, nid); if(!node) return;
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const startX = e.clientX, startY = e.clientY, startNX = node.x, startNY = node.y;
+    let moved = false;
+    function onMove(ev){
+      const dxPct = (ev.clientX-startX)/rect.width*100, dyPct = (ev.clientY-startY)/rect.height*100;
+      if(Math.abs(dxPct)>1 || Math.abs(dyPct)>1) moved = true;
+      node.x = Math.max(4, Math.min(96, startNX+dxPct));
+      node.y = Math.max(6, Math.min(94, startNY+dyPct));
+      nodeEl.style.left = node.x+'%'; nodeEl.style.top = node.y+'%';
+      mmUpdateEdgeDom(tid, nid);
+    }
+    function onUp(){
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      if(!moved) mmHandleNodeClick(tid, nid);
+    }
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
   });
   $('#btn-change-strategy').addEventListener('click', ()=>{
     if(busy || session.phase!=='explore') return;
