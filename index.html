@@ -340,6 +340,24 @@
   .cycle-node.done{background:var(--accent-wash);border-color:#cdeadd;color:var(--accent-ink)}
   .cycle-arrow{color:var(--muted);font-size:12px;padding:0 1px}
 
+  /* ===== 성취기준·목표를 줄이지 않고 항상 보여주는 상단 박스 ===== */
+  .goal-strip{padding:11px 18px;border-bottom:1px solid var(--line);background:#fff;display:flex;flex-direction:column;gap:6px}
+  .gs-row{display:flex;gap:7px;align-items:baseline;flex-wrap:wrap;font-size:12.5px;line-height:1.5}
+  .gs-row .gs-ic{flex:none}
+  .gs-row b{color:var(--muted);font-weight:800;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;flex:none}
+  .gs-row span:last-child{color:var(--ink);font-weight:600;flex:1 1 240px;min-width:0;word-break:keep-all}
+
+  /* ===== 원리1 적응적 페이딩(비계 감소)이 실제로 눈에 보이도록 하는 단계 표시 바 =====
+     오른쪽에서 왼쪽으로 진 방향(많이→보통→조금)이며, 이미 지나온 단계는 done(체크)으로
+     표시해 "정말로 줄어들고 있다"가 시각적으로 확인되게 한다. */
+  .scaffold-wrap{border-bottom:1px solid var(--line);background:var(--surface-2);padding:10px 18px;transition:background .3s}
+  .scaffold-title{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.03em;margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:baseline}
+  .scaffold-hint{font-weight:600;color:var(--muted);font-size:10.5px;letter-spacing:0;text-transform:none}
+  .scaffold-strip{display:flex;align-items:center;flex-wrap:wrap;gap:2px}
+  .scaffold-node.done::before{content:"✓ "}
+  @keyframes scaffoldFlash{0%,100%{background:transparent}45%{background:var(--amber-wash)}}
+  .scaffold-wrap.flash{animation:scaffoldFlash 1s ease}
+
   /* ===== 다음으로 넘어가기: 눈에 잘 띄는 버튼 ===== */
   .prep-next-btn{width:100%;display:flex;align-items:center;gap:13px;text-align:left;background:var(--accent-wash);border:1.5px solid #a9e2c6;border-radius:14px;padding:13px 16px;transition:.15s}
   .prep-next-btn:hover{background:#d9f3e7;border-color:var(--accent)}
@@ -441,6 +459,8 @@
   .task-block button:hover{border-color:var(--accent);background:var(--accent-wash)}
   .task-block.locked{background:var(--surface-2);color:var(--muted);border-style:dashed}
   .task-block.locked .lock-ic{font-size:12px}
+  .tb-stage h6{font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.05em;margin:10px 0 5px;text-transform:uppercase}
+  .tb-stage:first-child h6{margin-top:0}
   .block-locked-row{border:1px dashed var(--line-strong);border-radius:14px;padding:12px;margin-top:10px;background:var(--surface-2)}
 
   [hidden]{display:none!important}
@@ -572,7 +592,7 @@
       </div>
       <hr style="border:none;border-top:1px solid var(--line)" />
       <div>
-        <label class="field-label">① 시작할 때 AI 힌트 크기 <span style="color:var(--muted);font-weight:500">(얼마나 자세히 알려줄지 — 대화 중엔 못 바꾸고, 잘 이해할수록 자동으로 줄어들어요)</span></label>
+        <label class="field-label">① 시작할 때 AI 힌트 크기 <span style="color:var(--muted);font-weight:500">(얼마나 자세히 알려줄지 — 대화 중엔 못 바꾸고, 잘 이해할수록 자동으로 줄어들어요. 이 정도는 대화 내내 상단 바로 계속 보여요)</span></label>
         <div class="choices" id="st-support" style="grid-template-columns:repeat(3,1fr)">
           <button class="choice" data-v="high">많이<small>구체적인 힌트</small></button>
           <button class="choice" data-v="mid">보통<small>방향만 살짝</small></button>
@@ -580,12 +600,7 @@
         </div>
       </div>
       <div>
-        <label class="field-label" style="margin-bottom:6px">② 오늘 나와 AI의 역할 분담 <span style="color:var(--muted);font-weight:500">(①과는 다른 결정이에요 — 누가 더 많이 할지 정해요. 대화 내내 헤더에 표시돼요)</span></label>
-        <input type="range" class="range" id="st-role" min="0" max="100" step="10" value="40" />
-        <div class="range-ends"><span>🙋 내가 주로 할래요</span><span id="st-role-val">힌트 위주로 도와줘요 (40)</span><span>✏️ AI가 첨삭까지 →</span></div>
-      </div>
-      <div>
-        <label class="field-label" style="margin-bottom:6px">③ 오늘 할 일, 누가 맡을까요? <span style="color:var(--muted);font-weight:500">(블록을 눌러서 반대쪽으로 옮겨요 — AI가 실제로 이 약속을 지켜요)</span></label>
+        <label class="field-label" style="margin-bottom:6px">② 오늘 할 일, 누가 맡을까요? <span style="color:var(--muted);font-weight:500">(블록을 눌러서 반대쪽으로 옮겨요 — AI가 실제로 이 약속을 지켜요. ①과는 다른 결정이에요: ①은 "얼마나 자세히" 힌트를 줄지, 여기는 "그 일 자체를 누가 할지"예요)</span></label>
         <div class="block-cols">
           <div class="block-col"><h5>🤖 AI가 맡을 일</h5><div id="tb-ai"></div></div>
           <div class="block-col"><h5>🙋 내가 맡을 일</h5><div id="tb-me"></div></div>
@@ -594,11 +609,6 @@
           <h5 style="font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.03em;margin-bottom:9px">🔒 항상 내가 하는 일 (옮길 수 없어요 — AI에게 넘길 수 없는 일이에요)</h5>
           <div id="tb-locked"></div>
         </div>
-      </div>
-      <div>
-        <label class="field-label" for="st-checkpoint">④ 이해도 체크포인트 간격 <span style="color:var(--muted);font-weight:500">(선생님 설정 — 몇 번 주고받을 때마다 "얼마나 이해했는지" 확인할지)</span></label>
-        <input type="number" class="input" id="st-checkpoint" min="2" max="10" value="4" style="max-width:140px" />
-        <p class="hint">대화 중 자동으로 뜨는 이해도 체크포인트에서는 점수만이 아니라 <b>그 이유도 꼭</b> 적어야 다음으로 갈 수 있어요.</p>
       </div>
     </div>
     <div class="nav">
@@ -622,18 +632,19 @@
           <span id="chat-std">오늘 배울 내용</span>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <span class="support-badge" style="background:var(--purple-wash);border-color:#ddd6fe;color:var(--purple-ink)" title="세션 시작할 때 정한 역할 분담이에요(원리5) — 누가 더 많이 할지. 힌트 크기(원리1)와는 다른 결정이고, 대화 중엔 못 바꿔요.">
-            역할 <span id="role-badge-text">힌트 위주</span>
-          </span>
-          <span class="support-badge" title="세션 시작할 때 정한 힌트 크기예요(원리1) — AI 응답을 '좋아요'로 표시할수록 자동으로 줄어들어요. 대화 중엔 직접 못 바꿔요.">
-            AI 도움 <span id="support-text">많이</span>
-            <span class="bar"><i id="support-fill" style="width:100%"></i></span>
-          </span>
           <span class="support-badge" id="strategy-badge" style="background:var(--accent-wash);border-color:#cdeadd;color:var(--accent-ink)" title="내가 고른 공부 방법이에요(원리8) — 여러 개 고를 수 있고, 막히면 바꿔볼 수 있어요." hidden>
             방법 <span id="strategy-badge-text">-</span>
           </span>
           <button class="icon-btn" id="btn-change-strategy" style="padding:0 10px;height:28px;font-size:11.5px" hidden>🔄 방법 바꾸기</button>
         </div>
+      </div>
+      <div class="goal-strip" id="goal-strip">
+        <div class="gs-row"><span class="gs-ic">🎯</span><b>성취기준</b><span id="gs-std"></span></div>
+        <div class="gs-row" id="gs-goal-row" hidden><span class="gs-ic">🧭</span><b>오늘 목표</b><span id="gs-goal"></span></div>
+      </div>
+      <div class="scaffold-wrap" id="scaffold-wrap">
+        <div class="scaffold-title">AI 도움 크기(원리1) <span class="scaffold-hint">— 잘 이해할수록 자동으로 줄어들고, 다시 늘지는 않아요</span></div>
+        <div class="scaffold-strip" id="scaffold-strip"></div>
       </div>
       <div class="cycle-wrap" id="prep-wrap" hidden>
         <div class="cycle-title">지금 이 순서로 이야기 나누고 있어요</div>
@@ -862,16 +873,31 @@ const STRATS = [
     tips:['자기 말로 설명해보고 막히는 곳 찾기','1~5점으로 확신 정도 매겨보기','모르는 부분만 골라 다시 확인하기'],
     structs:[{ type:'checklist', label:'🎯 아는지 체크리스트로 확인하기' }] }
 ];
-/* 대화 시작 전에 학습자-AI 과업 범위를 명시적으로 나눈다(원리5). 일부 과업은 학습자의
-   최종 선택권·자기판단(원리2)에 직결돼 AI로 옮길 수 없게 고정한다. */
+/* 대화 시작 전에 학습자-AI 과업 범위를 명시적으로 나눈다(원리5). 준비·탐구·마무리 단계별로
+   실제 대화에서 벌어지는 구체적인 하위 과업을 더 세분화해서, "옮길 수 있는 일"의 폭 자체가
+   좁고 뭉뚱그려져 있던 문제를 줄인다. 일부 과업은 학습자의 최종 선택권·자기판단(원리2)이나
+   정교화(연결 짓기는 AI가 대신 하면 안 됨)에 직결돼 AI로 옮길 수 없게 고정한다. */
 const TASK_BLOCKS = [
-  { id:'concept',   label:'📖 개념 쉽게 설명하기', locked:false, def:'ai' },
-  { id:'example',   label:'📇 예시 들어주기',       locked:false, def:'ai' },
-  { id:'checkwork', label:'✅ 내 답 확인해주기',    locked:false, def:'ai' },
-  { id:'summarize', label:'📝 배운 내용 요약하기',  locked:false, def:'me' },
-  { id:'strategy_choice', label:'🧭 공부 방법 정하기',        locked:true },
-  { id:'self_judge',      label:'🔍 AI 말 수용할지 판단하기', locked:true },
-  { id:'reflect_write',   label:'💭 성찰문·되돌아보기 쓰기',  locked:true }
+  { id:'prior_prompt', label:'🌱 사전지식 끌어내는 질문하기', stage:'준비', locked:false, def:'ai' },
+  { id:'goal_clarify',  label:'🎯 목표 구체화 도와주기',       stage:'준비', locked:false, def:'ai' },
+  { id:'concept',   label:'📖 개념 쉽게 설명하기', stage:'탐구', locked:false, def:'ai' },
+  { id:'example',   label:'📇 예시 들어주기',       stage:'탐구', locked:false, def:'ai' },
+  { id:'hint',      label:'💡 막힐 때 힌트 주기',   stage:'탐구', locked:false, def:'ai' },
+  { id:'checkwork', label:'✅ 내 답 확인해주기',    stage:'탐구', locked:false, def:'ai' },
+  { id:'nextq',     label:'❓ 다음 질문 정하기',    stage:'탐구', locked:false, def:'ai' },
+  { id:'error_find', label:'🧐 틀린 부분 짚어주기', stage:'마무리', locked:false, def:'ai' },
+  { id:'summarize',  label:'📝 배운 내용 요약하기', stage:'마무리', locked:false, def:'me' },
+  { id:'strategy_choice', label:'🧭 공부 방법 정하기',         stage:'항상 나', locked:true },
+  { id:'connect_make',    label:'🔗 개념 연결 짓기(정교화)',    stage:'항상 나', locked:true },
+  { id:'self_judge',      label:'🔍 AI 말 수용할지 판단하기',  stage:'항상 나', locked:true },
+  { id:'reflect_write',   label:'💭 성찰문·되돌아보기 쓰기',   stage:'항상 나', locked:true }
+];
+/* 원리1 적응적 페이딩(비계 감소)이 실제로 눈에 보이도록, 헤더 아래 상시 표시되는 단계 표시
+   바에서 쓰는 순서. 이 배열의 인덱스가 곧 "지원 강도" 축이며 오른쪽으로 갈수록 도움이 준다. */
+const SUPPORT_STEPS = [
+  { k:'high', t:'많이 · 구체적 힌트' },
+  { k:'mid',  t:'보통 · 방향만 살짝' },
+  { k:'low',  t:'조금 · 되묻는 질문' }
 ];
 /* 원리7(메타인지적 지식 점검): 이해질문·전략질문·연결질문을 서로 다른 발문 스캐폴딩으로
    명확히 구별해서 순서대로 묻는다(Kramarski & Mevarech, 2003). */
@@ -881,7 +907,6 @@ const SCAFFOLD_ORDER = [
   { key:'connect',    instr:`[원리7-③ 연결 스캐폴딩] 아래 예시 중 하나를 골라 거의 그대로 1개만 물어봐: "이 내용을 지난 시간에 배운 개념과 연결 지어보면 어떤 공통점이나 차이점이 보여?" 또는 "이걸 네 일상이나 실제 사례에 적용해본다면 구체적으로 어떤 상황을 예로 들 수 있을까?" 질문은 1개만.` }
 ];
 const SUPPORT_LABEL = { high:'많이', mid:'보통', low:'조금' };
-const SUPPORT_PCT   = { high:100, mid:60, low:28 };
 const PHASES = { prep:'먼저 이야기', explore:'같이 알아가기', wrap:'마무리' };
 
 /* 탐구 대화 중 순환하는 절차(원리8 전략적용 → 원리9 점검 → 원리10 학습자 판단).
@@ -1174,7 +1199,6 @@ function renderStart(){
   const lastSess = acc && acc.sessions.length ? acc.sessions[acc.sessions.length-1] : null;
   stSupport = (lastSess && lastSess.residual && lastSess.residual.nextSupport) || 'high';
   $$('#st-support .choice').forEach(x=> x.classList.toggle('is-selected', x.dataset.v===stSupport));
-  $('#st-role').value = 40; $('#st-role-val').textContent = roleValText(40);
   initTaskBlocks(); renderTaskBlocks();
   fillStartSubjects();
 }
@@ -1203,9 +1227,17 @@ function renderTaskBlocks(){
   const aiBox = $('#tb-ai'), meBox = $('#tb-me'), lockedBox = $('#tb-locked');
   if(!aiBox) return;
   const movable = TASK_BLOCKS.filter(b=>!b.locked);
+  const stages = ['준비','탐구','마무리'];
   const chip = (b)=> `<div class="task-block"><span>${esc(b.label)}</span><button type="button" data-id="${b.id}">↔ 옮기기</button></div>`;
-  aiBox.innerHTML = movable.filter(b=>stTaskBlocks[b.id]==='ai').map(chip).join('') || '<p class="hint">여기엔 없어요</p>';
-  meBox.innerHTML = movable.filter(b=>stTaskBlocks[b.id]==='me').map(chip).join('') || '<p class="hint">여기엔 없어요</p>';
+  const bySide = (side)=> {
+    const html = stages.map(st=>{
+      const items = movable.filter(b=>b.stage===st && stTaskBlocks[b.id]===side);
+      return items.length ? `<div class="tb-stage"><h6>${esc(st)}</h6>${items.map(chip).join('')}</div>` : '';
+    }).join('');
+    return html || '<p class="hint">여기엔 없어요</p>';
+  };
+  aiBox.innerHTML = bySide('ai');
+  meBox.innerHTML = bySide('me');
   lockedBox.innerHTML = TASK_BLOCKS.filter(b=>b.locked).map(b=>
     `<div class="task-block locked"><span><span class="lock-ic">🔒</span> ${esc(b.label)}</span></div>`).join('');
 }
@@ -1245,13 +1277,13 @@ function startSession(){
     taskBlocks: { ...stTaskBlocks },
     // AI 도움 정도는 여기(대화 시작 전)에서만 정한다. 대화 중에는 '좋아요' 판단이 쌓일 때만 자동으로 줄어든다.
     support: stSupport || 'high',
-    roleSplit: +$('#st-role').value || 40,
     acceptStreak:0, holdStreak:0, stuckCount:0,
     phase:'prep', prepStep:'init', awaitPick:null,
     cycleIdx:0, cycleNow:'ask',
-    // 이해 전략(원리9 이해 점검): 선생님이 정한 간격마다 확신도+근거 체크포인트를 자동 삽입한다.
+    // 이해 전략(원리9 이해 점검): 간격을 선생님이 미리 정하지 않고, 대화 신호(판단 결과·막힘·
+    // 방법 변경)를 보고 AI가 그때그때 적응적으로 판별해 체크포인트를 자동 삽입한다.
     // "설명해봐"(1차 인지 확인)와 구분되도록, 내용이 아니라 "내 이해 상태에 대한 판단·근거"를 묻는다.
-    checkpointInterval: Math.max(2, Math.min(10, +$('#st-checkpoint').value || 4)),
+    checkpointInterval: 4, checkpointForceSoon:false,
     checkpoints:[], turnsSinceCheckpoint:0, pendingCheckpoint:false,
     turns:[],
     reflect:{ note:'', noteA:'', tags:{}, step:'delegate' },
@@ -1271,20 +1303,38 @@ let strategyPickMode = 'initial';  // 'initial'(처음 고르기) | 'change'(원
 let mmSelected = null;    // 마인드맵에서 선택된 노드 {tid, nodeId}
 let mmConnectFrom = null; // 마인드맵 연결선 긋기 모드 {tid, nodeId|null}
 function enterChat(){
-  $('#chat-std').textContent = `${session.ctx.subject} · ${trim(session.ctx.std,40)}`;
+  $('#chat-std').textContent = session.ctx.subject;
   mmSelected = null; mmConnectFrom = null; closeMmPopover();
-  paintSupport(); paintPhase();
+  renderGoalStrip(); paintSupport(); paintPhase();
   renderStream();
   if(!session.turns.length){
     pushNote(`공부 시작 · [${session.ctx.grade||session.ctx.band} ${session.ctx.subject}] ${trim(session.ctx.std,44)}`);
     advancePrep();
   }
 }
+// 성취기준·목표는 대화창 헤더 바로 아래에 줄이지 않고 그대로 보여준다(문장이 길어도 생략 안 함).
+function renderGoalStrip(){
+  $('#gs-std').textContent = `${session.ctx.subject} · ${session.ctx.std}${session.ctx.area?' ('+session.ctx.area+')':''} · ${session.ctx.grade||session.ctx.band}`;
+  const row = $('#gs-goal-row');
+  if(session.goal){ row.hidden = false; $('#gs-goal').textContent = session.goal; }
+  else { row.hidden = true; }
+}
+// 원리1 적응적 페이딩이 실제로 줄어드는 게 보이도록 하는 단계 표시 바.
+function renderScaffoldStrip(){
+  const strip = $('#scaffold-strip'); if(!strip) return;
+  const order = SUPPORT_STEPS.map(s=>s.k);
+  const curIdx = order.indexOf(session.support);
+  strip.innerHTML = SUPPORT_STEPS.map((s,i)=>{
+    const cls = i < curIdx ? 'done' : i===curIdx ? 'now' : '';
+    const node = `<div class="cycle-node scaffold-node ${cls}">${esc(s.t)}</div>`;
+    return i < SUPPORT_STEPS.length-1 ? node+'<span class="cycle-arrow">→</span>' : node;
+  }).join('');
+}
 function paintSupport(){
-  $('#support-text').textContent = SUPPORT_LABEL[session.support]; $('#support-fill').style.width = SUPPORT_PCT[session.support]+'%';
-  $('#role-badge-text').textContent = roleShortLabel(session.roleSplit); // 원리5: 시작할 때 정한 역할 분담을 대화 내내 표시
+  renderScaffoldStrip();
 }
 function paintPhase(){
+  renderGoalStrip();
   const p = $('#phase-pill'); p.textContent = PHASES[session.phase]; p.classList.toggle('explore', session.phase!=='prep');
   // 원리8: 고른 인지 전략을 헤더 배지로도 고정 노출(원리1·5와 같은 자리에) — cycle-wrap 문구만으론 스크롤 시 안 보일 수 있어서다.
   const sb = $('#strategy-badge');
@@ -1537,6 +1587,8 @@ function saveJudgeModal(){
     session.acceptStreak = 0;
     // 원리9: 학습자가 스스로 판단을 미룬 신호(잘 모르겠어요)가 쌓이면, 클릭을 기다리지 않고
     // 시스템이 먼저 점검·방법 조정을 제안한다("막혔어요"를 누를 때까지 기다리지 않는다).
+    // 이 신호 자체가 "이해가 흔들렸다"는 뜻이므로, 이해도 체크포인트도 다음 턴으로 앞당긴다.
+    session.checkpointForceSoon = true;
     session.holdStreak = (session.holdStreak||0) + 1;
     if(session.holdStreak>=2 && session.phase==='explore'){
       session.holdStreak = 0;
@@ -1815,11 +1867,10 @@ function sysPrompt(instruction){
   const meTasks = TASK_BLOCKS.filter(b=> b.locked || tb[b.id]==='me').map(b=>b.label.replace(/^\S+\s/,''));
   return [
 `당신은 대한민국 2022 개정 교육과정 성취기준 기반 초·중·고 메타인지 학습 튜터입니다. 학습자와 친근한 반말로 대화합니다.`,
-`--- 아래는 너만 보는 내부 설정값이다. 학습자에게 보내는 답변에는 이 라벨·숫자·영단어(예: "지원강도", "개입강도", "high", "roleSplit", "70" 같은 수치)를 절대 그대로 옮겨 적지 마라. 그 값에 "맞게 행동"만 하고, 값 자체는 언급하지 마라. ---`,
+`--- 아래는 너만 보는 내부 설정값이다. 학습자에게 보내는 답변에는 이 라벨·숫자·영단어(예: "지원강도", "high", "70" 같은 수치)를 절대 그대로 옮겨 적지 마라. 그 값에 "맞게 행동"만 하고, 값 자체는 언급하지 마라. ---`,
 `학년: ${session.ctx.grade || session.ctx.band}`,
 `성취기준: ${session.ctx.std}  (${session.ctx.band} ${session.ctx.subject}${session.ctx.area?' · '+session.ctx.area:''})`,
 `학습목표: ${session.goal || '(아직 미정)'}`,
-`역할 분담 수치(0=힌트만~100=첨삭까지): ${session.roleSplit}. 이 수치에 맞춰 개입 강도만 조절하고 숫자 자체는 말하지 마라.`,
 `지원강도(비계) 단계: ${session.support} — high면 구체적 힌트, mid면 방향만, low면 되묻는 질문 위주로 행동하되 이 단계명도 말하지 마라.`,
 `학습자가 고른 공부 방법(인지전략, 여러 개 가능): ${stratLabel}`,
 `그 방법을 고른 이유: ${session.strategyReason || '(아직 없음)'}`,
@@ -1868,12 +1919,16 @@ function checkpointEffectiveInterval(){
   return base;
 }
 // 이해 전략(원리9 이해 점검): "설명해봐"(1차 인지 확인)가 아니라 "내 이해 상태에 대한 판단과
-// 근거"를 정기적으로 자동으로 묻는다. 지원강도(원리1 페이딩) 신호를 그대로 재사용해, 아직
-// 서툴 때는 더 자주·숙련될수록 덜 자주 뜨게 한다.
+// 근거"를 자동으로 묻는다. 선생님이 미리 정한 고정 간격이 아니라, AI가 대화 신호를 보고
+// 그때그때 판별한다 — ①지원강도(원리1 페이딩)에 연동한 기본 주기(서툴수록 자주) 위에,
+// ②"잘 모르겠어요" 판단·"막혔어요"·공부 방법 변경처럼 이해가 흔들렸다는 신호가 잡히면
+// 그 즉시(다음 AI 응답 직후) 앞당겨서 체크포인트를 띄운다(checkpointForceSoon).
 function maybeInsertCheckpoint(kind){
   if(session.phase!=='explore' || kind==='monitor' || session.pendingCheckpoint) return;
   session.turnsSinceCheckpoint = (session.turnsSinceCheckpoint||0) + 1;
-  if(session.turnsSinceCheckpoint < checkpointEffectiveInterval()) return;
+  const need = session.checkpointForceSoon || session.turnsSinceCheckpoint >= checkpointEffectiveInterval();
+  if(!need) return;
+  session.checkpointForceSoon = false;
   session.turnsSinceCheckpoint = 0;
   session.pendingCheckpoint = true;
   session.turns.push({ id:uid(), role:'note', kind:'checkpoint', answered:false, score:null, reason:'' });
@@ -1898,7 +1953,7 @@ function stripMarkdown(s){
 // 답변에 그대로 섞여 나오는 경우, 그 줄을 통째로 제거한다(라벨·숫자가 학습자에게 노출되면 안 됨).
 function stripLeakedParams(s){
   // 키워드 + 콜론이 같은 줄에 있으면(중간에 숫자·공백이 껴도) 그 줄 전체를 버린다.
-  const kw = /(지원강도|개입강도|비계\s*수준|역할\s*분담|roleSplit)/;
+  const kw = /(지원강도|개입강도|비계\s*수준|과업\s*분담)/;
   return String(s)
     .split('\n')
     .filter(line => !(kw.test(line) && /[:：]/.test(line)))
@@ -1949,7 +2004,9 @@ function fade(){
   else if(session.support==='mid') session.support='low';
   else return;
   paintSupport();
-  pushNote(`AI 도움을 "${SUPPORT_LABEL[session.support]}"(으)로 조금 줄였어요. 잘 이해하고 있는 것 같아서요. [AI 도움 정하기]에서 다시 올릴 수 있어요.`);
+  const wrap = $('#scaffold-wrap');
+  if(wrap){ wrap.classList.remove('flash'); void wrap.offsetWidth; wrap.classList.add('flash'); setTimeout(()=>wrap.classList.remove('flash'), 1000); }
+  pushNote(`AI 도움을 "${SUPPORT_LABEL[session.support]}"(으)로 조금 줄였어요. 잘 이해하고 있는 것 같아서요. 바로 위 단계 표시 바에서 지금 어디쯤인지 볼 수 있어요.`);
 }
 function sendChat(){
   const el=$('#chat-input'); const v=anonymize(el.value.trim());
@@ -2320,7 +2377,6 @@ function init(){
   $('#st-back').addEventListener('click', ()=> show('home'));
   $('#st-go').addEventListener('click', ()=>{ if(stPick) startSession(); });
   $('#st-support').addEventListener('click', e=>{ const b=e.target.closest('.choice'); if(!b) return; stSupport=b.dataset.v; $$('#st-support .choice').forEach(x=>x.classList.toggle('is-selected',x===b)); });
-  $('#st-role').addEventListener('input', e=> $('#st-role-val').textContent = roleValText(+e.target.value));
   document.querySelector('.block-cols').addEventListener('click', e=>{
     const b = e.target.closest('button[data-id]'); if(!b) return;
     const id = b.dataset.id;
@@ -2332,7 +2388,7 @@ function init(){
   $('#chat-input').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
   $('#btn-stuck').addEventListener('click', ()=>{
     if(busy || session.phase!=='explore') return;
-    session.stuckCount++; session.holdStreak = 0;
+    session.stuckCount++; session.holdStreak = 0; session.checkpointForceSoon = true;
     const others = STRATS.filter(s=>!(session.strategies||[]).includes(s.id)).slice(0,2).map(s=>`${s.emoji} ${s.label}(${s.theory})`).join(', ');
     pushMe('지금 막혔어. 어디서 막혔는지 같이 점검해줘.', false);
     ai(`학습자가 "막혔어요" 신호를 보냈다. (1) 어디서 이해가 끊겼는지 짚어 보는 질문 1개 (2) 지금 방법 대신 시도해볼 만한 다른 공부 방법으로 ${others||'다른 방법'} 중 하나를 구체적으로 제안(쉬운 말로 풀어서, 괄호 안 영어 이론명은 말하지 마). 최종 선택은 학습자가 위쪽 [🔄 방법 바꾸기]에서 직접 한다.`);
@@ -2365,6 +2421,7 @@ function init(){
       if(strategyPickMode==='change'){
         session.strategyChangeLog.push({ from: strategyLabelJoined(prevIds)||'(없음)', to: session.strategyLabel, reason:'', at:new Date().toISOString() });
         session.holdStreak = 0;
+        session.checkpointForceSoon = true; // 방법을 바꿨다는 건 지금까지 방식이 안 맞았다는 신호라, 이해도를 곧바로 다시 확인한다
         renderStream();
         pushNote(`공부 방법을 "${strategyLabelJoined(prevIds)||'없음'}"에서 "${session.strategyLabel}"로 바꿨어요.`);
         session.awaitingChangeReason = true;
@@ -2562,9 +2619,6 @@ function init(){
     }catch(e){ /* 미로그인: auth 화면 유지 */ }
   })();
 }
-function roleValText(v){ return (v<=20?'🙋 내가 거의 다 해요':v<=40?'힌트 위주로 도와줘요':v<=60?'같이 반반 해요':v<=80?'AI가 많이 도와줘요':'✏️ AI가 첨삭까지 해요') + ` (${v})`; }
-function roleShortLabel(v){ return v<=20?'내가 주로':v<=40?'힌트 위주':v<=60?'같이 반반':v<=80?'AI가 많이':'AI 첨삭까지'; }
-
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
