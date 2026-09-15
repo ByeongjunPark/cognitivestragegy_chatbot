@@ -42,6 +42,7 @@
   .who{font-size:12.5px;color:var(--ink-2);font-weight:700}
   .icon-btn{height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:6px;transition:.15s}
   .icon-btn:hover{background:var(--surface-2);color:var(--ink)}
+  .icon-btn.is-selected{background:var(--warn-wash,#fef3e2);border-color:var(--warn,#f0a13a);color:#9a3412}
 
   .screen{display:none;animation:rise .28s cubic-bezier(.2,.7,.2,1)}
   .screen.is-active{display:block}
@@ -384,6 +385,10 @@
   .judge-trigger.st-comment{border-color:#c8d6f7;background:var(--info-wash);color:#1e3a8a}
   .comment-pill{margin-top:8px;background:var(--info-wash);border:1px solid #dbe4ff;border-radius:9px;padding:9px 11px;font-size:12.5px;color:#1e3a8a}
   .modal-lg{max-width:520px}
+  .modal-scroll{max-height:82vh;overflow-y:auto}
+  .sd-turn{border-left:3px solid var(--line-strong);padding:6px 0 6px 10px;font-size:12.5px}
+  .sd-turn.me{border-left-color:var(--purple,#8b5cf6)}
+  .sd-turn .r{font-weight:700;font-size:11px;color:var(--muted);margin-bottom:2px}
   .modal-quote{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink-2);margin:12px 0;max-height:160px;overflow-y:auto;white-space:pre-wrap}
 
   /* ===== 공부 방법별 구조화 산출물 (표 / 마인드맵 / 비교 / 인과사슬) ===== */
@@ -579,10 +584,16 @@
       <p class="subhead">교과서 단원 이름을 몰라도 괜찮아요. 무엇을 공부하고 싶은지 <b>내 말로 자유롭게</b> 적으면, 거기에 맞는 성취기준을 시스템이 찾아 줘요. 나머지(내가 아는 것 확인하기·공부 방법 고르기)는 따로 적는 게 아니라 <b>AI와 이야기하면서</b> 자연스럽게 해요.</p>
     </div>
     <div class="card stack">
-      <div>
-        <label class="field-label" for="st-band">학년</label>
-        <select class="select" id="st-band"></select>
-        <p class="hint">3·4학년, 5·6학년, 중1~3학년은 교육과정에서 배울 내용이 학년군으로 묶여 있어서, 같은 묶음이면 고를 수 있는 내용이 같아요.</p>
+      <div class="row-2">
+        <div>
+          <label class="field-label" for="st-band">학년</label>
+          <select class="select" id="st-band"></select>
+          <p class="hint">3·4학년, 5·6학년, 중1~3학년은 학년군으로 묶여 있어서, 같은 묶음이면 배울 내용이 같아요.</p>
+        </div>
+        <div>
+          <label class="field-label" for="st-subject">과목 <span style="color:var(--muted);font-weight:500">(안 골라도 돼요)</span></label>
+          <select class="select" id="st-subject"></select>
+        </div>
       </div>
       <div>
         <label class="field-label" for="st-topic">오늘 공부하고 싶은 것 <span style="color:var(--muted);font-weight:500">(자세히 적을수록 잘 찾아요)</span></label>
@@ -593,15 +604,19 @@
         </div>
       </div>
       <div class="callout accent" id="st-picked" hidden></div>
+      <div id="st-extra-wrap" hidden>
+        <label class="field-label">함께 다룰 성취기준을 더 더할까요? <span style="color:var(--muted);font-weight:500">(과목을 넘나드는 공부라면, 최대 2개까지 더 찾아 더할 수 있어요 — 안 해도 돼요)</span></label>
+        <div class="chip-list" id="st-extra-list"></div>
+        <div class="nav" style="margin:6px 0 0;justify-content:flex-start;gap:10px">
+          <input class="input" id="st-extra-topic" placeholder="예: 이번엔 이 개념을 다른 과목과 연결해서" style="flex:1;min-width:180px" autocomplete="off" />
+          <button type="button" class="btn btn-sm btn-ghost" id="st-extra-btn">+ 더 찾기</button>
+        </div>
+      </div>
       <details id="st-manual">
-        <summary style="cursor:pointer;font-size:12.5px;font-weight:700;color:var(--muted)">직접 과목·단원을 골라 정할래요</summary>
+        <summary style="cursor:pointer;font-size:12.5px;font-weight:700;color:var(--muted)">직접 단원을 골라 정할래요</summary>
         <div class="stack" style="margin-top:10px">
           <div>
-            <label class="field-label" for="st-subject">과목</label>
-            <select class="select" id="st-subject"></select>
-          </div>
-          <div>
-            <label class="field-label">오늘 배울 내용 <span style="color:var(--muted);font-weight:500">(교과서 단원에서 골라요)</span></label>
+            <label class="field-label">오늘 배울 내용 <span style="color:var(--muted);font-weight:500">(교과서 단원에서 골라요 — 위에서 고른 과목 기준)</span></label>
             <input class="input" id="st-filter" placeholder="낱말로 찾기 (예: 분수, 광합성, 지도)" autocomplete="off" style="margin-bottom:8px" />
             <div class="chip-list" id="st-std"></div>
           </div>
@@ -621,13 +636,14 @@
         </div>
       </div>
       <div>
-        <label class="field-label" style="margin-bottom:6px">② 오늘 할 일, 누가 맡을까요? <span style="color:var(--muted);font-weight:500">(블록을 눌러서 반대쪽으로 옮겨요 — AI가 실제로 이 약속을 지켜요. ①과는 다른 결정이에요: ①은 "얼마나 자세히" 힌트를 줄지, 여기는 "그 일 자체를 누가 할지"예요)</span></label>
+        <label class="field-label" style="margin-bottom:6px">② 오늘 할 일, 누가 맡을까요? <span style="color:var(--muted);font-weight:500">(블록을 눌러서 반대쪽으로 옮겨요. ①은 "얼마나 자세히" 도와줄지, 여기는 "그 일을 누가 할지"예요)</span></label>
+        <p class="hint" style="margin:0 0 10px">사전지식 물어보기·힌트 주기처럼 늘 AI가 먼저 도와주는 일은 목록에 없어요. 여기 있는 것만 고르면 돼요.</p>
         <div class="block-cols">
           <div class="block-col"><h5>🤖 AI가 맡을 일</h5><div id="tb-ai"></div></div>
           <div class="block-col"><h5>🙋 내가 맡을 일</h5><div id="tb-me"></div></div>
         </div>
         <div class="block-locked-row">
-          <h5 style="font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.03em;margin-bottom:9px">🔒 항상 내가 하는 일 (옮길 수 없어요 — AI에게 넘길 수 없는 일이에요)</h5>
+          <h5 style="font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.03em;margin-bottom:9px">🔒 항상 내가 하는 일 (옮길 수 없어요)</h5>
           <div id="tb-locked"></div>
         </div>
       </div>
@@ -661,6 +677,7 @@
       </div>
       <div class="goal-strip" id="goal-strip">
         <div class="gs-row"><span class="gs-ic">🎯</span><b>성취기준</b><span id="gs-std"></span></div>
+        <div class="gs-row" id="gs-extra-row" hidden><span class="gs-ic">🔗</span><b>함께 다루는 것</b><span id="gs-extra"></span></div>
         <div class="gs-row" id="gs-goal-row" hidden><span class="gs-ic">🧭</span><b>오늘 목표</b><span id="gs-goal"></span></div>
       </div>
       <div class="scaffold-wrap" id="scaffold-wrap">
@@ -685,6 +702,8 @@
         <button class="stuck" id="btn-stuck" hidden>🧭 막혔어요 (같이 점검해 주세요)</button>
         <div class="quick-actions" id="quick-actions" hidden></div>
         <div class="row">
+          <button type="button" class="icon-btn" id="btn-mic" title="말해서 입력하기(영어)" hidden style="width:40px">🎤</button>
+          <button type="button" class="icon-btn" id="btn-handwrite" title="손글씨로 풀기(수학)" hidden style="width:40px">✍️</button>
           <input class="input" id="chat-input" placeholder="편하게 말해도 돼요. 내 생각이나 예상을 먼저 적어 보세요." autocomplete="off" />
           <button class="btn btn-primary" id="chat-send">보내기</button>
         </div>
@@ -877,6 +896,36 @@
   </div>
 </div>
 
+<!-- ============ 지난 공부 상세보기(읽기 전용) ============ -->
+<div class="modal-scrim" id="sess-detail-scrim">
+  <div class="modal modal-lg modal-scroll stack" id="sess-detail-body"></div>
+</div>
+
+<!-- ============ 손글씨로 풀기(수학, Google Cloud Vision OCR) ============ -->
+<div class="modal-scrim" id="hw-scrim">
+  <div class="modal modal-lg stack">
+    <div>
+      <div style="font-weight:800;font-size:15px">✍️ 손글씨로 풀어봐요</div>
+      <p class="hint">아래에 손가락이나 마우스로 풀이를 쓰고 [인식하기]를 눌러요. 읽은 내용은 보낼 말 칸에 넣기 전에 고칠 수 있어요.</p>
+    </div>
+    <canvas id="hw-canvas" width="720" height="320" style="width:100%;aspect-ratio:720/320;touch-action:none;border:1px solid var(--line-strong);border-radius:10px;background:#fff;cursor:crosshair"></canvas>
+    <div class="nav" style="margin:0">
+      <button class="btn btn-ghost" id="hw-clear">🧹 지우기</button>
+      <span class="filler"></span>
+      <button class="btn btn-primary" id="hw-recognize-btn">🔍 인식하기</button>
+    </div>
+    <div id="hw-result-wrap" hidden>
+      <label class="field-label" for="hw-result">읽은 내용 (고쳐도 돼요)</label>
+      <textarea class="textarea" id="hw-result" rows="2"></textarea>
+    </div>
+    <div class="nav" style="margin:0">
+      <button class="btn btn-ghost" id="hw-cancel">닫기</button>
+      <span class="filler"></span>
+      <button class="btn btn-primary" id="hw-insert">이 내용 넣기</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    메타인지·AI활용 성찰 지원 시스템 — v3
@@ -927,20 +976,24 @@ const STRATS = [
    실제 대화에서 벌어지는 구체적인 하위 과업을 더 세분화해서, "옮길 수 있는 일"의 폭 자체가
    좁고 뭉뚱그려져 있던 문제를 줄인다. 일부 과업은 학습자의 최종 선택권·자기판단(원리2)이나
    정교화(연결 짓기는 AI가 대신 하면 안 됨)에 직결돼 AI로 옮길 수 없게 고정한다. */
+// 요청사항(2번째 피드백) 6: "막힐 때 힌트 주기"처럼 애초에 항상 AI가 하는 게 당연한 일까지
+// 선택지로 내놓아서 어색하다는 지적, 블록이 너무 많고 낱말도 어렵다는 지적을 반영해 정리한다.
+// - prior_prompt(사전지식 질문하기)·goal_clarify(목표 구체화 돕기)·hint(힌트 주기)는 통째로
+//   뺐다. 이 셋은 대화 구조상 항상 AI가 먼저 묻고 돕는 일이라(원리1의 "AI 도움 크기"가 이미
+//   힌트의 양을 조절함), 골라볼 수 있는 것처럼 보이면 오히려 혼란만 준다.
+// - 남긴 6개는 "AI가 해줄 수도, 내가 스스로 해볼 수도" 있는 진짜 선택지만 남기고, 낱말도
+//   더 쉽게 풀었다(예: "AI 말 수용할지 판단하기" → "AI 말이 맞는지 내가 판단하기").
 const TASK_BLOCKS = [
-  { id:'prior_prompt', label:'🌱 사전지식 끌어내는 질문하기', stage:'준비', locked:false, def:'ai' },
-  { id:'goal_clarify',  label:'🎯 목표 구체화 도와주기',       stage:'준비', locked:false, def:'ai' },
-  { id:'concept',   label:'📖 개념 쉽게 설명하기', stage:'탐구', locked:false, def:'ai' },
+  { id:'concept',   label:'📖 새로 배우는 내용 설명하기', stage:'탐구', locked:false, def:'ai' },
   { id:'example',   label:'📇 예시 들어주기',       stage:'탐구', locked:false, def:'ai' },
-  { id:'hint',      label:'💡 막힐 때 힌트 주기',   stage:'탐구', locked:false, def:'ai' },
-  { id:'checkwork', label:'✅ 내 답 확인해주기',    stage:'탐구', locked:false, def:'ai' },
-  { id:'nextq',     label:'❓ 다음 질문 정하기',    stage:'탐구', locked:false, def:'ai' },
-  { id:'error_find', label:'🧐 틀린 부분 짚어주기', stage:'마무리', locked:false, def:'ai' },
-  { id:'summarize',  label:'📝 배운 내용 요약하기', stage:'마무리', locked:false, def:'me' },
+  { id:'checkwork', label:'✅ 내 답 맞았는지 확인하기', stage:'탐구', locked:false, def:'ai' },
+  { id:'nextq',     label:'❓ 다음에 무엇을 할지 정하기', stage:'탐구', locked:false, def:'ai' },
+  { id:'error_find', label:'🧐 틀린 부분 찾아내기', stage:'마무리', locked:false, def:'ai' },
+  { id:'summarize',  label:'📝 배운 내용 정리하기', stage:'마무리', locked:false, def:'me' },
   { id:'strategy_choice', label:'🧭 공부 방법 정하기',         stage:'항상 나', locked:true },
-  { id:'connect_make',    label:'🔗 개념 연결 짓기(정교화)',    stage:'항상 나', locked:true },
-  { id:'self_judge',      label:'🔍 AI 말 수용할지 판단하기',  stage:'항상 나', locked:true },
-  { id:'reflect_write',   label:'💭 성찰문·되돌아보기 쓰기',   stage:'항상 나', locked:true }
+  { id:'connect_make',    label:'🔗 배운 것끼리 연결 짓기',    stage:'항상 나', locked:true },
+  { id:'self_judge',      label:'🔍 AI 말이 맞는지 내가 판단하기',  stage:'항상 나', locked:true },
+  { id:'reflect_write',   label:'💭 되돌아보며 쓰기',   stage:'항상 나', locked:true }
 ];
 /* 원리1 적응적 페이딩(비계 감소)이 실제로 눈에 보이도록, 헤더 아래 상시 표시되는 단계 표시
    바에서 쓰는 순서. 이 배열의 인덱스가 곧 "지원 강도" 축이며 오른쪽으로 갈수록 도움이 준다. */
@@ -1228,7 +1281,7 @@ function renderHome(){
         const pre=s.prior.diagScore, post=s.residual.postScore;
         const kind = post>pre?'up':post<pre?'down':'flat';
         const chip = kind==='up' ? '<span class="delta up">▲ 늘었어요</span>' : kind==='down' ? '<span class="delta flat">▼ 줄었어요</span>' : '<span class="delta na">· 비슷해요</span>';
-        return `<div class="sess-item"><div><div class="t">${SUBJECT_EMOJI[s.ctx.subject]||'📘'} ${esc(trim(s.ctx.std,40))}</div><div class="d">${s.startedAt.slice(0,10)} · 공부 전 ${pre}점 → 혼자 풀 때 ${post}점</div></div><div class="note">${chip}</div></div>`;
+        return `<div class="sess-item" data-id="${esc(s.id)}" style="cursor:pointer"><div><div class="t">${SUBJECT_EMOJI[s.ctx.subject]||'📘'} ${esc(trim(s.ctx.std,40))}</div><div class="d">${s.startedAt.slice(0,10)} · 공부 전 ${pre}점 → 혼자 풀 때 ${post}점</div></div><div class="note">${chip}</div></div>`;
       }).join('')
     : emptyState('🔁','아직 혼자 풀어본 기록이 없어요.<br>되짚기 마지막에 있는 [지금 해 보기]로 해볼 수 있어요.');
   // 방금 끝낸 공부인데 아직 혼자 풀어보기를 안 했다면, 여기서 바로 이어갈 수 있게 한다.
@@ -1240,12 +1293,14 @@ function renderHome(){
   } else { resumeBox.hidden = true; resumeBox.innerHTML=''; }
 
   // 지난 공부 기록
+  // 요청사항(2번째 피드백) 1: 지난 공부 기록을 눌러도 아무 반응이 없던 문제 — 클릭용 data-id와
+  // 커서 스타일을 추가하고, 아래 이벤트 위임(#sess-list click)에서 상세보기 모달을 연다.
   $('#sess-list').innerHTML = S.length
     ? S.slice().reverse().map(s=>{
         const emo = SUBJECT_EMOJI[s.ctx.subject] || '📘';
         const turnsN = (s.turns||[]).filter(t=>t.role!=='note').length;
         const note = esc(trim(s.reflect&&s.reflect.note,34)) || '돌아보기 안 씀';
-        return `<div class="sess-item"><div><div class="t">${emo} ${esc(trim(s.ctx.std,48))}</div><div class="d">${s.startedAt.slice(0,10)} · ${s.ctx.grade||s.ctx.band} ${s.ctx.subject} · 💬${turnsN} · ${s.strategyLabel||'안 골랐어요'} · AI 도움 ${SUPPORT_LABEL[s.support]||'-'}</div></div><div class="note">${note}</div></div>`;
+        return `<div class="sess-item" data-id="${esc(s.id)}" style="cursor:pointer" role="button" tabindex="0"><div><div class="t">${emo} ${esc(trim(s.ctx.std,48))}</div><div class="d">${s.startedAt.slice(0,10)} · ${s.ctx.grade||s.ctx.band} ${s.ctx.subject} · 💬${turnsN} · ${s.strategyLabel||'안 골랐어요'} · AI 도움 ${SUPPORT_LABEL[s.support]||'-'}</div></div><div class="note">${note}</div></div>`;
       }).join('')
     : emptyState('📖', '아직 기록이 없어요.<br>새 공부를 시작하면 여기에 쌓여요!');
 
@@ -1253,6 +1308,54 @@ function renderHome(){
     ? `끝낸 공부 ${S.length}번 · 주고받은 말 ${turns}번 · 가장 많이 쓴 방법 ${topStrat?topStrat.label:'-'}`
     : '아직 끝낸 공부가 없어요. 새 공부를 시작해 볼까요?';
 }
+
+/* ===== 지난 공부 기록 눌러서 보기(읽기 전용 상세) — 그동안 .sess-item에 클릭 핸들러가
+   아예 없어서 눌러도 반응이 없었다(실사용 보고로 확인된 버그). 되짚기 화면과 달리 여기서는
+   태깅·입력 등 아무것도 바꿀 수 없고, 그때 나눈 대화와 결과만 다시 볼 수 있다. ===== */
+function openSessDetail(s){
+  const emo = SUBJECT_EMOJI[s.ctx.subject] || '📘';
+  const scoreRows = [];
+  if(s.prior && s.prior.diagScore!=null) scoreRows.push(['사전 진단', s.prior.diagScore+'점']);
+  if(s.meta && s.meta.score!=null) scoreRows.push(['스스로 점검', s.meta.score+'점']);
+  if(s.residual && s.residual.postScore!=null) scoreRows.push(['혼자 풀어보기', s.residual.postScore+'점']);
+  const turnsHTML = (s.turns||[]).filter(t=>t.role==='me'||t.role==='ai').map(t=>{
+    const mine = t.role==='me';
+    const body = t.structured ? `(${(STRUCT_TYPE_LABEL[t.structured.type]||'산출물')} 산출물)` : esc(trim(t.text,220));
+    return `<div class="sd-turn ${mine?'me':''}"><div class="r">${mine?'나':'AI'}</div><div>${body}</div></div>`;
+  }).join('') || '<p class="hint">주고받은 이야기가 없어요.</p>';
+  const tb = s.taskBlocks||{};
+  const tbAi = TASK_BLOCKS.filter(b=>!b.locked && tb[b.id]==='ai').map(b=>b.label);
+  const tbMe = TASK_BLOCKS.filter(b=> b.locked || tb[b.id]==='me').map(b=>b.label);
+  $('#sess-detail-body').innerHTML = `
+    <div>
+      <div style="font-weight:800;font-size:15px">${emo} ${esc(s.ctx.std)}</div>
+      <p class="hint" style="margin-top:4px">${s.startedAt.slice(0,10)} · ${s.ctx.grade||s.ctx.band} ${s.ctx.subject}${s.ctx.area?' · '+esc(s.ctx.area):''}</p>
+    </div>
+    ${(s.ctx.extraStds&&s.ctx.extraStds.length) ? `<div class="kv"><span>함께 다룬 것</span><b>${esc(s.ctx.extraStds.map(e=>e.subject+' · '+e.name).join(' / '))}</b></div>` : ''}
+    ${s.goal ? `<div class="kv"><span>그날 목표</span><b>${esc(s.goal)}</b></div>` : ''}
+    <div class="kv"><span>고른 방법</span><b>${esc(s.strategyLabel||'안 골랐어요')}</b></div>
+    ${s.strategyReason ? `<div class="kv"><span>고른 이유</span><b>${esc(s.strategyReason)}</b></div>` : ''}
+    <div class="kv"><span>AI 도움 크기</span><b>${SUPPORT_LABEL[s.support]||'-'}</b></div>
+    ${scoreRows.map(r=>`<div class="kv"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')}
+    <div>
+      <h4 style="font-size:13px;font-weight:800;margin:4px 0 8px">그때 나눈 이야기</h4>
+      <div class="stack" style="gap:4px;max-height:220px;overflow-y:auto">${turnsHTML}</div>
+    </div>
+    ${(s.reflect && (s.reflect.noteA||s.reflect.note)) ? `<div>
+      <h4 style="font-size:13px;font-weight:800;margin:4px 0 8px">그때 남긴 돌아보기</h4>
+      ${s.reflect.noteA?`<p class="hint" style="margin-bottom:6px"><b>역할 되돌아보기:</b> ${esc(s.reflect.noteA)}</p>`:''}
+      ${s.reflect.note?`<p class="hint"><b>질문 돌아보기:</b> ${esc(s.reflect.note)}</p>`:''}
+    </div>` : ''}
+    <div>
+      <h4 style="font-size:13px;font-weight:800;margin:4px 0 8px">그때 할 일 분담</h4>
+      <p class="hint">🤖 AI: ${esc(tbAi.join(', ')||'없음')}</p>
+      <p class="hint">🙋 나: ${esc(tbMe.join(', ')||'-')}</p>
+    </div>
+    <div class="nav" style="margin:0"><span class="filler"></span><button class="btn btn-primary" id="sess-detail-close">닫기</button></div>
+  `;
+  $('#sess-detail-scrim').classList.add('open');
+}
+function closeSessDetail(){ $('#sess-detail-scrim').classList.remove('open'); }
 
 /* ============================================================
    세션 시작 (성취기준만)
@@ -1279,6 +1382,10 @@ const SUBJECT_ALIAS = { '국어(공통)':'국어', '수학(공통)':'수학', '�
 function fillStartSubjects(){
   const band = bandOf($('#st-band').value);
   const sub = $('#st-subject'); const prev = sub.value; sub.innerHTML='';
+  // 요청사항(2번째 피드백) 4: 대화 전에 과목을 먼저 고를 수 있게 항상 보이는 과목 란을 추가.
+  // 값을 비워두면("전체 과목에서 찾기") 학년군 전체에서 자동으로 찾고, 과목을 고르면 그 과목
+  // 안에서만 찾는다 — 자동 매칭을 더 정확하게 좁히는 용도로도 쓰인다.
+  const optAll = document.createElement('option'); optAll.value=''; optAll.textContent='전체 과목에서 찾기'; sub.appendChild(optAll);
   Object.keys(CURRICULUM_STANDARDS[band]||{})
     .filter(k => SUBJECT_ALLOW.includes(SUBJECT_ALIAS[k]||k))
     .forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=SUBJECT_ALIAS[k]||k; sub.appendChild(o); });
@@ -1312,6 +1419,7 @@ function renderTaskBlocks(){
 }
 function fillStartStds(){
   const band=bandOf($('#st-band').value), subj=$('#st-subject').value;
+  if(!subj){ $('#st-std').innerHTML = '<p class="hint" style="padding:8px">먼저 위에서 과목을 골라 주세요.</p>'; syncStartGo(); return; }
   const q = $('#st-filter').value.trim();
   let list = (CURRICULUM_STANDARDS[band] && CURRICULUM_STANDARDS[band][subj]) || [];
   if(q) list = list.filter(it => (it.name+it.code+it.area).includes(q));
@@ -1335,11 +1443,12 @@ function syncStartGo(){
    공부할지"를 직접 정하는 데서 이미 실현되고, 그걸 교육과정 코드로 옮기는 사무적인 일만
    시스템이 대신한다. 수동으로 직접 고르는 경로도 <details>로 그대로 남겨 안전망으로 둔다. ===== */
 function tokenizeKo(s){ return (String(s||'').toLowerCase().match(/[가-힣a-zA-Z0-9]{2,}/g) || []); }
-function topStdCandidates(band, text, n){
+function topStdCandidates(band, text, n, subjectFilter){
   const tokens = tokenizeKo(text);
   const all = [];
   Object.keys(CURRICULUM_STANDARDS[band]||{})
     .filter(k => SUBJECT_ALLOW.includes(SUBJECT_ALIAS[k]||k))
+    .filter(k => !subjectFilter || k===subjectFilter)
     .forEach(subjKey=>{
       (CURRICULUM_STANDARDS[band][subjKey]||[]).forEach(it=>{
         const hay = (it.name+' '+(it.kw||[]).join(' ')+' '+(it.area||'')).toLowerCase();
@@ -1358,7 +1467,9 @@ async function matchStandardFromGoal(){
   if(text.replace(/\s/g,'').length < 4){ modal('안내','조금 더 자세히 적어볼까요? 예를 들면 "분수를 그림으로 나타내면서 더하는 방법을 알고 싶어요"처럼요.'); return; }
   statusEl.hidden = false; statusEl.textContent = '딱 맞는 내용을 찾는 중…';
   const band = bandOf($('#st-band').value);
-  const cands = topStdCandidates(band, text, 30);
+  // 요청사항(2번째 피드백) 4: 위에서 과목을 미리 골랐으면 그 과목 안에서만 찾는다(더 정확해짐).
+  const subjectFilter = $('#st-subject').value || null;
+  const cands = topStdCandidates(band, text, 30, subjectFilter);
   if(!cands.length){
     statusEl.textContent = '비슷한 내용을 못 찾았어요. 아래에서 직접 골라볼까요?';
     $('#st-manual').open = true;
@@ -1379,13 +1490,48 @@ async function matchStandardFromGoal(){
   stPick = picked;
   fillStartStds();
   $('#st-manual').open = false;
+  $('#st-extra-wrap').hidden = false;
+  renderExtraStds();
+}
+/* ===== 요청사항(2번째 피드백) 4: 성취기준이 반드시 1개여야 하냐는 질문 — 과목을 넘나드는
+   공부라면 여러 개일 수 있다고 보고, 기본은 1개(위 stPick)지만 원하면 관련 성취기준을 최대
+   2개까지 더 찾아 추가할 수 있게 한다(stExtraStds). 삭제도 가능. ===== */
+let stExtraStds = [];
+function renderExtraStds(){
+  $('#st-extra-list').innerHTML = stExtraStds.length
+    ? stExtraStds.map((it,i)=>`<span class="chip is-selected" data-i="${i}"><b style="color:var(--muted);font-weight:700">[${esc(SUBJECT_ALIAS[it.subjKey]||it.subjKey)}]</b> ${esc(it.name)} <button type="button" class="st-extra-remove" data-i="${i}" style="margin-left:6px;border:none;background:none;color:inherit;cursor:pointer;font-weight:800">×</button></span>`).join('')
+    : '<p class="hint" style="padding:4px 0">아직 없어요.</p>';
+  $('#st-extra-btn').disabled = stExtraStds.length>=2;
+}
+async function addExtraStd(){
+  if(busy || stExtraStds.length>=2) return;
+  const text = ($('#st-extra-topic').value||'').trim();
+  if(text.replace(/\s/g,'').length < 4){ modal('안내','무엇과 연결할지 조금 더 자세히 적어볼까요?'); return; }
+  const band = bandOf($('#st-band').value);
+  const cands = topStdCandidates(band, text, 20).filter(c => !stPick || c.code!==stPick.code);
+  if(!cands.length){ modal('안내','비슷한 내용을 못 찾았어요.'); return; }
+  let picked = cands[0];
+  try{
+    const raw = await callLLM([
+      { role:'system', content:'너는 교육과정 성취기준 매칭 보조자다. 반드시 순수 JSON만 출력한다.' },
+      { role:'user', content:`학생이 추가로 다루고 싶다고 적은 말: "${text}"\n아래 후보 중 가장 잘 맞는 것 하나만 code로 골라라.\n${cands.map(c=>`${c.code} | ${c.name}`).join('\n')}\n{"code":"..."}` }
+    ]);
+    const j = parseJSON(raw);
+    const found = cands.find(c=>c.code===j.code);
+    if(found) picked = found;
+  }catch(e){ /* 매칭 실패 시 낱말 점수 1위 후보 */ }
+  stExtraStds.push(picked);
+  $('#st-extra-topic').value = '';
+  renderExtraStds();
 }
 function startSession(){
   const grade=$('#st-band').value, subjKey=$('#st-subject').value;
   const subj = SUBJECT_ALIAS[subjKey] || subjKey; // 화면·기록엔 항상 5개 이름 중 하나로 표시
   session = {
     id:uid(), startedAt:new Date().toISOString(), endedAt:null,
-    ctx:{ grade, band:bandOf(grade), subject:subj, code:stPick.code, std:stPick.name, area:stPick.area||'', concept:stPick.concept||'' },
+    // extraStds(요청사항 4): 과목을 넘나드는 공부를 위해 학생이 직접 더한 관련 성취기준(최대 2개).
+    ctx:{ grade, band:bandOf(grade), subject:subj, code:stPick.code, std:stPick.name, area:stPick.area||'', concept:stPick.concept||'',
+      extraStds: stExtraStds.map(it=>({ code:it.code, name:it.name, area:it.area||'', concept:it.concept||'', subject:SUBJECT_ALIAS[it.subjKey]||it.subjKey })) },
     goal: anonymize($('#st-goal').value.trim()),
     // 원리6: 사전 활성화(note, 서술) + 점검 두 갈래 — ①AI 채점 진단(diagScore, 객관 — "아는 것
     // 나누기"에서 나눈 대화를 그대로 채점해 만든다. 별도 퀴즈를 새로 보지 않아 활성화와 중복되지
@@ -1431,10 +1577,97 @@ function enterChat(){
   mmSelected = null; mmConnectFrom = null; closeMmPopover();
   renderGoalStrip(); paintSupport(); paintPhase();
   renderStream();
+  // 요청사항(2번째 피드백) 3: 영어는 국어·사회·과학과 달리 말하기·듣기 어포던스가 필요하다는
+  // 지적 — 브라우저 내장 음성인식(Web Speech API, 별도 키 불필요)으로 말해서 입력하기를 켠다.
+  // 수학의 손글씨 인식은 별도 API가 필요해 이번 버전엔 없다(README 참고).
+  const micBtn = $('#btn-mic');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  micBtn.hidden = !(SR && session.ctx.subject==='영어');
+  $('#btn-handwrite').hidden = session.ctx.subject!=='수학';
   if(!session.turns.length){
     pushNote(`공부 시작 · [${session.ctx.grade||session.ctx.band} ${session.ctx.subject}] ${trim(session.ctx.std,44)}`);
     advancePrep();
   }
+}
+let micRec = null, micOn = false;
+function toggleMic(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) return;
+  if(micOn){ micRec && micRec.stop(); return; }
+  micRec = new SR();
+  micRec.lang = 'en-US'; micRec.interimResults = false; micRec.maxAlternatives = 1;
+  micOn = true; $('#btn-mic').classList.add('is-selected'); $('#btn-mic').textContent = '⏹️';
+  micRec.onresult = (e)=>{
+    const said = e.results[0][0].transcript;
+    const el = $('#chat-input'); el.value = (el.value ? el.value+' ' : '') + said;
+  };
+  const stop = ()=>{ micOn=false; $('#btn-mic').classList.remove('is-selected'); $('#btn-mic').textContent='🎤'; };
+  micRec.onerror = stop; micRec.onend = stop;
+  micRec.start();
+}
+// AI 말풍선을 영어 발음으로 들어볼 수 있게(듣기 연습). 브라우저 내장 TTS라 별도 키 불필요.
+function speakText(text){
+  if(!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(String(text));
+  u.lang = 'en-US'; u.rate = 0.92;
+  window.speechSynthesis.speak(u);
+}
+
+/* ===== 요청사항(2번째 피드백) 3: 수학은 손으로 풀이 과정을 쓰는 게 자연스러운데 타이핑만 되면
+   불편하다는 지적 — 캔버스에 손글씨를 쓰면 서버(api/ocr.js → Google Cloud Vision)가 텍스트로
+   읽어준다. 읽은 결과는 곧바로 보내지 않고 편집 칸에 먼저 보여줘 학습자가 고친 뒤 넣게 한다
+   (OCR도 틀릴 수 있으니 최종 확인은 항상 학습자 몫 — 원리2). ===== */
+let hwDrawing = false, hwLastX = 0, hwLastY = 0;
+function hwPos(e, canvas){
+  const rect = canvas.getBoundingClientRect();
+  const t = e.touches && e.touches[0];
+  const cx = (t ? t.clientX : e.clientX) - rect.left;
+  const cy = (t ? t.clientY : e.clientY) - rect.top;
+  return { x: cx * (canvas.width/rect.width), y: cy * (canvas.height/rect.height) };
+}
+function hwClear(){
+  const canvas = $('#hw-canvas'); const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+}
+function openHandwriteModal(){
+  hwClear();
+  const ctx = $('#hw-canvas').getContext('2d');
+  ctx.strokeStyle = '#161a1e'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  $('#hw-result').value = ''; $('#hw-result-wrap').hidden = true;
+  $('#hw-scrim').classList.add('open');
+}
+function closeHandwriteModal(){ $('#hw-scrim').classList.remove('open'); }
+function hwStart(e){ e.preventDefault(); hwDrawing = true; const p = hwPos(e, $('#hw-canvas')); hwLastX=p.x; hwLastY=p.y; }
+function hwMove(e){
+  if(!hwDrawing) return; e.preventDefault();
+  const canvas = $('#hw-canvas'); const ctx = canvas.getContext('2d');
+  const p = hwPos(e, canvas);
+  ctx.beginPath(); ctx.moveTo(hwLastX, hwLastY); ctx.lineTo(p.x, p.y); ctx.stroke();
+  hwLastX = p.x; hwLastY = p.y;
+}
+function hwEnd(){ hwDrawing = false; }
+async function hwRecognize(){
+  const canvas = $('#hw-canvas');
+  const base64 = canvas.toDataURL('image/png').split(',')[1];
+  const btn = $('#hw-recognize-btn');
+  btn.disabled = true; btn.textContent = '읽는 중…';
+  try{
+    const r = await apiJSON('/api/ocr', { method:'POST', body: JSON.stringify({ imageBase64: base64 }) });
+    $('#hw-result').value = (r.text||'').trim() || '';
+    $('#hw-result-wrap').hidden = false;
+    if(!(r.text||'').trim()) modal('안내', '글씨를 잘 못 읽었어요. 더 크고 진하게 다시 써볼까요?');
+  }catch(e){
+    modal('안내', '손글씨 인식에 문제가 생겼어요: ' + e.message);
+  }finally{
+    btn.disabled = false; btn.textContent = '🔍 인식하기';
+  }
+}
+function hwInsert(){
+  const t = ($('#hw-result').value||'').trim();
+  if(!t) return;
+  const el = $('#chat-input'); el.value = (el.value ? el.value+' ' : '') + t;
+  closeHandwriteModal();
 }
 // 성취기준·목표는 대화창 헤더 바로 아래에 줄이지 않고 그대로 보여준다(문장이 길어도 생략 안 함).
 function renderGoalStrip(){
@@ -1442,6 +1675,10 @@ function renderGoalStrip(){
   const row = $('#gs-goal-row');
   if(session.goal){ row.hidden = false; $('#gs-goal').textContent = session.goal; }
   else { row.hidden = true; }
+  const extras = session.ctx.extraStds||[];
+  const erow = $('#gs-extra-row');
+  if(extras.length){ erow.hidden = false; $('#gs-extra').textContent = extras.map(e=>`${e.subject} · ${e.name}`).join(' / '); }
+  else { erow.hidden = true; }
 }
 // 원리1 적응적 페이딩이 실제로 줄어드는 게 보이도록 하는 단계 표시 바.
 function renderScaffoldStrip(){
@@ -1640,6 +1877,7 @@ function renderStream(){
       const stCls = j==='accept'?'st-accept':j==='hold'?'st-hold':j==='comment'?'st-comment':'';
       const label = j==='accept'?'👍 좋아요':j==='hold'?'🤔 잘 모르겠어요':j==='comment'?'💭 다른 생각':'🔍 판단하기';
       extra = `<button type="button" class="judge-trigger ${stCls}" data-id="${t.id}">${label}</button>`;
+      if(session.ctx.subject==='영어' && window.speechSynthesis && t.text) extra += `<button type="button" class="icon-btn speak-btn" data-id="${t.id}" title="영어 발음으로 들어보기" style="padding:0 10px;height:26px;font-size:11px;margin-left:6px">🔊 들어보기</button>`;
       if(j==='comment' && (t.comment||'').trim()) extra += `<div class="comment-pill"><b>내 다른 생각:</b> ${esc(t.comment)}</div>`;
       if(t.kind==='prior-pick') extra += priorPickHTML();
       if(t.kind==='strategy-pick') extra += strategyPickHTML(pendingStrategyPick);
@@ -2043,6 +2281,7 @@ function sysPrompt(instruction){
 `학년: ${session.ctx.grade || session.ctx.band}`,
 `성취기준: ${session.ctx.std}  (${session.ctx.band} ${session.ctx.subject}${session.ctx.area?' · '+session.ctx.area:''})`,
 session.ctx.concept ? `이 성취기준의 핵심 개념·내용요소(교육과정 해설): ${session.ctx.concept} — 대화 내용이 이 범위를 벗어나지 않도록 반드시 참고하라(그대로 읽어주지 말고, 학습자 수준으로 풀어서 자연스럽게 녹여라).` : '',
+(session.ctx.extraStds && session.ctx.extraStds.length) ? `학습자가 이 공부와 함께 다루고 싶다고 직접 더한 관련 성취기준: ${session.ctx.extraStds.map(e=>`[${e.subject}] ${e.name}${e.concept?' — '+e.concept:''}`).join(' / ')} — 기회가 되면 원래 성취기준과 이 내용을 자연스럽게 연결해줘라(억지로 매 턴 끼워 넣지는 마라).` : '',
 `학습목표: ${session.goal || '(아직 미정)'}`,
 `지원강도(비계) 단계: ${session.support} — high면 구체적 힌트, mid면 방향만, low면 되묻는 질문 위주로 행동하되 이 단계명도 말하지 마라.`,
 `학습자가 고른 공부 방법(인지전략, 여러 개 가능): ${stratLabel}`,
@@ -2653,7 +2892,7 @@ function init(){
     try{ await apiJSON('/api/auth', { method:'POST', body: JSON.stringify({ mode:'logout' }) }); }catch(e){}
     DB = { accounts:{}, currentUser:null }; session=null; switchAuthTab('login'); show('auth');
   });
-  $('#btn-new-session').addEventListener('click', ()=>{ stPick=null; $('#st-goal').value=''; $('#st-filter').value=''; $('#st-topic').value=''; $('#st-match-status').hidden=true; show('start'); });
+  $('#btn-new-session').addEventListener('click', ()=>{ stPick=null; stExtraStds=[]; $('#st-goal').value=''; $('#st-filter').value=''; $('#st-topic').value=''; $('#st-extra-topic').value=''; $('#st-extra-wrap').hidden=true; $('#st-match-status').hidden=true; show('start'); });
   $('#agg-residual-resume').addEventListener('click', e=>{
     if(!e.target.closest('#btn-resume-residual')) return;
     const acc = account(); if(!acc || !acc.sessions.length) return;
@@ -2661,19 +2900,26 @@ function init(){
     show('residual');
   });
 
-  $('#st-band').addEventListener('change', ()=>{ stPick=null; fillStartSubjects(); });
+  $('#st-band').addEventListener('change', ()=>{ stPick=null; stExtraStds=[]; $('#st-extra-wrap').hidden=true; fillStartSubjects(); });
   $('#st-subject').addEventListener('change', ()=>{ stPick=null; fillStartStds(); });
   $('#st-filter').addEventListener('input', fillStartStds);
   $('#st-std').addEventListener('click', e=>{
     const b=e.target.closest('.chip'); if(!b) return;
     const band=bandOf($('#st-band').value), subj=$('#st-subject').value;
     const it = (CURRICULUM_STANDARDS[band]?.[subj]||[]).find(x=>x.code===b.dataset.code);
-    stPick = it ? { ...it } : null; fillStartStds();
+    stPick = it ? { ...it, subjKey:subj } : null; fillStartStds();
+    if(stPick){ $('#st-extra-wrap').hidden=false; renderExtraStds(); }
   });
   $('#st-match-btn').addEventListener('click', matchStandardFromGoal);
   $('#st-picked').addEventListener('click', e=>{
     if(!e.target.closest('#st-picked-clear')) return;
-    stPick = null; syncStartGo(); $('#st-manual').open = true;
+    stPick = null; stExtraStds=[]; syncStartGo(); $('#st-manual').open = true;
+    $('#st-extra-wrap').hidden = true; $('#st-extra-topic').value=''; renderExtraStds();
+  });
+  $('#st-extra-btn').addEventListener('click', addExtraStd);
+  $('#st-extra-list').addEventListener('click', e=>{
+    const b = e.target.closest('.st-extra-remove'); if(!b) return;
+    stExtraStds.splice(+b.dataset.i, 1); renderExtraStds();
   });
   $('#st-back').addEventListener('click', ()=> show('home'));
   $('#st-go').addEventListener('click', ()=>{ if(stPick) startSession(); });
@@ -2687,6 +2933,19 @@ function init(){
 
   $('#chat-send').addEventListener('click', sendChat);
   $('#chat-input').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
+  $('#btn-mic').addEventListener('click', toggleMic);
+  $('#btn-handwrite').addEventListener('click', openHandwriteModal);
+  $('#hw-cancel').addEventListener('click', closeHandwriteModal);
+  $('#hw-scrim').addEventListener('click', e=>{ if(e.target.id==='hw-scrim') closeHandwriteModal(); });
+  $('#hw-clear').addEventListener('click', hwClear);
+  $('#hw-recognize-btn').addEventListener('click', hwRecognize);
+  $('#hw-insert').addEventListener('click', hwInsert);
+  { const c = $('#hw-canvas');
+    c.addEventListener('mousedown', hwStart); c.addEventListener('mousemove', hwMove);
+    window.addEventListener('mouseup', hwEnd);
+    c.addEventListener('touchstart', hwStart, {passive:false}); c.addEventListener('touchmove', hwMove, {passive:false});
+    c.addEventListener('touchend', hwEnd);
+  }
   $('#btn-stuck').addEventListener('click', ()=>{
     if(busy || session.phase!=='explore') return;
     session.stuckCount++; session.holdStreak = 0; session.checkpointForceSoon = true;
@@ -2749,6 +3008,8 @@ function init(){
     }
     const jt = e.target.closest('.judge-trigger');
     if(jt){ openJudgeModal(jt.dataset.id); return; }
+    const spk = e.target.closest('.speak-btn');
+    if(spk){ const t = session.turns.find(x=>x.id===spk.dataset.id); if(t) speakText(t.text); return; }
     const rb = e.target.closest('.struct-review-btn');
     if(rb){ if(!busy) reviewStruct(rb.dataset.tid); return; }
     // ----- 이해도 체크포인트(원리9 이해 점검) -----
@@ -2867,6 +3128,21 @@ function init(){
   $('#judge-save').addEventListener('click', saveJudgeModal);
   $('#judge-cancel').addEventListener('click', closeJudgeModal);
   $('#judge-scrim').addEventListener('click', e=>{ if(e.target.id==='judge-scrim') closeJudgeModal(); });
+
+  $('#sess-list').addEventListener('click', e=>{
+    const it = e.target.closest('.sess-item'); if(!it) return;
+    const acc = account(); if(!acc) return;
+    const s = acc.sessions.find(x=>x.id===it.dataset.id); if(!s) return;
+    openSessDetail(s);
+  });
+  $('#agg-residual').addEventListener('click', e=>{
+    const it = e.target.closest('.sess-item'); if(!it) return;
+    const acc = account(); if(!acc) return;
+    const s = acc.sessions.find(x=>x.id===it.dataset.id); if(!s) return;
+    openSessDetail(s);
+  });
+  $('#sess-detail-body').addEventListener('click', e=>{ if(e.target.closest('#sess-detail-close')) closeSessDetail(); });
+  $('#sess-detail-scrim').addEventListener('click', e=>{ if(e.target.id==='sess-detail-scrim') closeSessDetail(); });
   $('#quick-actions').addEventListener('click', e=>{
     const b=e.target.closest('button'); if(!b) return;
     requestStructured(b.dataset.type, b.dataset.label);

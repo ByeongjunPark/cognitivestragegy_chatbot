@@ -1,34 +1,206 @@
 // 공용 저장소·인증 헬퍼 (파일명 '_' 접두사라 Vercel 라우트로 노출되지 않음)
-// Redis(TCP, REDIS_URL) 로 사용자 계정과 학습 데이터를 영속 저장한다.
+//
+// v12: Redis(Vercel Marketplace 통합)를 해제하고 Google Sheets를 백엔드로 쓴다(사용자 요청).
+// 인증은 서비스 계정 JWT(RS256, node:crypto만 사용 — googleapis 패키지 불필요)로 OAuth2 액세스
+// 토큰을 발급받아 Sheets REST API(v4)를 fetch로 직접 호출한다. auth.js·data.js는 기존과 똑같이
+// kvGet/kvSet/kvSetNX/kvDel(key-value)만 호출하므로 이 파일 밖은 전혀 바뀌지 않는다.
+//
+// 필요한 Vercel 환경변수 3개:
+//   GOOGLE_CLIENT_EMAIL  — 서비스 계정 이메일 (...@...iam.gserviceaccount.com)
+//   GOOGLE_PRIVATE_KEY   — 서비스 계정 JSON 키의 private_key 값 (그대로 붙여넣기)
+//   GOOGLE_SHEET_ID      — 스프레드시트 URL의 /d/ 뒤 긴 문자열
+// (+ 그 스프레드시트를 GOOGLE_CLIENT_EMAIL 주소에 "편집자"로 공유해 둬야 한다)
+//
+// 시트 구성(처음 호출될 때 탭·헤더가 없으면 자동으로 만든다):
+//   Users     — nickname | pin_hash | pin_salt | created_at
+//   Sessions  — nickname | session_id | started_at | session_json | updated_at (세션마다 한 행)
+// 성취기준(curriculum_standards.js)은 그대로 앱에 내장한다 — 매번 시트에서 1,491행을 읽어오면
+// 느려지고 API 한도에도 더 민감해지는데, 정적 참고자료라 굳이 그럴 이유가 없다.
 import crypto from 'node:crypto';
-import { createClient } from 'redis';
 
 export const SECRET = process.env.AUTH_SECRET || '';
 export function ready() {
-  return { store: !!process.env.REDIS_URL, secret: !!SECRET };
+  return {
+    store: !!(process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY && process.env.GOOGLE_SHEET_ID),
+    secret: !!SECRET
+  };
 }
 
-// ---------- Redis 연결 (웜 인스턴스 간 재사용) ----------
-let _client = null;
-let _connecting = null;
-async function client() {
-  if (_client && _client.isOpen) return _client;
-  if (!_connecting) {
-    _client = createClient({
-      url: process.env.REDIS_URL,
-      socket: { reconnectStrategy: (r) => Math.min(r * 50, 800) }
+/* ---------- Google 서비스 계정 JWT → OAuth2 액세스 토큰 (웜 인스턴스 간 캐시) ---------- */
+let _token = null, _tokenExp = 0;
+function b64url(buf) { return Buffer.from(buf).toString('base64url'); }
+async function getAccessToken() {
+  const now = Math.floor(Date.now() / 1000);
+  if (_token && _tokenExp > now + 60) return _token;
+  const email = process.env.GOOGLE_CLIENT_EMAIL;
+  const key = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const claim = {
+    iss: email,
+    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/cloud-vision',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now, exp: now + 3600
+  };
+  const unsigned = b64url(JSON.stringify(header)) + '.' + b64url(JSON.stringify(claim));
+  const signer = crypto.createSign('RSA-SHA256');
+  signer.update(unsigned);
+  const signature = signer.sign(key).toString('base64url');
+  const jwt = unsigned + '.' + signature;
+
+  const resp = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: jwt })
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error('Google 인증 실패: ' + (data.error_description || data.error || resp.status));
+  _token = data.access_token;
+  _tokenExp = now + (data.expires_in || 3600);
+  return _token;
+}
+// Cloud Vision 등 다른 API(api/ocr.js)에서도 같은 토큰을 재사용할 수 있게 내보낸다.
+export { getAccessToken };
+
+/* ---------- Sheets REST 호출 ---------- */
+const SHEET_ID = () => process.env.GOOGLE_SHEET_ID;
+async function sheetsFetch(path, opts = {}) {
+  const token = await getAccessToken();
+  const resp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID()}${path}`, {
+    ...opts,
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error('Sheets API 오류: ' + (data.error?.message || resp.status));
+  return data;
+}
+const range = (r) => `/values/${encodeURIComponent(r)}`;
+const colLetter = (n) => String.fromCharCode(64 + n); // 1→A ... 26까지만(이 파일은 5열까지만 씀)
+
+/* ---------- 탭·헤더 자동 생성(요청사항: "탭별 헤더를 알아서 만들어달라") ---------- */
+let _ensured = false;
+async function ensureHeader(sheet, headers) {
+  const last = colLetter(headers.length);
+  const r = await sheetsFetch(range(`${sheet}!A1:${last}1`));
+  if (!r.values || !r.values.length || !r.values[0].length) {
+    await sheetsFetch(range(`${sheet}!A1:${last}1`) + '?valueInputOption=RAW', {
+      method: 'PUT', body: JSON.stringify({ values: [headers] })
     });
-    _client.on('error', (e) => console.error('[redis]', e && e.message));
-    _connecting = _client.connect().catch((e) => { _connecting = null; throw e; });
   }
-  await _connecting;
-  return _client;
+}
+async function ensureSheets() {
+  if (_ensured) return;
+  const meta = await sheetsFetch('?fields=sheets.properties.title');
+  const titles = (meta.sheets || []).map(s => s.properties.title);
+  const need = [];
+  if (!titles.includes('Users')) need.push({ addSheet: { properties: { title: 'Users' } } });
+  if (!titles.includes('Sessions')) need.push({ addSheet: { properties: { title: 'Sessions' } } });
+  if (need.length) await sheetsFetch(':batchUpdate', { method: 'POST', body: JSON.stringify({ requests: need }) });
+  await ensureHeader('Users', ['nickname', 'pin_hash', 'pin_salt', 'created_at']);
+  await ensureHeader('Sessions', ['nickname', 'session_id', 'started_at', 'session_json', 'updated_at']);
+  _ensured = true;
 }
 
-export const kvGet = async (k) => (await client()).get(k);
-export const kvSet = async (k, v) => (await client()).set(k, v);
-export const kvSetNX = async (k, v) => (await client()).set(k, v, { NX: true }); // 'OK' | null
-export const kvDel = async (k) => (await client()).del(k);
+async function findUserRow(nickname) {
+  const r = await sheetsFetch(range('Users!A:A'));
+  const rows = r.values || [];
+  for (let i = 1; i < rows.length; i++) if (rows[i][0] === nickname) return i + 1; // 1-indexed 시트 행
+  return null;
+}
+
+/* ---------- kv 인터페이스: auth.js·data.js는 이 4개 함수만 쓴다(키 접두사로 라우팅) ---------- */
+export async function kvGet(key) {
+  await ensureSheets();
+  if (key.startsWith('user:')) {
+    const nick = key.slice(5);
+    const row = await findUserRow(nick);
+    if (!row) return null;
+    const r = await sheetsFetch(range(`Users!A${row}:D${row}`));
+    const v = (r.values && r.values[0]) || [];
+    if (!v[0]) return null;
+    return JSON.stringify({ h: v[1] || '', s: v[2] || '', created: v[3] || '' });
+  }
+  if (key.startsWith('data:')) {
+    const nick = key.slice(5);
+    const r = await sheetsFetch(range('Sessions!A:D'));
+    const rows = (r.values || []).slice(1);
+    const sessions = rows
+      .filter(row => row[0] === nick)
+      .map(row => { try { return JSON.parse(row[3]); } catch (e) { return null; } })
+      .filter(Boolean)
+      .sort((a, b) => String(a.startedAt || '').localeCompare(String(b.startedAt || '')));
+    const userRow = await findUserRow(nick);
+    let created = new Date().toISOString();
+    if (userRow) { const ur = await sheetsFetch(range(`Users!D${userRow}:D${userRow}`)); created = ur.values?.[0]?.[0] || created; }
+    return JSON.stringify({ nickname: nick, created, sessions });
+  }
+  return null;
+}
+
+export async function kvSet(key, value) {
+  await ensureSheets();
+  if (key.startsWith('user:')) {
+    const nick = key.slice(5);
+    const obj = JSON.parse(value); // {h,s,created}
+    const row = await findUserRow(nick);
+    const vals = [nick, obj.h, obj.s, obj.created];
+    if (row) await sheetsFetch(range(`Users!A${row}:D${row}`) + '?valueInputOption=RAW', { method: 'PUT', body: JSON.stringify({ values: [vals] }) });
+    else await sheetsFetch(range('Users!A:D') + ':append?valueInputOption=RAW', { method: 'POST', body: JSON.stringify({ values: [vals] }) });
+    return;
+  }
+  if (key.startsWith('data:')) {
+    const nick = key.slice(5);
+    const obj = JSON.parse(value); // {nickname, created, sessions}
+    const idx = await sheetsFetch(range('Sessions!A:D'));
+    const rows = idx.values || [];
+    const bySession = new Map(); // "id" -> { rowNum, json }
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] === nick) bySession.set(rows[i][1], { rowNum: i + 1, json: rows[i][3] });
+    }
+    const now = new Date().toISOString();
+    // 프런트가 매 자동저장마다 세션 전체 배열을 통째로 보내오므로(디바운스 600ms), 내용이 실제로
+    // 바뀐 세션만 시트에 다시 쓴다 — 안 그러면 활발히 대화할 때마다 세션 수만큼 쓰기 호출이 발생한다.
+    for (const s of (obj.sessions || [])) {
+      const json = JSON.stringify(s);
+      const existing = bySession.get(s.id);
+      if (existing && existing.json === json) continue;
+      const vals = [nick, s.id, s.startedAt || '', json, now];
+      if (existing) await sheetsFetch(range(`Sessions!A${existing.rowNum}:E${existing.rowNum}`) + '?valueInputOption=RAW', { method: 'PUT', body: JSON.stringify({ values: [vals] }) });
+      else await sheetsFetch(range('Sessions!A:E') + ':append?valueInputOption=RAW', { method: 'POST', body: JSON.stringify({ values: [vals] }) });
+    }
+    return;
+  }
+}
+
+// 닉네임 중복 가입 방지용 "없을 때만 생성". Sheets엔 진짜 원자적 연산이 없어 read-then-append로
+// 흉내만 낸다 — 같은 닉네임으로 동시에 가입 요청이 오는 극히 드문 경우엔 경합이 있을 수 있다는
+// 점을 인지하고 쓴다(이 프로토타입 규모에선 허용 가능한 트레이드오프).
+export async function kvSetNX(key, value) {
+  await ensureSheets();
+  if (!key.startsWith('user:')) { await kvSet(key, value); return 'OK'; }
+  const nick = key.slice(5);
+  const row = await findUserRow(nick);
+  if (row) return null;
+  const obj = JSON.parse(value);
+  await sheetsFetch(range('Users!A:D') + ':append?valueInputOption=RAW', { method: 'POST', body: JSON.stringify({ values: [[nick, obj.h, obj.s, obj.created]] }) });
+  return 'OK';
+}
+
+export async function kvDel(key) {
+  await ensureSheets();
+  if (key.startsWith('user:')) {
+    const row = await findUserRow(key.slice(5));
+    if (row) await sheetsFetch(range(`Users!A${row}:D${row}`) + ':clear', { method: 'POST', body: JSON.stringify({}) });
+    return;
+  }
+  if (key.startsWith('data:')) {
+    const nick = key.slice(5);
+    const r = await sheetsFetch(range('Sessions!A:A'));
+    const rows = r.values || [];
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] === nick) await sheetsFetch(range(`Sessions!A${i + 1}:E${i + 1}`) + ':clear', { method: 'POST', body: JSON.stringify({}) });
+    }
+  }
+}
 
 // ---------- 그림 비밀번호 해시 (Node 내장 crypto만 사용) ----------
 export function hashPin(pin, salt) {
