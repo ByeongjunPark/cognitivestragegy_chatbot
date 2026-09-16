@@ -688,7 +688,7 @@
         <div class="cycle-strip" id="prep-strip"></div>
       </div>
       <div class="cycle-wrap" id="cycle-wrap" hidden>
-        <div class="cycle-title">지금 방법 <b id="cycle-strat-name" style="color:var(--ink)"></b>으로 이렇게 순서를 돌아요</div>
+        <div class="cycle-title">지금 방법 <b id="cycle-strat-name" style="color:var(--ink)"></b>으로 다·라를 계속 왔다갔다해요</div>
         <div class="cycle-strip" id="cycle-strip"></div>
       </div>
       <div class="stream" id="stream"></div>
@@ -1041,11 +1041,14 @@ const PHASES = { prep:'먼저 이야기', explore:'같이 알아가기', wrap:'�
    cycleNow 는 지금 이 루프에서 어디쯤 있는지를 나타내는 표시용 상태다.
    나선형 순환(선택→시행→평가→조정→시행→평가→조정…)이 되도록 "④ 조정"을 실제 생성 단계로
    넣어, 매 바퀴마다 "이 방법 계속 쓸까, 바꿔볼까"를 학습자가 의식적으로 결정하게 한다. */
+// 요청사항(4번째 피드백) 2: "다. 방법 정해서 과제해보기"와 "라. AI 피드백 받고 수정해보기"가
+// 계속 왔다갔다할 수 있다고 요청받아, 표시 이름을 그 두 덩어리로 다시 묶었다(내부 신호 4개
+// 자체는 그대로 유지 — ask+apply=다, check+adjust=라).
 const CYCLE_LABELS = [
-  { k:'ask',    t:'① 질문을 받아요' },
-  { k:'apply',  t:'② 방법대로 해봐요(시행)' },
-  { k:'check',  t:'③ 점검하고 판단해요(평가)' },
-  { k:'adjust', t:'④ 계속할지 바꿀지 정해요(조정)' }
+  { k:'ask',    t:'다. 질문 받아요' },
+  { k:'apply',  t:'다. 방법대로 과제해봐요' },
+  { k:'check',  t:'라. AI 피드백 받아요' },
+  { k:'adjust', t:'라. 점검하고 수정해요' }
 ];
 /* 공부 방법별 구조화 산출물을 만들 때 AI에게 요구하는 JSON 스키마.
    마크다운 표·목록 대신 실제 표/마인드맵/비교/사슬 UI로 렌더링한다. */
@@ -1541,11 +1544,10 @@ function startSession(){
     // extraStds(요청사항 4): 과목을 넘나드는 공부를 위해 학생이 직접 더한 관련 성취기준(최대 2개).
     ctx:{ grade, band:bandOf(grade), subject:subj, code:stPicks[0].code, std:stPicks[0].name, area:stPicks[0].area||'', concept:stPicks[0].concept||'',
       extraStds: stPicks.slice(1).map(it=>({ code:it.code, name:it.name, area:it.area||'', concept:it.concept||'', subject:SUBJECT_ALIAS[it.subjKey]||it.subjKey })) },
-    // 요청사항(3번째 피드백) 2: "오늘 나의 목표" 입력란을 없앴다 — "오늘 공부하고 싶은 것"을 이미
-    // 적었는데 목표를 또 적으라는 건 중복이라는 지적. 목표는 원래도 준비 대화 첫 턴("오늘 이걸로
-    // 뭘 할 수 있게 되고 싶어?")에서 학습자 답을 그대로 받아 session.goal에 채워진다(advancePrep·
-    // sendChat의 'greet' 단계) — 여기서는 항상 비워 시작해 대화 밖에서 미리 채워지는 경로를 없앤다.
-    goal: '',
+    // 요청사항(3·4번째 피드백) 2: "오늘 나의 목표" 입력란과 대화 중 "목표 말하기" 절차를 모두
+    // 없앴다 — 시작 화면에 이미 적은 "오늘 공부하고 싶은 것"이 곧 목표이므로, 그 텍스트를 그대로
+    // session.goal로 쓴다(대화에서 또 묻지 않음, advancePrep 참고).
+    goal: anonymize(($('#st-topic').value||'').trim()).slice(0,140),
     // 요청사항(3번째 피드백) 7 — 가 단계(원리6, 교과내용지식 활성화): "아는 것 나누기" 자유
     // 대화를 채점하던 방식을 되돌려, 다양한 방식(기억·예시·설명·적용)으로 살짝 확인하는 4문항
     // 진단을 새로 본다(items). diagScore(0~100, 객관)는 이 4문항 채점 평균이고, score는 그
@@ -1745,13 +1747,13 @@ function syncComposeLock(){
   if(locked) bn.disabled = true; else bn.disabled = false;
 }
 
-/* ===== 요청사항(3번째 피드백) 7: 준비 대화를 원리6·7·8 순서(가·나·다)로 학생이 알아보기 쉽게
-   보여준다. 목표 확인 → 가(아는 것 확인, 4문항 카드) → 자신감 점수 → 나(스스로 점검: 평소
-   공부법 한 줄 + 이해·전략·연결 스캐폴딩) → 다(방법 고르고 이유 말하기). 자신감 점수는 "얼마나
-   자신 있는지"(주관)를 가 단계 채점(객관)과 나란히 두고, 잔여물 확인(원리13)의 사후 점수와
-   비교하는 기준선으로도 재사용된다. */
+/* ===== 요청사항(3·4번째 피드백) 7: 준비 대화를 원리6·7·8 순서(가·나·다)로 학생이 알아보기
+   쉽게 보여준다. 목표는 시작 화면에서 이미 적었으므로 대화에서 따로 확인하지 않고 곧바로
+   가(아는 것 확인, 4문항 카드) → 자신감 점수 → 나(스스로 점검: 평소 공부법 한 줄 + 이해·전략·
+   연결 스캐폴딩) → 다(방법 고르고 이유 말하기)로 이어간다. 자신감 점수는 "얼마나 자신
+   있는지"(주관)를 가 단계 채점(객관)과 나란히 두고, 잔여물 확인(원리13)의 사후 점수와 비교하는
+   기준선으로도 재사용된다. */
 const PREP_LABELS = [
-  { k:'greet',       t:'① 목표 정하기' },
   { k:'activate',    t:'가. 아는 것 확인' },
   { k:'priorscore',  t:'자신감 점수' },
   { k:'meta',        t:'나. 스스로 점검' },
@@ -1924,24 +1926,55 @@ function priorPickHTML(){
     UNDERSTAND_LEVELS.map(u=>`<button type="button" class="u-chip ${session.prior.score===u.n?'is-selected':''}" data-n="${u.n}"><span class="u-emoji">${u.emoji}</span><span>${u.label}</span></button>`).join('') +
     `</div>`;
 }
-// 요청사항(3번째 피드백) 6·7-다: 방법을 고르기 전에, 가·나 단계에서 나온 내 수준 정보를 눈에
-// 보이게 요약해 준다("인지전략 선택이 학습자의 메타인지·교과지식과 맞아야 하지 않냐"는 지적).
-// 최종 선택은 여전히 학습자 몫이고, 이 요약은 참고 정보일 뿐 방법을 대신 정해주지 않는다.
+// 요청사항(3번째 피드백) 6·7-다, (4번째 피드백) 4·5: 방법을 고르기 전에, 가·나 단계에서 나온
+// 내 수준 정보를 학습자에게 더 와닿는 쉬운 말로 보여주고, 그중 무엇이 약했는지에 따라 어떤
+// 방법이 도움될 수 있는지도 짧게 안내한다. 교육적 판단: 원리2(최종판단 보존)와 충돌하지 않게
+// "정답을 대신 정해주는" 게 아니라 "~일 수도 있으니 참고해봐" 수준의 약한 추천으로만 두고,
+// 이미 앱 곳곳에 있는 패턴(예: suggestStrategyCheck의 대안 제안)과 같은 결의 도움말이다.
+function scoreBand(n){
+  if(n>=80) return '잘 알아요';
+  if(n>=60) return '꽤 알아요';
+  if(n>=40) return '조금씩 알아가고 있어요';
+  return '아직 낯설어요';
+}
+const WEAK_STRAT_HINT = {
+  activate:  { id:'rehearsal',   why:'아직 내용 자체가 낯설 수 있어요' },
+  understand:{ id:'monitoring',  why:'아직 헷갈리는 부분이 있을 수 있어요' },
+  strategy:  { id:'organization',why:'어떤 순서로 풀지 정리해보면 좋을 수 있어요' },
+  connect:   { id:'elaboration', why:'다른 것과 연결 짓는 연습이 도움될 수 있어요' }
+};
 function levelSummaryHTML(){
   const rows = [];
-  if(session.prior.diagScore!=null) rows.push(['가. 아는 것 확인', session.prior.diagScore+'점']);
-  if(session.prior.score!=null) rows.push(['자신감', session.prior.score+'/5']);
+  const scores = {};
+  if(session.prior.diagScore!=null){ rows.push(['가. 아는 것 확인', scoreBand(session.prior.diagScore)]); scores.activate = session.prior.diagScore; }
+  if(session.prior.score!=null) rows.push(['자신감', session.prior.score>=4?'자신 있어요':session.prior.score===3?'반쯤 자신 있어요':'아직 자신 없어요']);
   if(session.meta.scoreDetail){
     const d = session.meta.scoreDetail;
-    rows.push(['나. 이해 정확도', d.understand+'점']);
-    rows.push(['나. 전략 적절성', d.strategy+'점']);
-    rows.push(['나. 연결 타당성', d.connect+'점']);
+    rows.push(['나. 이해 정확도', scoreBand(d.understand)]); scores.understand = d.understand;
+    rows.push(['나. 전략 적절성', scoreBand(d.strategy)]); scores.strategy = d.strategy;
+    rows.push(['나. 연결 타당성', scoreBand(d.connect)]); scores.connect = d.connect;
   }
   if(!rows.length) return '';
+  // 가장 낮은 항목 하나만 짚어서, 그 결과가 어떤 방법과 이어질 수 있는지 참고 문장을 만든다.
+  let hint = '';
+  const entries = Object.entries(scores);
+  if(entries.length){
+    entries.sort((a,b)=>a[1]-b[1]);
+    const [weakKey, weakVal] = entries[0];
+    if(weakVal < 70){
+      const w = WEAK_STRAT_HINT[weakKey];
+      const strat = STRATS.find(s=>s.id===w.id);
+      hint = `<div class="hint" style="margin-top:8px">💡 참고: ${w.why} — <b>${strat.emoji} ${esc(strat.label)}</b>가 도움될 수 있어요.</div>`;
+    } else {
+      hint = `<div class="hint" style="margin-top:8px">💡 지금까지는 골고루 잘 됐어요! 마음에 드는 방법으로 골라도 좋고, 더 도전해보고 싶으면 🧐 따져서 살펴보기도 해볼 만해요.</div>`;
+    }
+  }
   return `<div class="callout accent" style="margin-bottom:10px">
     <b>📊 지금까지 나온 내 정보(참고용)</b>
     <div class="stack" style="gap:4px;margin-top:6px">${rows.map(r=>`<div style="display:flex;justify-content:space-between;font-size:12.5px"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('')}</div>
-    <div class="hint" style="margin-top:6px">점수가 낮다고 나쁜 게 아니에요 — 어떤 방법이 지금 나한테 맞을지 고를 때 참고만 해요.</div>
+    <div class="hint" style="margin-top:6px">이 정도 안다고 나쁜 게 아니에요 — 어떤 방법이 지금 나한테 맞을지 고를 때 참고만 해요.</div>
+    ${hint}
+    <div class="hint" style="margin-top:4px">이건 참고일 뿐, 방법은 항상 내가 직접 골라요.</div>
   </div>`;
 }
 // 원리8: 여러 방법을 함께 고를 수 있다. 카드는 토글만 하고, 아래 확정 버튼을 눌러야 다음으로 간다.
@@ -2235,11 +2268,14 @@ async function requestStructured(type, label){
 
 /* --- 준비 대화: 각 점검(사전지식·스스로 점검)은 여러 턴 이어지고,
        학습자가 [다음으로] 버튼을 눌러야 다음 단계로 넘어간다. --- */
-async function advancePrep(){   // 최초 인사만 담당
+// 요청사항(4번째 피드백) 2: 목표를 따로 묻지 않는다 — 세션 시작 화면에서 이미 적은 "오늘
+// 공부하고 싶은 것"(session.goal)을 그대로 쓰고, 인사 후 곧바로 가 단계(활성화)로 넘어간다.
+async function advancePrep(){
   session.prepStep = 'greet';
   paintPhase();
-  const g = session.goal ? `목표를 "${session.goal}"(으)로 잡았구나. 좋아.` : '';
-  await ai(`너는 초·중·고 학생과 함께 공부하는 학습 도우미다. 친근한 반말로 인사하고, 오늘 배울 내용 "${session.ctx.std}"를 초등학생도 알아들을 만큼 쉬운 한 문장으로 풀어 말해줘. ${g} 그다음 ${session.goal?'가볍게 각오를 물어봐':'"오늘 이걸로 뭘 할 수 있게 되고 싶어?"라고 목표를 물어봐'}. 질문은 1개.`);
+  const g = session.goal ? `학습자는 오늘 "${session.goal}"을(를) 공부하고 싶다고 이미 적었다.` : '';
+  await ai(`너는 초·중·고 학생과 함께 공부하는 학습 도우미다. 친근한 반말로 인사하고, 오늘 배울 내용 "${session.ctx.std}"를 초등학생도 알아들을 만큼 쉬운 한 문장으로 풀어 말해줘. ${g} 그다음 이제 지금 얼마나 알고 있는지 짧게 확인해볼 거라고 한 문장으로 안내해(질문은 하지 마, 문항은 잠시 뒤 화면에 카드로 따로 뜰 거야). 질문 없이 안내만 1~2문장.`);
+  await startActivationQuiz();
 }
 // 학습자가 [다음으로]를 눌렀을 때 (가 단계는 이제 퀴즈 제출 버튼으로 넘어가서 여기서 다루지 않는다)
 async function prepNext(){
@@ -2396,6 +2432,12 @@ async function ai(instruction, kind){
       session.lowUnderstandFlag = false;
       instruction += ' (학습자가 방금 이해도 체크포인트에서 "아직 잘 모르겠다"고 낮게 표시했다. 지금까지보다 더 쉬운 낱말과 더 쉬운 예시 하나로 다시 짧게 짚어준 다음에 이어가라.)';
     }
+    // 요청사항(4번째 피드백) 3: 대화 응답과 구조화된 선택 카드(이해도 체크포인트 등)가 동시에
+    // 뜨면 학생이 뭘 먼저 해야 할지 헷갈린다는 지적 — 이번 응답 뒤에 체크포인트가 뜰 걸 미리 알면,
+    // 그 응답 자체는 새 질문 없이 마무리만 하도록 지시해 "대화 vs 평가"가 겹치지 않게 한다.
+    if(checkpointWillFire(kind)){
+      instruction += ' (중요: 이번 답변에서는 새로운 질문을 던지지 마라. 지금까지 이야기를 짧게 마무리하는 문장으로만 답해라. 바로 뒤에 이해도를 확인하는 카드가 화면에 따로 뜬다.)';
+    }
     const hist = session.turns.filter(t=>t.role!=='note').map(t=>({ role:t.role==='me'?'user':'assistant', content:t.text||'(표/마인드맵 결과)' }));
     const messages = [{ role:'system', content:sysPrompt(instruction) }, ...hist].slice(-16);
     let text = await callLLM(messages);
@@ -2438,6 +2480,12 @@ function checkpointEffectiveInterval(){
 // 그때그때 판별한다 — ①지원강도(원리1 페이딩)에 연동한 기본 주기(서툴수록 자주) 위에,
 // ②"잘 모르겠어요" 판단·"막혔어요"·공부 방법 변경처럼 이해가 흔들렸다는 신호가 잡히면
 // 그 즉시(다음 AI 응답 직후) 앞당겨서 체크포인트를 띄운다(checkpointForceSoon).
+// ai()가 응답을 만들기 전에, 이번 턴 끝에 체크포인트가 뜰지 미리 안다(부수효과 없이 계산만).
+function checkpointWillFire(kind){
+  if(session.phase!=='explore' || kind==='monitor' || session.pendingCheckpoint) return false;
+  const nextCount = (session.turnsSinceCheckpoint||0) + 1;
+  return !!(session.checkpointForceSoon || nextCount >= checkpointEffectiveInterval());
+}
 function maybeInsertCheckpoint(kind){
   if(session.phase!=='explore' || kind==='monitor' || session.pendingCheckpoint) return;
   session.turnsSinceCheckpoint = (session.turnsSinceCheckpoint||0) + 1;
@@ -2526,14 +2574,6 @@ function capLength(s, max=420){
   if(lastEnd > max*0.35) return cut.slice(0, lastEnd).trim();
   return cut.trim() + '…';
 }
-// 원리4: 학습목표가 명확해야 다음 단계(사전지식 활성화·점검)로 넘어간다. 완전 자동 판정은
-// 어려우니, 너무 짧거나 의미 없는 대답("몰라", "그냥" 등)만 최소한으로 걸러낸다.
-function isClearGoal(text){
-  const t = (text||'').trim();
-  if(t.replace(/\s/g,'').length < 4) return false;
-  const filler = ['몰라요','모르겠어요','모름','글쎄요','글쎄','그냥','없어요','없음','아무거나','상관없어요'];
-  return !filler.includes(t.replace(/[.!?~\s]/g,''));
-}
 function fade(){
   if(session.support==='high') session.support='mid';
   else if(session.support==='mid') session.support='low';
@@ -2553,18 +2593,10 @@ function sendChat(){
   // 준비 대화: 단계별로 여러 턴 이어짐. [다음으로] 버튼으로만 단계 전환.
   if(session.phase==='prep'){
     const step = session.prepStep;
-    if(step==='greet'){
-      // 원리4: 목표가 뚜렷해야 다음(가 단계, 교과내용지식 활성화)으로 간다. 애매하면 한 번 더 구체적으로 물어본다.
-      if(!isClearGoal(v)){
-        ai(`학습자의 목표 답변("${v}")이 너무 짧거나 막연하다. 판단하는 말투 없이 "조금 더 자세히 말해줄래? 예를 들면 오늘 이걸로 무엇을 할 수 있게 되고 싶은지"처럼 구체적인 목표를 다시 물어봐. 질문 1개. 절대 다음 단계로 넘어가지 마.`);
-        return;
-      }
-      session.goal = v.slice(0,120);
-      paintPhase();
-      ai(`학습자가 목표("${session.goal}")를 뚜렷하게 말했다. 한 문장으로 격려하고, 이제 지금 얼마나 알고 있는지 짧게 확인해볼 거라고 한 문장으로 안내해(질문은 하지 마, 문항은 잠시 뒤 화면에 카드로 따로 뜰 거야). 질문 없이 안내만 1~2문장.`)
-        .then(()=> startActivationQuiz());
-      return;
-    }
+    // 요청사항(4번째 피드백) 2: "목표 말하기" 절차를 없앤다 — 세션 시작 화면에서 이미 "오늘
+    // 공부하고 싶은 것"을 적었으므로 대화에서 또 물어보면 중복이다. advancePrep()이 인사 후
+    // 곧바로 가 단계(startActivationQuiz)로 넘어가서, prepStep이 'greet'인 동안엔 학습자
+    // 입력을 기다리지 않는다(그래서 여기 sendChat에는 'greet' 분기가 없다).
     if(step==='priorscore'){
       // 자신감 카드는 화면의 이모지 버튼으로만 고른다(자유 텍스트는 무시하고 다시 안내).
       ai(`짧게 반응만 하고, 내용이 아니라 전체적인 자신감을 아래 다섯 개 중 하나로 눌러 달라고 한 문장으로 다시 안내해. 다음 단계로 넘어가지 마.`, 'prior-pick');
