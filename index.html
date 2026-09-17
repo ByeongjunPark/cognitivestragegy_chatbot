@@ -631,8 +631,8 @@
         </div>
       </div>
       <div>
-        <label class="field-label" style="margin-bottom:6px">② 오늘 할 일, 누가 맡을까요? <span style="color:var(--muted);font-weight:500">(①에서 고른 힌트 크기에 맞게 아래 5개는 자동으로 나뉘어요. 마음에 안 들면 블록을 눌러 반대쪽으로 옮기면 돼요)</span></label>
-        <p class="hint" style="margin:0 0 10px">👇 이 5개는 AI가 해도 되고 내가 해도 되는 일이에요(회색지대). 새로 배우는 내용 설명처럼 <b>늘 AI만 하는 일</b>과 공부 방법 정하기처럼 <b>늘 내가 하는 일</b>은 아래에 따로 있어요.</p>
+        <label class="field-label" style="margin-bottom:6px">② 오늘 할 일, 누가 맡을까요? <span style="color:var(--muted);font-weight:500">(①에서 고른 힌트 크기에 맞게 아래 4개는 자동으로 나뉘어요. 마음에 안 들면 블록을 눌러 반대쪽으로 옮기면 돼요)</span></label>
+        <p class="hint" style="margin:0 0 10px">👇 이 4개는 AI가 해도 되고 내가 해도 되는 일이에요(회색지대). 새로 배우는 내용 설명·내 답이 맞는지 확인처럼 <b>늘 AI만 하는 일</b>과 공부 방법 정하기처럼 <b>늘 내가 하는 일</b>은 아래에 따로 있어요.</p>
         <div class="block-cols">
           <div class="block-col"><h5>🤖 AI가 맡을 일</h5><div id="tb-ai"></div></div>
           <div class="block-col"><h5>🙋 내가 맡을 일</h5><div id="tb-me"></div></div>
@@ -744,13 +744,15 @@
           <div class="timeline" id="timeline"></div>
         </div>
         <div class="stack">
-          <div class="grid-2">
-            <div class="box"><h4>내 질문 종류 비율</h4><canvas id="pie-init" height="150"></canvas></div>
-            <div class="box">
-              <h4>AI 말에 내가 어떻게 표시했나</h4>
-              <div id="judge-dist"></div>
-              <div class="metric"><span>내가 생각해서 물은 것(선택)</span><b id="m-self">0</b></div>
-              <div class="metric"><span>AI에게 답을 맡긴 것(선택)</span><b id="m-ai">0</b></div>
+          <!-- 실제로 성찰에 도움될 정보만 한 곳에: AI 말 판단 분포 + 이해도 흐름(있을 때만).
+               예전엔 같은 정보(내가 생각/AI에게 맡김 개수)가 위 tag-counter·도넛 차트·metric
+               3곳에 중복 표시되고, 박스마다 제목과 내용이 안 맞아 산발적으로 느껴졌다. -->
+          <div class="box">
+            <h4>이번 대화 한눈에 보기</h4>
+            <div id="judge-dist"></div>
+            <div id="rs-cp-wrap" hidden>
+              <p class="hint" style="margin:10px 0 4px">이해도 체크포인트 흐름</p>
+              <canvas id="cp-trend" height="120"></canvas>
             </div>
           </div>
           <!-- 요청사항(3번째 피드백) 8: 대화 중 개별로 했던 "판단하기"를 한번에 묶어 다시 볼 수 있게 -->
@@ -758,26 +760,15 @@
             <h4>👍🤔💭 AI 말 판단 모아보기</h4>
             <div id="judge-collected" class="stack" style="gap:6px"></div>
           </div>
-          <!-- 요청사항 6·7: 이해도 추이 그래프 + 대화 중 만들어진 자료들을 한곳에 모아 보여준다
-               (그동안 계산·저장은 됐지만 되짚기 화면에 전혀 노출되지 않았다). -->
-          <div class="grid-2">
-            <div class="box">
-              <h4>이해도 체크포인트 추이</h4>
-              <canvas id="cp-trend" height="150"></canvas>
-              <p class="hint" id="cp-trend-empty" style="margin-top:8px" hidden>아직 체크포인트에 답한 기록이 없어요.</p>
-            </div>
-            <div class="box">
-              <h4>이번 공부에서 바꾼 방법</h4>
-              <div id="strategy-log" class="stack" style="gap:6px"></div>
-            </div>
+          <!-- 방법을 바꿨거나 자료를 만든 적이 있을 때만 보여준다(없으면 박스 자체를 숨김 —
+               "이번엔 안 했어요" 빈 상태를 굳이 보여줘서 화면을 늘리지 않는다). -->
+          <div class="box" id="strategy-log-box" hidden>
+            <h4>이번 공부에서 바꾼 방법</h4>
+            <div id="strategy-log" class="stack" style="gap:6px"></div>
           </div>
-          <div class="box">
+          <div class="box" id="artifact-log-box" hidden>
             <h4>이번 공부에서 만든 자료</h4>
             <div id="artifact-log" class="stack" style="gap:8px"></div>
-          </div>
-          <div class="box">
-            <h4>오늘 할 일, 누가 맡았었나</h4>
-            <div id="taskblock-log" class="stack" style="gap:6px"></div>
           </div>
           <div>
             <h4 style="font-size:13px;font-weight:800;margin-bottom:10px">내가 "다른 생각"으로 남긴 코멘트</h4>
@@ -1000,12 +991,23 @@ const STRATS = [
 // 같다"는 지적) — locked:true("항상 나") 하나뿐이던 고정 자리를 fixed:'ai'|'me' 둘로 나눠,
 // concept을 "항상 AI가 하는 일"로 옮겼다. 진짜 옮길 수 있는 것("가운데" 회색지대)만 아래
 // movable 5개로 좁혔고, 낱말도 더 쉽게 다듬었다.
+// 요청사항(6번째 피드백) 3: "정답 확인은 기본적으로 AI가 하는 일이고, 힌트도 필연적으로 AI
+// 도움을 전제한다 — 여전히 AI/인간 경계가 불명확하다"는 지적을 받아 다시 검토했다. checkwork
+// ("내 답 맞았는지 확인하기")를 "내가"로 옮기면 실제로는 아무도 정답 여부를 확인해 주지 않는
+// 상태가 된다 — 아직 배우는 중인 내용이라 학습자에게는 맞는지 판단할 근거(정답지)가 없고,
+// AI 없이는 검증 자체가 불가능하기 때문이다(concept과 같은 이유). connect_make·self_judge와
+// 달리 "학습자가 대신 하는 버전"이 아예 성립하지 않으므로, checkwork도 concept처럼
+// fixed:'ai'로 고정했다. error_find("틀린 부분 찾아내기")는 성격이 달라 movable로 남긴다 —
+// 이건 정답을 몰라도 "내 풀이 안에서 앞뒤가 안 맞는 곳·의심 가는 곳을 스스로 짚어보는" 비판적
+// 사고 활동이라(반례 찾기, critical 전략과 동일한 성격) 학습자 혼자서도 시도할 수 있는 일이다.
+// 다만 최종 확정("정말 틀렸다")이 아니라 "먼저 스스로 의심 지점을 찾아보는 것"이라는 걸
+// 이름에서도 드러나게 라벨을 바꿨다.
 const TASK_BLOCKS = [
   { id:'concept',   label:'📖 새로 배우는 내용 설명하기', stage:'탐구', fixed:'ai' },
   { id:'example',   label:'📇 예시 들어주기',       stage:'탐구', fixed:null, def:'ai' },
-  { id:'checkwork', label:'✅ 내 답 맞았는지 확인하기', stage:'탐구', fixed:null, def:'ai' },
+  { id:'checkwork', label:'✅ 내 답 맞았는지 확인하기', stage:'탐구', fixed:'ai' },
   { id:'nextq',     label:'❓ 다음에 무엇을 할지 정하기', stage:'탐구', fixed:null, def:'ai' },
-  { id:'error_find', label:'🧐 틀린 부분 찾아내기', stage:'마무리', fixed:null, def:'ai' },
+  { id:'error_find', label:'🧐 의심 가는 부분 먼저 찾아보기', stage:'마무리', fixed:null, def:'ai' },
   { id:'summarize',  label:'📝 배운 내용 정리하기', stage:'마무리', fixed:null, def:'me' },
   { id:'strategy_choice', label:'🧭 공부 방법 정하기',         stage:'항상 나', fixed:'me' },
   { id:'connect_make',    label:'🔗 배운 것끼리 서로 연결하기',    stage:'항상 나', fixed:'me' },
@@ -1015,10 +1017,11 @@ const TASK_BLOCKS = [
 // 요청사항 3: 힌트 크기(지원강도)를 고르면 과업 분담도 그에 맞는 꾸러미로 한 번에 세팅된다.
 // high(많이 도움)일수록 AI가 더 많이 맡고, low(조금 도움)일수록 학생이 더 많이 맡는다 — 물론
 // 세팅된 뒤에도 블록을 눌러 하나씩 자유롭게 옮길 수 있다(출발점일 뿐 최종 결정이 아니다).
+// checkwork는 이제 fixed라 여기서 다룰 필요가 없어 뺐다.
 const SUPPORT_PRESET = {
-  high: { example:'ai', checkwork:'ai', nextq:'ai', error_find:'ai', summarize:'ai' },
-  mid:  { example:'ai', checkwork:'ai', nextq:'ai', error_find:'ai', summarize:'me' },
-  low:  { example:'me', checkwork:'me', nextq:'me', error_find:'me', summarize:'me' }
+  high: { example:'ai', nextq:'ai', error_find:'ai', summarize:'ai' },
+  mid:  { example:'ai', nextq:'ai', error_find:'ai', summarize:'me' },
+  low:  { example:'me', nextq:'me', error_find:'me', summarize:'me' }
 };
 function applySupportPreset(level){
   const preset = SUPPORT_PRESET[level] || SUPPORT_PRESET.mid;
@@ -2728,6 +2731,11 @@ function sendChat(){
         ai(SCAFFOLD_ORDER[n].instr); // n=1→전략 스캐폴딩, n=2→연결 스캐폴딩
       } else {
         ai(`학습자의 답에 짧게 공감하고, "이해질문·전략질문·연결질문을 다 나눠봤어. 이 정도면 준비된 것 같아, 더 이야기해도 좋고 준비됐으면 아래 [다음으로]를 눌러도 좋아"라고 안내해. 절대 공부 방법 고르기로 먼저 넘어가지 마.`);
+        // 버그 수정: meta.step이 방금 SCAFFOLD_ORDER.length에 닿아 [다음으로] 버튼이 나타날
+        // 조건이 됐는데도, 이 분기가 renderStream()만 부르는 ai()만 호출하고 paintPhase()를
+        // 부르지 않아 버튼의 hidden 속성이 계속 안 바뀌던 문제(값은 바뀌지만 화면이 안 바뀜).
+        // 이해·전략·연결 스캐폴딩을 다 답해도 "다. 방법 정하기"로 못 넘어가는 것처럼 보였다.
+        paintPhase();
       }
       return;
     }
@@ -2806,7 +2814,6 @@ function sendChat(){
 /* ============================================================
    되짚기
    ============================================================ */
-let pie=null;
 let cpTrendChart=null;
 const STRUCT_TYPE_LABEL = { table:'📊 표', mindmap:'🕸️ 마인드맵', compare:'⚖️ 비교표', chain:'🔗 순서 사슬', drill:'🔁 반복 연습 체크', checklist:'🎯 아는지 체크리스트' };
 const REFLECT_STEPS = [
@@ -2862,8 +2869,12 @@ function enterReflect(){
   }).join('') || '<div class="hint">주고받은 이야기가 없어요.</div>';
   syncReflectA();
 
-  const { self, ai_ } = tagCounts();
-  $('#m-self').textContent=self; $('#m-ai').textContent=ai_;
+  // 요청사항(6번째 피드백): 성찰 화면이 산발적으로 느껴진다는 지적 — 같은 정보(내가 생각/AI에게
+  // 맡김 개수)가 위 tag-counter·도넛 차트·metric 3곳에 중복 표시되고, 박스 제목과 내용이 안
+  // 맞는 경우(예: "AI 말에 내가 어떻게 표시했나" 제목 아래 실제로는 내 발화 태그 개수가 나옴)도
+  // 있었다. 도넛 차트·중복 metric·설정 시점 정보(과업 분담 로그)는 지우고, 실제로 이 대화에서
+  // "있었던 일"만 남겨 하나의 요약 박스로 모은다. 없었던 항목(방법 안 바꿈·자료 안 만듦)은 빈
+  // 상태 문구 대신 박스 자체를 숨겨 화면을 늘리지 않는다.
   const jd={accept:0,hold:0,comment:0,none:0};
   session.turns.filter(t=>t.role==='ai').forEach(t=> jd[t.judge||'none']++);
   $('#judge-dist').innerHTML = ['accept','hold','comment','none'].map(k=>{
@@ -2879,18 +2890,11 @@ function enterReflect(){
         return `<div class="box" style="padding:9px 12px"><div class="hint" style="margin-bottom:3px">${l}</div><div style="font-size:12.5px">${esc(trim(t.text,110))}</div>${t.comment?`<div class="hint" style="margin-top:4px"><b>내 생각:</b> ${esc(t.comment)}</div>`:''}</div>`;
       }).join('')
     : '<p class="hint">아직 판단한 AI 말이 없어요.</p>';
-  if(pie) pie.destroy();
-  pie = new Chart($('#pie-init'), {
-    type:'doughnut',
-    data:{ labels:['내가 생각한 것(선택)','AI에게 맡긴 것(선택)'], datasets:[{ data:[self,ai_], backgroundColor:['#12a05f','#f0a13a'], borderWidth:0 }] },
-    options:{ plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, boxWidth:10 } } }, cutout:'62%' }
-  });
   // 요청사항 6: 이해도 체크포인트 점수 추이를 실제로 그래프로 보여준다(그동안 기록만 되고 어디에도
-  // 시각화되지 않았다). 요청사항 7: 방법을 바꾼 기록과 만든 자료도 여기 한곳에 모아 보여준다.
+  // 시각화되지 않았다). 체크포인트를 한 번도 안 겪었으면 이 항목 자체를 숨긴다.
   const cps = session.checkpoints||[];
   if(cpTrendChart){ cpTrendChart.destroy(); cpTrendChart=null; }
-  $('#cp-trend-empty').hidden = cps.length>0;
-  $('#cp-trend').hidden = cps.length===0;
+  $('#rs-cp-wrap').hidden = cps.length===0;
   if(cps.length){
     cpTrendChart = new Chart($('#cp-trend'), {
       type:'line',
@@ -2899,23 +2903,19 @@ function enterReflect(){
     });
   }
   const logRows = (session.strategyChangeLog||[]);
-  $('#strategy-log').innerHTML = logRows.length
-    ? logRows.map(l=>`<div class="box" style="padding:10px 12px"><div style="font-size:13px">${esc(l.from||'-')} → ${esc(l.to||'-')}</div>${l.reason?`<div class="hint" style="margin-top:4px">왜: ${esc(l.reason)}</div>`:''}</div>`).join('')
-    : '<p class="hint">이번엔 방법을 바꾸지 않았어요.</p>';
+  $('#strategy-log-box').hidden = logRows.length===0;
+  if(logRows.length){
+    $('#strategy-log').innerHTML = logRows.map(l=>`<div class="box" style="padding:10px 12px"><div style="font-size:13px">${esc(l.from||'-')} → ${esc(l.to||'-')}</div>${l.reason?`<div class="hint" style="margin-top:4px">왜: ${esc(l.reason)}</div>`:''}</div>`).join('');
+  }
   const artifactTurns = session.turns.filter(t=>t.role==='ai' && t.structured);
-  $('#artifact-log').innerHTML = artifactTurns.length
-    ? artifactTurns.map(t=>{
+  $('#artifact-log-box').hidden = artifactTurns.length===0;
+  if(artifactTurns.length){
+    $('#artifact-log').innerHTML = artifactTurns.map(t=>{
         const label = STRUCT_TYPE_LABEL[t.structured.type] || '산출물';
         const d = describeStruct(t.structured);
         return `<div class="box" style="padding:10px 12px"><div style="font-size:13px;font-weight:700">${label}</div><div class="hint" style="margin-top:4px">${esc(trim(d.text,140))}</div></div>`;
-      }).join('')
-    : '<p class="hint">이번엔 표·마인드맵 같은 자료를 만들지 않았어요.</p>';
-  const tb = session.taskBlocks||{};
-  const tbAi = TASK_BLOCKS.filter(b=> b.fixed==='ai' || (!b.fixed && tb[b.id]==='ai'));
-  const tbMe = TASK_BLOCKS.filter(b=> b.fixed==='me' || (!b.fixed && tb[b.id]==='me'));
-  $('#taskblock-log').innerHTML =
-    `<div class="box" style="padding:10px 12px"><div style="font-size:13px;font-weight:700">🤖 AI가 맡았던 일</div><div class="hint" style="margin-top:4px">${tbAi.length?esc(tbAi.map(b=>b.label).join(', ')):'없음'}</div></div>` +
-    `<div class="box" style="padding:10px 12px"><div style="font-size:13px;font-weight:700">🙋 내가 맡았던 일</div><div class="hint" style="margin-top:4px">${esc(tbMe.map(b=>b.label).join(', '))}</div></div>`;
+      }).join('');
+  }
 
   const cmts = session.turns.filter(t=>t.role==='ai' && t.judge==='comment' && (t.comment||'').trim());
   $('#reflect-comments').innerHTML = cmts.length
