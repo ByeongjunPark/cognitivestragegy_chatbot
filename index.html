@@ -704,6 +704,16 @@
         </button>
         <button class="stuck" id="btn-stuck" hidden>🧭 막혔어요 (같이 점검해 주세요)</button>
         <div class="quick-actions" id="quick-actions" hidden></div>
+        <!-- 요청사항: "수식을 제대로 인식 못한다" — 손글씨 인식(Vision)이 분수·지수·근호 같은
+             기호를 놓칠 수 있어, 타이핑으로 정확하게 넣을 수 있는 수식 기호 버튼을 보조로 둔다. -->
+        <div class="quick-actions" id="math-symbols" hidden>
+          <button type="button" class="sym-btn" data-sym="/">／(분수)</button>
+          <button type="button" class="sym-btn" data-sym="^">^(지수)</button>
+          <button type="button" class="sym-btn" data-sym="√">√</button>
+          <button type="button" class="sym-btn" data-sym="×">×</button>
+          <button type="button" class="sym-btn" data-sym="÷">÷</button>
+          <button type="button" class="sym-btn" data-sym="π">π</button>
+        </div>
         <div class="row">
           <button type="button" class="icon-btn" id="btn-mic" title="말해서 입력하기(영어)" hidden style="width:40px">🎤</button>
           <button type="button" class="icon-btn" id="btn-handwrite" title="손글씨로 풀기(수학)" hidden style="width:40px">✍️</button>
@@ -1615,6 +1625,7 @@ function enterChat(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   micBtn.hidden = !(SR && session.ctx.subject==='영어');
   $('#btn-handwrite').hidden = session.ctx.subject!=='수학';
+  $('#math-symbols').hidden = session.ctx.subject!=='수학';
   if(!session.turns.length){
     pushNote(`공부 시작 · [${session.ctx.grade||session.ctx.band} ${session.ctx.subject}] ${trim(session.ctx.std,44)}`);
     advancePrep();
@@ -1678,6 +1689,21 @@ function hwMove(e){
   hwLastX = p.x; hwLastY = p.y;
 }
 function hwEnd(){ hwDrawing = false; }
+// 요청사항: "수학 수식을 제대로 인식 못한다" — Google Cloud Vision은 범용 OCR이라 분수(가로줄
+// 위아래)·지수(위 첨자)·근호처럼 평면 배치가 아니라 "2차원 구조"로 읽어야 하는 수식 기호는
+// 일반 문서 OCR로 원천적으로 잘 못 읽는다(전용 수식 인식 엔진이 아니면 흔한 한계). 완전히
+// 고칠 수는 없지만, 이미 있는 Upstage 연결로 OCR 결과를 한 번 더 다듬어(흔한 오독을 수식
+// 표기로 보정) 도움을 준다 — 그래도 학습자가 편집 칸에서 최종 확인·수정한다(원리2).
+async function refineMathOcr(raw){
+  try{
+    const fixed = await callLLM([
+      { role:'system', content:'너는 손글씨 수식 OCR 보정 보조자다. 설명 없이 보정한 텍스트만 출력한다.' },
+      { role:'user', content:`아래는 학생이 손으로 쓴 수학 풀이를 광학문자인식(OCR)으로 읽은 결과다. OCR이 분수·지수·근호 같은 기호를 잘못 읽었을 수 있다. 원래 의도를 최대한 짐작해 평범한 텍스트로 표현 가능한 수식 표기(예: 3/4, x^2, sqrt(9), 2*3, 5-2)로 다시 정리해라. 확신이 안 서는 부분은 원문 그대로 둬라. 수식이 아니라 그냥 글자면 손대지 마라.\nOCR 결과: "${raw}"`}
+    ]);
+    const cleaned = String(fixed||'').trim();
+    return cleaned && cleaned.length < raw.length * 3 ? cleaned : raw; // 너무 길어지면 딴소리로 보고 원문 유지
+  }catch(e){ return raw; }
+}
 async function hwRecognize(){
   const canvas = $('#hw-canvas');
   const base64 = canvas.toDataURL('image/png').split(',')[1];
@@ -1685,9 +1711,11 @@ async function hwRecognize(){
   btn.disabled = true; btn.textContent = '읽는 중…';
   try{
     const r = await apiJSON('/api/ocr', { method:'POST', body: JSON.stringify({ imageBase64: base64 }) });
-    $('#hw-result').value = (r.text||'').trim() || '';
+    let text = (r.text||'').trim();
+    if(text){ btn.textContent = '수식 다듬는 중…'; text = await refineMathOcr(text); }
+    $('#hw-result').value = text;
     $('#hw-result-wrap').hidden = false;
-    if(!(r.text||'').trim()) modal('안내', '글씨를 잘 못 읽었어요. 더 크고 진하게 다시 써볼까요?');
+    if(!text) modal('안내', '글씨를 잘 못 읽었어요. 더 크고 진하게 다시 써볼까요?');
   }catch(e){
     modal('안내', '손글씨 인식에 문제가 생겼어요: ' + e.message);
   }finally{
@@ -3208,6 +3236,13 @@ function init(){
   $('#chat-input').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
   $('#btn-mic').addEventListener('click', toggleMic);
   $('#btn-handwrite').addEventListener('click', openHandwriteModal);
+  $('#math-symbols').addEventListener('click', e=>{
+    const b = e.target.closest('.sym-btn'); if(!b) return;
+    const el = $('#chat-input');
+    const start = el.selectionStart ?? el.value.length, end = el.selectionEnd ?? el.value.length;
+    el.value = el.value.slice(0,start) + b.dataset.sym + el.value.slice(end);
+    el.focus(); el.setSelectionRange(start+b.dataset.sym.length, start+b.dataset.sym.length);
+  });
   $('#hw-cancel').addEventListener('click', closeHandwriteModal);
   $('#hw-scrim').addEventListener('click', e=>{ if(e.target.id==='hw-scrim') closeHandwriteModal(); });
   $('#hw-clear').addEventListener('click', hwClear);
