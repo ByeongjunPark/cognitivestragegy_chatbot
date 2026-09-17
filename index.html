@@ -1852,13 +1852,21 @@ function paintPhase(){
 }
 // 이해도 체크포인트가 안 풀렸으면(근거 미입력) 다음 대화로 못 넘어가게 잠근다.
 function syncComposeLock(){
-  const locked = !!(session && (session.pendingCheckpoint || session.pendingActivation));
+  const locked = !!(session && (session.pendingCheckpoint || session.pendingActivation)) || busy;
   ['chat-send','chat-input','btn-stuck','btn-change-strategy'].forEach(id=>{ const el=$('#'+id); if(el) el.disabled = locked; });
   const qa = $('#quick-actions');
   qa.style.pointerEvents = locked ? 'none' : '';
   qa.style.opacity = locked ? '.4' : '';
   const bn = $('#btn-prep-next');
   if(locked) bn.disabled = true; else bn.disabled = false;
+  // 요청사항(8번째 피드백) 3: "체크리스트 검토나 기타등등, 학습자가 응답해줘도 AI가 체크를
+  // 못하는 일이 생긴다" — 실제 원인은 busy(AI가 이전 응답을 만드는 중)일 때도 화면의 다른
+  // 버튼(🔍 다 했어요·체크리스트·표 칸 등)은 그대로 눌려서, reviewStruct()/requestStructured()
+  // 안의 "if(busy) return;" 가드에 조용히 씹혔다(에러도 안내도 없이). 학습자 입장에서는 분명히
+  // 응답했는데 AI가 못 본 것처럼 보인다. busy인 동안은 스트림 전체를 시각적으로도 잠가서,
+  // 클릭이 소리 없이 사라지는 대신 "지금은 기다려야 한다"는 게 눈에 보이게 한다.
+  const stream = $('#stream');
+  if(stream){ stream.style.pointerEvents = busy ? 'none' : ''; stream.style.opacity = busy ? '.65' : ''; }
 }
 
 /* ===== 요청사항(3·4번째 피드백) 7: 준비 대화를 원리6·7·8 순서(가·나·다)로 학생이 알아보기
@@ -1997,7 +2005,7 @@ function renderStream(){
           box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="paper">
             <div class="tab">🌱 가. 아는 것 확인하기 — 시험이 아니에요, 아는 만큼만 편하게 적어요</div>
             <div class="body stack">
-              ${items.map((it,i)=>`<div><label class="field-label">${i+1}. ${esc(it.q)}</label><textarea class="textarea aq-a" data-i="${i}" rows="2">${esc(it.a)}</textarea></div>`).join('')}
+              ${items.map((it,i)=>aqFieldHTML(it,i)).join('')}
             </div>
             <div style="text-align:right;padding:0 16px 16px"><button type="button" class="btn btn-sm btn-primary aq-submit" data-id="${t.id}" ${activationQuizValid()?'':'disabled'}>다 적었어요</button></div>
           </div></div>`);
@@ -2448,7 +2456,7 @@ function mmEditPopover(x, y, initial, onConfirm){
 }
 async function requestStructured(type, label){
   if(busy || session.phase!=='explore') return;
-  busy = true;
+  busy = true; syncComposeLock();
   pushMe(`(${label})`, false);
   const box=$('#stream');
   box.insertAdjacentHTML('beforeend', `<div class="msg ai" id="pending"><div class="av">AI</div><div class="bubble"><span class="loading"><i></i><i></i><i></i></span></div></div>`);
@@ -2471,7 +2479,7 @@ async function requestStructured(type, label){
   }catch(e){
     $('#pending')?.remove();
     pushAi('⚠ 정리하는 데 실패했어요: ' + e.message);
-  } finally { busy = false; }
+  } finally { busy = false; syncComposeLock(); }
 }
 
 /* --- 준비 대화: 각 점검(사전지식·스스로 점검)은 여러 턴 이어지고,
@@ -2511,22 +2519,41 @@ async function startActivationQuiz(){
   session.turns.push({ id:turnId, role:'note', kind:'activate-quiz', answered:false });
   renderStream(); syncComposeLock();
   try{
+    // 요청사항(8번째 피드백) 4: "사전 진단평가도 텍스트 쓰기만 주지 말고 선다형도 섞어달라" —
+    // 기억해내기·예시 들기처럼 정답 후보를 나열할 수 있는 유형은 4지선다로, 자기 말로 설명하기·
+    // 다른 상황에 적용하기처럼 학습자 고유의 서술이 필요한 유형은 그대로 서술형으로 남긴다
+    // (전부 선다형으로 바꾸면 "자기 말로 설명"이 성립하지 않는다).
     const raw = await callLLM([
       { role:'system', content:'너는 교육과정 성취기준 기반 사전 확인 문항 출제자다. 반드시 순수 JSON만 출력한다. 시험처럼 딱딱하지 않게, 서로 다른 방식(기억해내기·예시 들기·자기 말로 설명하기·다른 상황에 적용하기)으로 가볍게 확인하는 문항을 낸다.' },
-      { role:'user', content:`성취기준: "${session.ctx.std}" (${session.ctx.grade||session.ctx.band} · ${session.ctx.subject})\n학습목표: ${session.goal||'-'}\n이 내용을 학습자가 지금 얼마나 알고 있는지 가볍게 확인할 짧은 문항 4개를 서로 다른 방식으로 만들어라(부담 없이, 한 문장씩). 정답은 쓰지 말 것.\n{"items":[{"tag":"기억","q":"..."},{"tag":"예시","q":"..."},{"tag":"설명","q":"..."},{"tag":"적용","q":"..."}]}` }
+      { role:'user', content:`성취기준: "${session.ctx.std}" (${session.ctx.grade||session.ctx.band} · ${session.ctx.subject})\n학습목표: ${session.goal||'-'}\n이 내용을 학습자가 지금 얼마나 알고 있는지 가볍게 확인할 짧은 문항 4개를 서로 다른 방식으로 만들어라(부담 없이, 한 문장씩). "기억"·"예시" 문항 2개는 type을 "mcq"로 하고 그럴듯한 오답이 섞인 선택지(options) 4개를 만들어라(정답이 어디 있는지 티 내지 말 것). "설명"·"적용" 문항 2개는 자기 말로 써야 하니 type을 "text"로 하고 options는 넣지 마라. 정답을 별도로 알려주지 말 것(선택지 자체가 곧 문항이다).\n{"items":[{"tag":"기억","type":"mcq","q":"...","options":["...","...","...","..."]},{"tag":"예시","type":"mcq","q":"...","options":["...","...","...","..."]},{"tag":"설명","type":"text","q":"..."},{"tag":"적용","type":"text","q":"..."}]}` }
     ]);
     const j = parseJSON(raw);
     if(!j || !Array.isArray(j.items) || j.items.length<4) throw new Error('shape');
-    session.prior.items = j.items.slice(0,4).map((it,i)=>({ id:'a'+i, tag:String(it.tag||'확인'), q:String(it.q), a:'', score:null, correct:null, note:'' }));
+    session.prior.items = j.items.slice(0,4).map((it,i)=>{
+      const isMcq = it.type==='mcq' && Array.isArray(it.options) && it.options.length>=2;
+      return { id:'a'+i, tag:String(it.tag||'확인'), q:String(it.q), type: isMcq?'mcq':'text', options: isMcq ? it.options.map(String) : null, a:'', score:null, correct:null, note:'' };
+    });
   }catch(e){
     session.prior.items = [
-      { id:'a0', tag:'기억', q:`"${trim(session.ctx.std,30)}"과 관련해서 지금 알고 있는 걸 편하게 떠올려 써 보세요.`, a:'', score:null, correct:null, note:'' },
-      { id:'a1', tag:'예시', q:`이 내용과 관련된 예를 하나 들어 보세요.`, a:'', score:null, correct:null, note:'' },
-      { id:'a2', tag:'설명', q:`이 내용을 아는 만큼 자기 말로 짧게 설명해 보세요.`, a:'', score:null, correct:null, note:'' },
-      { id:'a3', tag:'적용', q:`이 내용을 실제 상황에 적용한다면 어떤 예가 있을지 써 보세요.`, a:'', score:null, correct:null, note:'' }
+      { id:'a0', tag:'기억', type:'text', options:null, q:`"${trim(session.ctx.std,30)}"과 관련해서 지금 알고 있는 걸 편하게 떠올려 써 보세요.`, a:'', score:null, correct:null, note:'' },
+      { id:'a1', tag:'예시', type:'text', options:null, q:`이 내용과 관련된 예를 하나 들어 보세요.`, a:'', score:null, correct:null, note:'' },
+      { id:'a2', tag:'설명', type:'text', options:null, q:`이 내용을 아는 만큼 자기 말로 짧게 설명해 보세요.`, a:'', score:null, correct:null, note:'' },
+      { id:'a3', tag:'적용', type:'text', options:null, q:`이 내용을 실제 상황에 적용한다면 어떤 예가 있을지 써 보세요.`, a:'', score:null, correct:null, note:'' }
     ];
   }
   renderStream();
+}
+// 요청사항(8번째 피드백) 4: mcq 문항은 텍스트 입력칸 대신 선택지 버튼을 준다 — 고른 선택지의
+// 실제 문구를 그대로 it.a에 저장해서, 채점(gradeActivationQuiz)은 손대지 않고 그대로 쓴다.
+function aqFieldHTML(it, i){
+  if(it.type==='mcq' && Array.isArray(it.options)){
+    return `<div><label class="field-label">${i+1}. ${esc(it.q)}</label>
+      <div class="choices aq-mcq" data-i="${i}" style="grid-template-columns:1fr 1fr">
+        ${it.options.map(op=>`<button type="button" class="choice ${it.a===op?'is-selected':''}" data-i="${i}" data-opt="${esc(op)}">${esc(op)}</button>`).join('')}
+      </div>
+    </div>`;
+  }
+  return `<div><label class="field-label">${i+1}. ${esc(it.q)}</label><textarea class="textarea aq-a" data-i="${i}" rows="2">${esc(it.a)}</textarea></div>`;
 }
 async function gradeActivationQuiz(){
   try{
@@ -2613,7 +2640,7 @@ session.ctx.concept ? `이 성취기준의 핵심 개념·내용요소(교육과
 `말투 규칙: ${gradeLangLevel(session.ctx.grade)} '메타인지·인지전략·성찰·전이·비계·스캐폴딩' 같은 어려운 학술 용어는 쓰지 말고, 꼭 필요하면 쉬운 말로 풀어서 설명하세요.`,
 `서식 규칙(반드시 지킬 것): 마크다운 문법을 절대 쓰지 마세요. 별표(**, *), 밑줄(__), 샵(#), 대시나 별표로 시작하는 목록(-, *), 번호 목록(1. 2.), 코드블록(백틱)을 쓰지 말고 꾸미지 않은 자연스러운 문장(과 필요하면 줄바꿈)만 쓰세요. 강조하고 싶으면 말로 풀어서 강조하세요(예: '정말 중요한 건' 처럼).`,
 `출력 규칙(반드시 지킬 것): 학습자에게 실제로 할 말(대화 문장)만 출력하세요. 설정값 요약, 메모, 괄호 안 라벨, "*지원강도: ...*" 같은 주석성 줄을 답변 끝이나 어디에도 덧붙이지 마세요.`,
-`직접 화법 규칙(반드시 지킬 것): 당신은 지금 이 학습자와 1:1로 직접 대화하고 있습니다. 다른 선생님에게 설명하듯 "(학습자가 ~하도록 유도)", "(실제 적용 시 …)", "만약 (1) 선택 시: … 만약 (2) 선택 시: …", "…라고 물어보면 됩니다", "(학습자가 OO를 선택함)", "(학습자 답변 후)", "(확인 유도)" 같은 지시문·조건분기·상황 설명 괄호를 절대 쓰지 마세요. 특히 학습자가 아직 아무 답도 안 했는데 "학습자가 이렇게 답했다고 치고" 다음 반응까지 미리 시뮬레이션해서 여러 턴을 한 번에 써버리는 것도 절대 금지입니다 — 학습자는 아직 답하지 않았습니다. 그런 계획은 머릿속에서만 정리하고, 학습자에게는 지금 이 순간 건넬 말 딱 1턴(질문이면 질문 1개)만 그대로 건네세요.`,
+`직접 화법 규칙(반드시 지킬 것): 당신은 지금 이 학습자와 1:1로 직접 대화하고 있습니다. 다른 선생님에게 설명하듯 "(학습자가 ~하도록 유도)", "(실제 적용 시 …)", "만약 (1) 선택 시: … 만약 (2) 선택 시: …", "…라고 물어보면 됩니다", "(학습자가 OO를 선택함)", "(학습자 답변 후)", "(확인 유도)" 같은 지시문·조건분기·상황 설명 괄호를 절대 쓰지 마세요. 학습자를 3인칭 "학습자가/학습자는"으로 부르며 서술하는 것도 금지입니다 — 그건 속으로만 판단하고, 학습자에게는 항상 "네가"라고 직접 부르세요. 특히 학습자가 아직 아무 답도 안 했는데 "학습자가 이렇게 답했다고 치고" 다음 반응까지 미리 시뮬레이션해서 여러 턴을 한 번에 써버리거나, "학생:"/"AI:"처럼 두 역할을 당신 혼자 다 쓰는 것도 절대 금지입니다 — 학습자는 아직 답하지 않았습니다. 그런 계획은 머릿속에서만 정리하고, 학습자에게는 지금 이 순간 건넬 말 딱 1턴(질문이면 질문 1개)만 그대로 건네세요.`,
 `[이번 지시] ${instruction}`
   ].join('\n');
 }
@@ -2633,10 +2660,17 @@ function hasMetaLeak(s){
   if(/만약\s*\(?\s*\d\)?\s*(선택|고르면|고를)/.test(t)) return true;
   if(/(라고|하고)\s*(물어보면|말하면|질문하면)\s*(됩니다|돼요)/.test(t)) return true;
   if((t.match(/\([^)]{0,30}학습자[^)]{0,30}\)/g)||[]).length >= 2) return true;
+  // 요청사항(8번째 피드백) 1·2: (1) 학습자에게 직접 말하는 대신 "학습자가/학습자는 ~"처럼
+  // 3인칭으로 서술해버리는 경우(속으로만 정리해야 할 판단·계획을 그대로 입 밖에 낸 것 —
+  // 직접 대화라면 항상 "네가"라고 해야 한다), (2) 학습자가 아직 하지 않은 말을 스스로 지어내
+  // "…라고 답했다고 치고" 이어가거나 "학생:/AI:"처럼 두 역할을 혼자 다 쓰는 원맨쇼를 감지한다.
+  if(/(^|[^가-힣])학습자(가|는|에게|를|의)\s/.test(t)) return true;
+  if(/(답했다고|말했다고|대답했다고|썼다고)\s*(치|가정)/.test(t)) return true;
+  if(/(^|\n)\s*(학습자|학생)\s*[:：]/.test(t)) return true;
   return false;
 }
 async function ai(instruction, kind, structOffer){
-  if(busy) return; busy=true;
+  if(busy) return; busy=true; syncComposeLock();
   const box=$('#stream');
   box.insertAdjacentHTML('beforeend', `<div class="msg ai" id="pending"><div class="av">AI</div><div class="bubble"><span class="loading"><i></i><i></i><i></i></span></div></div>`);
   box.scrollTop=box.scrollHeight;
@@ -2661,7 +2695,7 @@ async function ai(instruction, kind, structOffer){
     // 다음 질문(예: 메타인지 첫 질문)까지 통째로 날아가 엉뚱한 안내가 나가는 문제가 있었다.
     if(hasListDump(text) || hasMetaLeak(text) || hasTableDump(text)){
       try{
-        const retrySys = sysPrompt(instruction + ' (경고: 방금 번호 목록·표(마크다운 파이프 |…|)로 정리해서 대신 만들어주거나, "(학습자가 ~하도록 유도)"·"만약 (1) 선택 시: …" 같은 지시문·조건문·괄호 설명으로 답하려 했다. 너는 지금 그 학습자와 직접 대화하고 있는 튜터이지, 다른 선생님에게 설명하는 게 아니고, 학습자가 스스로 정리할 몫을 대신 만들어줘도 안 된다. 그런 것 없이, 학습자에게 실제로 건넬 말 딱 1문장(질문 1개)만 다시 말하라.)');
+        const retrySys = sysPrompt(instruction + ' (경고: 방금 번호 목록·표(마크다운 파이프 |…|)로 정리해서 대신 만들어주거나, "(학습자가 ~하도록 유도)"·"만약 (1) 선택 시: …" 같은 지시문·조건문·괄호 설명으로 답하려 했다. 또는 "학습자가"처럼 3인칭으로 서술하거나(그건 속으로만 정리할 생각이다 — 학습자에게는 항상 "네가"라고 직접 말하라), 학습자가 아직 하지 않은 말을 "…라고 답했다고 치고" 지어내며 대화를 혼자 이어갔다. 너는 지금 그 학습자와 직접 대화하고 있는 튜터이지, 다른 선생님에게 설명하는 게 아니고, 학습자가 스스로 정리할 몫을 대신 만들어줘도 안 된다. 그런 것 없이, 학습자에게 실제로 건넬 말 딱 1문장(질문 1개)만 다시 말하라.)');
         const retryText = await callLLM([{ role:'system', content:retrySys }, ...hist].slice(-16));
         if(!hasListDump(retryText) && !hasMetaLeak(retryText) && !hasTableDump(retryText)) text = retryText;
       }catch(e){ /* 재시도 실패 시 원래 text를 그대로 후처리 필터에 맡긴다 */ }
@@ -2683,7 +2717,7 @@ async function ai(instruction, kind, structOffer){
   }catch(err){
     $('#pending')?.remove();
     pushAi('⚠ ' + err.message);
-  }finally{ busy=false; }
+  }finally{ busy=false; syncComposeLock(); }
 }
 function checkpointEffectiveInterval(){
   const base = session.checkpointInterval || 4;
@@ -2757,6 +2791,11 @@ function stripMetaLeak(s){
     if(!t) return true; // 빈 줄은 문단 구분이니 유지
     if(/^만약\s*\(?\s*\d\)?\s*(선택|고르면|고를)/.test(t)) return false;
     if(/(라고|하고)\s*(물어보면|말하면|질문하면)\s*(됩니다|돼요)\s*[.]?$/.test(t)) return false;
+    // 요청사항(8번째 피드백) 1·2: 3인칭 서술("학습자가/는 ~")과 원맨쇼(가짜로 답했다고 치고
+    // 이어가거나 "학생:"류 라벨로 두 역할을 혼자 쓰는 것)도 재시도 이후 최종 안전망에서 지운다.
+    if(/(^|[^가-힣])학습자(가|는|에게|를|의)\s/.test(t)) return false;
+    if(/(답했다고|말했다고|대답했다고|썼다고)\s*(치|가정)/.test(t)) return false;
+    if(/^(학습자|학생)\s*[:：]/.test(t)) return false;
     return true;
   }).join('\n').replace(/\n{3,}/g, '\n\n').trim();
   return kept || String(s);
@@ -3506,6 +3545,13 @@ function init(){
       const cpId = cpChip.closest('[data-cp-score]').dataset.cpScore;
       const t = session.turns.find(x=>x.id===cpId); if(!t) return;
       t.score = +cpChip.dataset.n;
+      renderStream();
+      return;
+    }
+    const aqOpt = e.target.closest('.aq-mcq .choice');
+    if(aqOpt){
+      const i = +aqOpt.dataset.i;
+      if(session.prior.items[i]) session.prior.items[i].a = aqOpt.dataset.opt;
       renderStream();
       return;
     }
