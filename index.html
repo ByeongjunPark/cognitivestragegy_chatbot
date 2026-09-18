@@ -458,16 +458,15 @@
   .mm-edit-popover button{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:7px;padding:4px 10px;font-weight:800}
 
   /* ===== 원리5: 과업 분담 블록(대화 시작 전, 클릭으로 옮기기) ===== */
-  .block-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  @media(max-width:620px){.block-cols{grid-template-columns:1fr}}
-  .block-col{border:1px dashed var(--line-strong);border-radius:14px;padding:12px;min-height:64px;background:var(--surface-2)}
-  .block-col h5{font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.03em;margin-bottom:9px;display:flex;align-items:center;gap:6px}
-  .task-block{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fff;border:1px solid var(--line-strong);border-radius:10px;padding:9px 11px;font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:7px;transition:.14s}
-  .task-block:last-child{margin-bottom:0}
-  .task-block button{border:1px solid var(--line-strong);background:var(--surface-2);border-radius:7px;padding:4px 9px;font-size:11px;font-weight:800;color:var(--accent-ink);flex:none}
-  .task-block button:hover{border-color:var(--accent);background:var(--accent-wash)}
-  .tb-stage h6{font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.05em;margin:10px 0 5px;text-transform:uppercase}
-  .tb-stage:first-child h6{margin-top:0}
+  /* 원리5-지침2: 가변 블록(다) = 슬라이더, 역할고정협업 블록(가) = 토글 */
+  .tb-slide-row{border:1px solid var(--line-strong);border-radius:13px;padding:11px 13px;background:var(--surface-2)}
+  .tb-slide-label{font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:8px;display:flex;justify-content:space-between;gap:8px}
+  .tb-slide-label .tb-slide-val{font-weight:800;color:var(--accent-ink);white-space:nowrap}
+  .tb-slide{width:100%;accent-color:var(--accent)}
+  .tb-slide-ends{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:4px}
+  .tb-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid var(--line-strong);border-radius:10px;padding:8px 11px;font-size:12px;font-weight:700;color:var(--ink)}
+  .tb-toggle-row .tb-toggle-state{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}
+  .tb-toggle-row input[type="checkbox"]{width:18px;height:18px;accent-color:var(--accent);flex:none}
   .fixed-role-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
   @media(max-width:620px){.fixed-role-row{grid-template-columns:1fr}}
   .fixed-role-col{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--bg)}
@@ -658,17 +657,20 @@
            "많이·보통·조금"을 미리 고르게 하던 절차만 없앤다 — 두 가지 설정(힌트 크기 + 과업
            분담)이 겹쳐 있어 어색하다는 지적이 반복됐다. 이제 설정은 "오늘 할 일 나누기" 하나뿐.
            PDF 세부지침의 가·나·다를 그대로 반영해 다시 짠다(원리5 [대화 전 설정 지침] 1). -->
+      <!-- 요청사항(13번째 피드백): PDF [원리5 · 대화 전 설정 지침] 2 — "가변 블록은 슬라이더
+           (AI 의존도 연속 조절), 역할고정협업 블록은 토글(AI 호출 여부만 선택)로 구분 제시한다."
+           다(가변) 5개는 슬라이더로, 가(역할고정·AI) 3개는 "AI가 바로 나설지" 토글로 바꾼다.
+           나(역할고정·학습자)는 AI가 애초에 할 수 없는 일이라 호출할 대상이 없어 토글도 없다. -->
       <div>
-        <label class="field-label" style="margin-bottom:6px">오늘 할 일, 누가 맡을까요?</label>
-        <p class="hint" style="margin:0 0 10px">AI랑 나는 원래 하는 일이 서로 달라요. 그런데 아래 5가지는 <b>AI가 해도 되고 내가 해도 되는 일</b>이에요. 눌러서 서로 바꿔볼 수 있어요.</p>
-        <div class="block-cols">
-          <div class="block-col"><h5>🤖 AI가 맡을 일</h5><div id="tb-ai"></div></div>
-          <div class="block-col"><h5>🙋 내가 맡을 일</h5><div id="tb-me"></div></div>
-        </div>
+        <label class="field-label" style="margin-bottom:6px">오늘 할 일, 누가 얼마나 맡을까요?</label>
+        <p class="hint" style="margin:0 0 10px">아래 5가지는 <b>AI가 해도 되고 내가 해도 되는 일</b>이에요. 막대를 밀어서 AI와 내가 얼마나씩 맡을지 정해요.</p>
+        <p class="hint" id="tb-recent-hint" style="margin:0 0 10px"></p>
+        <div class="stack" id="tb-sliders" style="gap:14px"></div>
         <div class="fixed-role-row">
           <div class="fixed-role-col">
-            <h6>🤖 AI가 항상 하는 일</h6>
+            <h6>🤖 AI가 항상 하는 일 <span style="font-weight:500;color:var(--muted)">(맡는 일 자체는 안 바뀌어요, "바로 나설지"만 골라요)</span></h6>
             <p>내가 모르는 걸 찾아서 알려주고, 막혀서 어려워하면 힌트를 줘요. 그리고 내가 한 것을 봐 주고 잘했는지 알려줘요.</p>
+            <div class="stack" id="tb-toggles" style="gap:8px;margin-top:8px"></div>
           </div>
           <div class="fixed-role-col">
             <h6>🙋 내가 항상 하는 일</h6>
@@ -1066,26 +1068,37 @@ const STRATS = [
 // 설명 두 줄로만 보여준다(요청사항 10번째 피드백에서 "결정할 것도 없는 항목을 블록으로
 // 늘어놓지 말라"고 한 지적은 여전히 유효하다 — 다만 이번엔 그 6개가 PDF와 안 맞는 항목이라
 // 지운 것이었고, 지금은 PDF가 실제로 "고정"이라 명시한 5개를 설명문으로 보여주는 것이다).
+// 요청사항(13번째 피드백): PDF [원리5 · 대화 전 설정 지침] 2 그대로 — 다(가변) 5개는 0~100
+// "AI 의존도" 슬라이더(50 기준으로 실제 담당을 가른다), 가(역할고정·AI) 3개는 "AI가 바로
+// 나설지" 토글(끄면 학습자가 먼저 시도해볼 때까지 그 항목만 AI가 기다린다 — 역할 자체가
+// 학습자에게 넘어가는 게 아니다). toggleDefault는 처음엔 항상 켜둔다(AI가 바로 도와줌).
 const TASK_BLOCKS = [
-  // 가(고정·AI) — sysPrompt의 aiTasks에 항상 포함되고, 화면에는 fixed-role-col 설명문으로만 보인다.
-  { id:'find_ref',    label:'🔍 필요한 자료 찾아주기', fixed:'ai' },
-  { id:'scaffold_help',label:'🪜 어려울 때 힌트 주기',  fixed:'ai' },
-  { id:'grade_feedback',label:'✅ 채점하고 알려주기',   fixed:'ai' },
-  // 나(고정·학습자)
+  { id:'find_ref',    label:'🔍 필요한 자료 찾아주기', fixed:'ai', toggleDefault:true },
+  { id:'scaffold_help',label:'🪜 어려울 때 힌트 주기',  fixed:'ai', toggleDefault:true },
+  { id:'grade_feedback',label:'✅ 채점하고 알려주기',   fixed:'ai', toggleDefault:true },
+  // 나(고정·학습자) — AI가 애초에 맡을 수 없는 일이라 호출 토글도 없다.
   { id:'reflect_method', label:'🧠 내가 어떻게 공부하는지 돌아보기', fixed:'me' },
   { id:'judge_reason',   label:'🔍 내 생각이 맞는지 스스로 판단하기', fixed:'me' },
-  // 다(유동적) — 세션 시작 화면에서 학습자가 직접 AI/나로 나눈다.
-  { id:'define_problem', label:'❓ 문제가 뭔지 명확히 정하기',     stage:'탐구', fixed:null, def:'ai' },
-  { id:'explain_result', label:'🗣️ 내가 만든 것 설명하기',       stage:'탐구', fixed:null, def:'ai' },
-  { id:'summarize_key',  label:'📝 핵심만 요약해서 보여주기',      stage:'마무리', fixed:null, def:'ai' },
-  { id:'draft_first',    label:'✏️ 과제 초안 먼저 써보기',        stage:'탐구', fixed:null, def:'me' },
-  { id:'structure_complex', label:'🧩 복잡한 문제, 풀이 순서 짜주기', stage:'탐구', fixed:null, def:'ai' }
+  // 다(유동적) — def는 0~100 슬라이더 시작값(50 이상=AI 쪽, 미만=학습자 쪽으로 실행에 반영).
+  { id:'define_problem', label:'❓ 문제가 뭔지 명확히 정하기',     stage:'탐구', fixed:null, def:70 },
+  { id:'explain_result', label:'🗣️ 내가 만든 것 설명하기',       stage:'탐구', fixed:null, def:65 },
+  { id:'summarize_key',  label:'📝 핵심만 요약해서 보여주기',      stage:'마무리', fixed:null, def:65 },
+  { id:'draft_first',    label:'✏️ 과제 초안 먼저 써보기',        stage:'탐구', fixed:null, def:30 },
+  { id:'structure_complex', label:'🧩 복잡한 문제, 풀이 순서 짜주기', stage:'탐구', fixed:null, def:70 }
 ];
-// 요청사항(11번째 피드백) 1: "AI 힌트 크기 고르는 것을 없애라" — 그동안 지원강도(많이/보통/
-// 조금)를 먼저 고르면 그 값으로 이 5개의 기본값을 세팅했는데, 그 선택 자체를 없앴으니 그냥
-// 위에 적어둔 def 값을 그대로 시작값으로 쓴다(모두 눌러서 자유롭게 바꿀 수 있다).
+// 요청사항(11번째 피드백) 1: "AI 힌트 크기 고르는 것을 없애라"로 지원강도 선택 자체는 없앴다.
+// 요청사항(13번째 피드백) · 원리5-지침3: "최근 설정 내역에서 주로 설정한 이전 선택을 정보로
+// 제공한다" — 힌트 크기가 없어진 지금은 이 지침이 적용될 유일한 설정이 과업 분담이라, 지난
+// 세션에서 실제로 정했던 슬라이더·토글 값을 이번 시작값으로 이어받는다(없으면 위 def 사용).
 function applyDefaultTaskBlocks(){
-  TASK_BLOCKS.forEach(b=>{ if(!b.fixed) stTaskBlocks[b.id] = b.def; });
+  const acc = account();
+  const lastSess = acc && acc.sessions.length ? acc.sessions[acc.sessions.length-1] : null;
+  const lastTb = (lastSess && lastSess.taskBlocks) || {};
+  const lastToggle = (lastSess && lastSess.fixedToggle) || {};
+  TASK_BLOCKS.forEach(b=>{
+    if(!b.fixed) stTaskBlocks[b.id] = typeof lastTb[b.id]==='number' ? lastTb[b.id] : b.def;
+    else if(b.toggleDefault!=null) stFixedToggle[b.id] = typeof lastToggle[b.id]==='boolean' ? lastToggle[b.id] : b.toggleDefault;
+  });
 }
 /* 원리1 적응적 페이딩(비계 감소)이 실제로 눈에 보이도록, 헤더 아래 상시 표시되는 단계 표시
    바에서 쓰는 순서. 이 배열의 인덱스가 곧 "지원 강도" 축이며 오른쪽으로 갈수록 도움이 준다. */
@@ -1564,8 +1577,8 @@ function openSessDetail(s){
     return `<div class="sd-turn ${mine?'me':''}"><div class="r">${mine?'나':'AI'}</div><div>${body}</div></div>`;
   }).join('') || '<p class="hint">주고받은 이야기가 없어요.</p>';
   const tb = s.taskBlocks||{};
-  const tbAi = TASK_BLOCKS.filter(b=> b.fixed==='ai' || (!b.fixed && tb[b.id]==='ai')).map(b=>b.label);
-  const tbMe = TASK_BLOCKS.filter(b=> b.fixed==='me' || (!b.fixed && tb[b.id]==='me')).map(b=>b.label);
+  const tbAi = TASK_BLOCKS.filter(b=> b.fixed==='ai' || (!b.fixed && (tb[b.id]==null || tb[b.id]>=50))).map(b=>b.label);
+  const tbMe = TASK_BLOCKS.filter(b=> b.fixed==='me' || (!b.fixed && tb[b.id]!=null && tb[b.id]<50)).map(b=>b.label);
   $('#sess-detail-body').innerHTML = `
     <div>
       <div style="font-weight:800;font-size:15px">${emo} ${esc(s.ctx.std)}</div>
@@ -1625,7 +1638,8 @@ function makeSampleSession(spec, idx){
     prior:{ score:3, items:[], diagScore:spec.prior, diagFeedback:'예시 데이터예요.' },
     meta:{ usualMethod:'', raw:'예시로 채운 답변입니다.', score:metaScore, scoreDetail:{...spec.meta}, feedback:'예시 데이터예요.' },
     strategies: spec.strategies.slice(), strategyLabel: stratLabel, strategyReason: spec.reason, strategyChangeLog:[], stratTurnIdx:0, stratDone:{}, stratRounds:{},
-    taskBlocks: { ...stTaskBlocks },
+    taskBlocks: (()=>{ const o={}; TASK_BLOCKS.forEach(b=>{ if(!b.fixed) o[b.id]=b.def; }); return o; })(),
+    fixedToggle: (()=>{ const o={}; TASK_BLOCKS.forEach(b=>{ if(b.toggleDefault!=null) o[b.id]=true; }); return o; })(),
     turns: [
       { id:uid(), role:'me', text:`"${spec.std}"에 대해 알고 있는 만큼 적어볼게요.`, phase:'explore', delegate:false, initiative:'self' },
       { id:uid(), role:'ai', text:'좋아, 하나씩 같이 살펴보자! 지금까지 나온 이야기를 정리해볼까?', phase:'explore', kind:null, support:spec.support, judge:'accept', comment:'' },
@@ -1664,6 +1678,16 @@ function renderStart(){
   // 시작하고, 대화 중 이해도가 좋아지면 그때 제안→선택으로만 줄어든다(원리1, proposeFade()).
   initTaskBlocks(); applyDefaultTaskBlocks(); renderTaskBlocks();
   fillStartSubjects();
+  // 원리5-지침3: 지난 세션에서 실제로 정했던 값을 이어받았을 때, 왜 그 값으로 미리
+  // 맞춰졌는지 안내한다(값 자체는 applyDefaultTaskBlocks에서 이미 채워둠).
+  const acc = account();
+  const hintEl = $('#tb-recent-hint');
+  if(hintEl){
+    const lastSess = acc && acc.sessions.length ? acc.sessions[acc.sessions.length-1] : null;
+    hintEl.textContent = (lastSess && lastSess.taskBlocks)
+      ? '지난 공부에서 정했던 비율로 미리 맞춰뒀어요. 오늘은 다르게 하고 싶으면 얼마든지 밀어서 바꿔도 돼요.'
+      : '';
+  }
 }
 // 과목은 국어·영어·수학·사회·과학 5개만 남긴다. 고1은 원본 데이터 키가
 // "국어(공통)"/"통합사회"처럼 달라서, 화면 표시만 5개 이름으로 맞추고 실제 성취기준
@@ -1688,26 +1712,36 @@ function fillStartSubjects(){
 // stPicks[0]이 대화를 이끄는 주 성취기준, 나머지는 session.ctx.extraStds로 들어간다.
 let stPicks = [];
 let stSupport = 'high';
-let stTaskBlocks = null; // { taskId: 'ai'|'me' }, fixed 블록은 항상 그 값
+let stTaskBlocks = null;   // { taskId: 0~100 }, 다(가변) 5개 전용 — 50 이상=AI, 미만=학습자
+let stFixedToggle = null;  // { taskId: boolean }, 가(고정·AI) 3개 전용 — "AI가 바로 나설지"
 function initTaskBlocks(){
-  stTaskBlocks = {};
-  TASK_BLOCKS.forEach(b=> stTaskBlocks[b.id] = b.fixed || b.def);
+  stTaskBlocks = {}; stFixedToggle = {};
+  TASK_BLOCKS.forEach(b=>{ if(!b.fixed) stTaskBlocks[b.id] = b.def; else if(b.toggleDefault!=null) stFixedToggle[b.id] = b.toggleDefault; });
+}
+// 요청사항(13번째 피드백): PDF 원리5-지침2 그대로 — 슬라이더(다) + 토글(가)로 렌더링.
+function tbSliderLabel(v){
+  if(v>=70) return 'AI가 많이';
+  if(v>=55) return 'AI가 조금 더';
+  if(v>45) return '반반';
+  if(v>=30) return '내가 조금 더';
+  return '내가 많이';
 }
 function renderTaskBlocks(){
-  const aiBox = $('#tb-ai'), meBox = $('#tb-me');
-  if(!aiBox) return;
+  const sliderBox = $('#tb-sliders'), toggleBox = $('#tb-toggles');
+  if(!sliderBox) return;
   const movable = TASK_BLOCKS.filter(b=>!b.fixed);
-  const stages = ['탐구','마무리'];
-  const chip = (b)=> `<div class="task-block"><span>${esc(b.label)}</span><button type="button" data-id="${b.id}">↔ 옮기기</button></div>`;
-  const bySide = (side)=> {
-    const html = stages.map(st=>{
-      const items = movable.filter(b=>b.stage===st && stTaskBlocks[b.id]===side);
-      return items.length ? `<div class="tb-stage"><h6>${esc(st)}</h6>${items.map(chip).join('')}</div>` : '';
-    }).join('');
-    return html || '<p class="hint">여기엔 없어요</p>';
-  };
-  aiBox.innerHTML = bySide('ai');
-  meBox.innerHTML = bySide('me');
+  sliderBox.innerHTML = movable.map(b=>{
+    const v = stTaskBlocks[b.id];
+    return `<div class="tb-slide-row"><div class="tb-slide-label"><span>${esc(b.label)}</span><span class="tb-slide-val">${tbSliderLabel(v)}</span></div>
+      <input type="range" class="tb-slide" data-id="${b.id}" min="0" max="100" step="10" value="${v}">
+      <div class="tb-slide-ends"><span>🤖 AI가 맡아요</span><span>🙋 내가 맡아요</span></div>
+    </div>`;
+  }).join('');
+  const fixedAi = TASK_BLOCKS.filter(b=>b.fixed==='ai' && b.toggleDefault!=null);
+  toggleBox.innerHTML = fixedAi.map(b=>{
+    const on = stFixedToggle[b.id];
+    return `<label class="tb-toggle-row"><span>${esc(b.label)}</span><span style="display:flex;align-items:center;gap:8px"><span class="tb-toggle-state">${on?'AI가 바로 해줘요':'내가 먼저 해볼래요'}</span><input type="checkbox" class="tb-ai-toggle" data-id="${b.id}" ${on?'checked':''}></span></label>`;
+  }).join('');
 }
 function fillStartStds(){
   const band=bandOf($('#st-band').value), subj=$('#st-subject').value;
@@ -1805,8 +1839,8 @@ function startSession(){
     meta:{ usualMethod:'', raw:'', u:'', s:'', c:'', score:null, scoreDetail:null, feedback:'' },
     // 원리8: 복수 선택 가능(Weinstein & Mayer 1983 / Pintrich et al. 1993의 5개 유형 중 1개 이상).
     strategies:[], strategyLabel:null, strategyReason:'', strategyChangeLog:[], stratTurnIdx:0, stratDone:{}, stratRounds:{},
-    // 원리5: 대화 시작 전 학습자-AI 과업 분담을 블록으로 명시(고정 블록은 항상 학습자 몫).
-    taskBlocks: { ...stTaskBlocks },
+    // 원리5: 대화 시작 전 학습자-AI 과업 분담을 명시(다=슬라이더 값, 가=AI 호출 토글).
+    taskBlocks: { ...stTaskBlocks }, fixedToggle: { ...stFixedToggle },
     // AI 도움 정도는 여기(대화 시작 전)에서만 정한다. 대화 중에는 '좋아요' 판단이 쌓일 때만 자동으로 줄어든다.
     support: stSupport || 'high',
     acceptStreak:0, holdStreak:0, cpHighStreak:0, stuckCount:0,
@@ -2205,9 +2239,10 @@ function renderStream(){
       const label = j==='accept'?'👍 좋아요':j==='hold'?'🤔 잘 모르겠어요':j==='comment'?'💭 다른 생각':'🔍 판단하기';
       extra = `<button type="button" class="judge-trigger ${stCls}" data-id="${t.id}">${label}</button>`;
       if(session.ctx.subject==='영어' && window.speechSynthesis && t.text) extra += `<button type="button" class="icon-btn speak-btn" data-id="${t.id}" title="영어 발음으로 들어보기" style="padding:0 10px;height:26px;font-size:11px;margin-left:6px">🔊 들어보기</button>`;
-      // 원리10 [대화 중: 대화 전반 지침] 3: "필요 시 자신의 대화가 나온 산출 과정을 학습자가
-      // 이해할 수 있도록 제공한다" — 일반 대화형 AI 말풍선에 "왜 이렇게 말했어?" 버튼을 둔다.
-      if(t.phase==='explore' && !t.structured && !t.kind && t.text) extra += `<button type="button" class="icon-btn explain-btn" data-id="${t.id}" title="이 말이 왜 나왔는지 설명 보기" style="padding:0 10px;height:26px;font-size:11px;margin-left:6px">🧭 왜 이렇게 말했어?</button>`;
+      // 원리10 [대화 중: 대화 전반 지침] 3: "학습자가 AI 챗봇과 대화하는 과정 전반의 맥락에서"
+      // 산출 과정을 제공하라고 돼 있다 — "판단하기"(위 judge-trigger)가 phase 구분 없이 모든
+      // AI 말풍선에 뜨는 것과 같은 범위여야 정합성이 맞다(이전엔 explore로만 좁혀 놨던 것을 넓힘).
+      if(!t.structured && !t.kind && t.text) extra += `<button type="button" class="icon-btn explain-btn" data-id="${t.id}" title="이 말이 왜 나왔는지 설명 보기" style="padding:0 10px;height:26px;font-size:11px;margin-left:6px">🧭 왜 이렇게 말했어?</button>`;
       if(t.explain && t.explainOpen) extra += `<div class="explain-box">🧭 ${esc(t.explain)}</div>`;
       if(j==='comment' && (t.comment||'').trim()) extra += `<div class="comment-pill"><b>내 다른 생각:</b> ${esc(t.comment)}</div>`;
       if(t.kind==='prior-pick') extra += priorPickHTML();
@@ -2847,8 +2882,13 @@ function gradeLangLevel(grade){
 function sysPrompt(instruction){
   const stratLabel = strategyLabelJoined(session.strategies||[]) || '아직 없음';
   const tb = session.taskBlocks || {};
-  const aiTasks = TASK_BLOCKS.filter(b=> b.fixed==='ai' || (!b.fixed && tb[b.id]==='ai')).map(b=>b.label.replace(/^\S+\s/,''));
-  const meTasks = TASK_BLOCKS.filter(b=> b.fixed==='me' || (!b.fixed && tb[b.id]==='me')).map(b=>b.label.replace(/^\S+\s/,''));
+  const toggle = session.fixedToggle || {};
+  // 요청사항(13번째 피드백) · 원리5-지침2: 다(가변) 5개는 이제 0~100 슬라이더 값이라, 50을
+  // 기준으로 실행에 반영한다(50 이상=AI, 미만=학습자). 가(고정·AI) 3개는 역할 자체은 항상
+  // AI 몫이지만, 토글이 꺼져 있으면 "학습자가 먼저 해볼 때까지 나서지 않기"만 별도로 지시한다.
+  const aiTasks = TASK_BLOCKS.filter(b=> b.fixed==='ai' || (!b.fixed && (tb[b.id]==null || tb[b.id]>=50))).map(b=>b.label.replace(/^\S+\s/,''));
+  const meTasks = TASK_BLOCKS.filter(b=> b.fixed==='me' || (!b.fixed && tb[b.id]!=null && tb[b.id]<50)).map(b=>b.label.replace(/^\S+\s/,''));
+  const holdBackAi = TASK_BLOCKS.filter(b=> b.fixed==='ai' && b.toggleDefault!=null && toggle[b.id]===false).map(b=>b.label.replace(/^\S+\s/,''));
   return [
 `당신은 대한민국 2022 개정 교육과정 성취기준 기반 초·중·고 메타인지 학습 튜터입니다. 학습자와 친근한 반말로 대화합니다.`,
 `--- 아래는 너만 보는 내부 설정값이다. 학습자에게 보내는 답변에는 이 라벨·숫자·영단어(예: "지원강도", "high", "70" 같은 수치)를 절대 그대로 옮겨 적지 마라. 그 값에 "맞게 행동"만 하고, 값 자체는 언급하지 마라. ---`,
@@ -2860,7 +2900,7 @@ session.ctx.concept ? `이 성취기준의 핵심 개념·내용요소(교육과
 `지원강도(비계) 단계: ${session.support} — high면 구체적 힌트, mid면 방향만, low면 되묻는 질문 위주로 행동하되 이 단계명도 말하지 마라.`,
 `학습자가 고른 공부 방법(인지전략, 여러 개 가능): ${stratLabel}`,
 `그 방법을 고른 이유: ${session.strategyReason || '(아직 없음)'}`,
-`과업 분담(대화 시작 전 학습자가 직접 정함, 원리5): AI가 맡기로 한 일 - ${aiTasks.join(', ')||'(없음)'}. 학습자가 맡기로 한 일(AI가 대신 하면 안 됨) - ${meTasks.join(', ')}. 학습자 몫으로 정해진 일은 절대 대신 해주지 말고, 학습자가 직접 하도록 짧게 유도만 하라.`,
+`과업 분담(대화 시작 전 학습자가 직접 정함, 원리5): AI가 맡기로 한 일 - ${aiTasks.join(', ')||'(없음)'}. 학습자가 맡기로 한 일(AI가 대신 하면 안 됨) - ${meTasks.join(', ')}. 학습자 몫으로 정해진 일은 절대 대신 해주지 말고, 학습자가 직접 하도록 짧게 유도만 하라.${holdBackAi.length ? ` 다만 다음은 원래 네 몫이지만 학습자가 "먼저 스스로 해보고 싶다"고 정했다 — 학습자가 시도할 때까지 먼저 나서지 말고 기다려라: ${holdBackAi.join(', ')}.` : ''}`,
 `--- 여기부터는 실제 대화 규칙이다 ---`,
 `규칙(반드시 지킬 것, 어기면 안 됨): 질문은 한 번에 딱 1개. 전체 답변은 아무리 길어도 4문장을 넘기지 마세요. 절대 번호 목록(1. 2. 3.)이나 소제목, 여러 문단으로 된 긴 설명을 쓰지 마세요 — 그건 요약이지 대화가 아닙니다. 정답 여부·이해 수준·수용 여부를 당신이 최종 판정하지 말고 학습자에게 돌려주세요. 학습자가 대화를 끝내기 전에는 되돌아보기(성찰) 질문을 먼저 꺼내지 마세요.`,
 `과업 대행 금지(반드시 지킬 것): 학습자가 인지 전략(반복 연습하기·예시로 연결하기·표나 그림으로 정리하기·따져서 살펴보기·내가 아는지 확인하기 등)을 실제로 수행하는 게 이 대화의 목적입니다. 정리표·요약·마인드맵·긴 예시 목록처럼 학습자가 스스로 해볼 몫을 당신이 대신 만들어 보여주지 마세요. 그런 산출물은 학습자가 화면의 버튼을 눌러 직접 요청합니다. 당신은 "네가 한번 정리해볼래? 뭐부터 써볼까?"처럼 학습자가 그 전략을 스스로 실행하도록 짧게 유도만 하세요.`,
@@ -3686,10 +3726,14 @@ function init(){
   });
   $('#st-back').addEventListener('click', ()=> show('home'));
   $('#st-go').addEventListener('click', ()=>{ if(stPicks.length) startSession(); });
-  document.querySelector('.block-cols').addEventListener('click', e=>{
-    const b = e.target.closest('button[data-id]'); if(!b) return;
-    const id = b.dataset.id;
-    stTaskBlocks[id] = stTaskBlocks[id]==='ai' ? 'me' : 'ai';
+  $('#tb-sliders').addEventListener('input', e=>{
+    const s = e.target.closest('.tb-slide'); if(!s) return;
+    stTaskBlocks[s.dataset.id] = +s.value;
+    renderTaskBlocks();
+  });
+  $('#tb-toggles').addEventListener('change', e=>{
+    const c = e.target.closest('.tb-ai-toggle'); if(!c) return;
+    stFixedToggle[c.dataset.id] = c.checked;
     renderTaskBlocks();
   });
 
