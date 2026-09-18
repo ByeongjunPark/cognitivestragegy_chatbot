@@ -380,6 +380,7 @@
   .judge-trigger.st-hold{border-color:#f3d19b;background:#fdf3e3;color:#92620a}
   .judge-trigger.st-comment{border-color:#c8d6f7;background:var(--info-wash);color:#1e3a8a}
   .comment-pill{margin-top:8px;background:var(--info-wash);border:1px solid #dbe4ff;border-radius:9px;padding:9px 11px;font-size:12.5px;color:#1e3a8a}
+  .explain-box{margin-top:8px;background:var(--accent-wash);border:1px solid #cdeadd;border-radius:9px;padding:9px 11px;font-size:12.5px;color:var(--accent-ink)}
   .modal-lg{max-width:520px}
   .modal-scroll{max-height:82vh;overflow-y:auto}
   .sd-turn{border-left:3px solid var(--line-strong);padding:6px 0 6px 10px;font-size:12.5px}
@@ -463,11 +464,8 @@
   .task-block:last-child{margin-bottom:0}
   .task-block button{border:1px solid var(--line-strong);background:var(--surface-2);border-radius:7px;padding:4px 9px;font-size:11px;font-weight:800;color:var(--accent-ink);flex:none}
   .task-block button:hover{border-color:var(--accent);background:var(--accent-wash)}
-  .task-block.locked{background:var(--surface-2);color:var(--muted);border-style:dashed}
-  .task-block.locked .lock-ic{font-size:12px}
   .tb-stage h6{font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.05em;margin:10px 0 5px;text-transform:uppercase}
   .tb-stage:first-child h6{margin-top:0}
-  .block-locked-row{border:1px dashed var(--line-strong);border-radius:14px;padding:12px;margin-top:10px;background:var(--surface-2)}
 
   [hidden]{display:none!important}
 </style>
@@ -644,21 +642,16 @@
           <button class="choice" data-v="mid">보통<small>방향만 살짝</small></button>
           <button class="choice" data-v="low">조금<small>되묻는 질문 위주</small></button>
         </div>
+        <!-- 원리5 [대화 전 설정 지침] 3: "최근 설정 내역에서 주로 설정한 이전 선택내역을
+             정보로 제공한다" — 값은 예전부터 지난 세션 기준으로 채워져 있었지만, 왜 그 값이
+             미리 골라졌는지 학습자에게 보여준 적은 없었다. 이번에 그 안내 문구를 추가한다. -->
+        <p class="hint" id="st-support-hint" style="margin-top:8px"></p>
       </div>
       <div>
-        <label class="field-label" style="margin-bottom:6px">② 오늘 할 일, 누가 맡을까요? <span style="color:var(--muted);font-weight:500">(①에서 고른 힌트 크기에 맞게 아래 4개는 자동으로 나뉘어요. 마음에 안 들면 블록을 눌러 반대쪽으로 옮기면 돼요)</span></label>
-        <p class="hint" style="margin:0 0 10px">👇 이 4개는 AI가 해도 되고 내가 해도 되는 일이에요(회색지대). 새로 배우는 내용 설명·내 답이 맞는지 확인처럼 <b>늘 AI만 하는 일</b>과 공부 방법 정하기처럼 <b>늘 내가 하는 일</b>은 아래에 따로 있어요.</p>
+        <label class="field-label" style="margin-bottom:6px">② 오늘 할 일, 누가 맡을까요? <span style="color:var(--muted);font-weight:500">(①에서 고른 힌트 크기에 맞게 자동으로 나뉘어요. 마음에 안 들면 블록을 눌러 반대쪽으로 옮기면 돼요)</span></label>
         <div class="block-cols">
           <div class="block-col"><h5>🤖 AI가 맡을 일</h5><div id="tb-ai"></div></div>
           <div class="block-col"><h5>🙋 내가 맡을 일</h5><div id="tb-me"></div></div>
-        </div>
-        <div class="block-locked-row">
-          <h5 style="font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.03em;margin-bottom:9px">🔒 항상 AI가 하는 일 (옮길 수 없어요)</h5>
-          <div id="tb-locked-ai"></div>
-        </div>
-        <div class="block-locked-row">
-          <h5 style="font-size:11.5px;font-weight:800;color:var(--muted);letter-spacing:.03em;margin-bottom:9px">🔒 항상 내가 하는 일 (옮길 수 없어요)</h5>
-          <div id="tb-locked-me"></div>
         </div>
       </div>
     </div>
@@ -1036,28 +1029,17 @@ const STRATS = [
 // 같다"는 지적) — locked:true("항상 나") 하나뿐이던 고정 자리를 fixed:'ai'|'me' 둘로 나눠,
 // concept을 "항상 AI가 하는 일"로 옮겼다. 진짜 옮길 수 있는 것("가운데" 회색지대)만 아래
 // movable 5개로 좁혔고, 낱말도 더 쉽게 다듬었다.
-// 요청사항(6번째 피드백) 3: "정답 확인은 기본적으로 AI가 하는 일이고, 힌트도 필연적으로 AI
-// 도움을 전제한다 — 여전히 AI/인간 경계가 불명확하다"는 지적을 받아 다시 검토했다. checkwork
-// ("내 답 맞았는지 확인하기")를 "내가"로 옮기면 실제로는 아무도 정답 여부를 확인해 주지 않는
-// 상태가 된다 — 아직 배우는 중인 내용이라 학습자에게는 맞는지 판단할 근거(정답지)가 없고,
-// AI 없이는 검증 자체가 불가능하기 때문이다(concept과 같은 이유). connect_make·self_judge와
-// 달리 "학습자가 대신 하는 버전"이 아예 성립하지 않으므로, checkwork도 concept처럼
-// fixed:'ai'로 고정했다. error_find("틀린 부분 찾아내기")는 성격이 달라 movable로 남긴다 —
-// 이건 정답을 몰라도 "내 풀이 안에서 앞뒤가 안 맞는 곳·의심 가는 곳을 스스로 짚어보는" 비판적
-// 사고 활동이라(반례 찾기, critical 전략과 동일한 성격) 학습자 혼자서도 시도할 수 있는 일이다.
-// 다만 최종 확정("정말 틀렸다")이 아니라 "먼저 스스로 의심 지점을 찾아보는 것"이라는 걸
-// 이름에서도 드러나게 라벨을 바꿨다.
+// 요청사항(10번째 피드백) 1: "과업 분배가 여전히 어색하다. 필요없는 과업분배는 버려라" —
+// concept·checkwork(늘 AI가 함)와 strategy_choice·connect_make·self_judge·reflect_write
+// (늘 내가 함) 6개는 사실 "분담"이 아니라 옮길 수 없는 고정값이라, 화면에 골라볼 수 있는
+// 것처럼 늘어놓아 봐야 결정할 게 없는 항목만 6개 쌓여 어수선했다(실제 동작은 여전히 그대로
+// AI가 설명·채점하고, 학습자가 전략을 고르고 판단·성찰을 직접 쓴다 — 코드가 아니라 화면에서만
+// 지운다). 진짜 "AI가 해도, 내가 해도 되는" 회색지대 4개만 남긴다.
 const TASK_BLOCKS = [
-  { id:'concept',   label:'📖 새로 배우는 내용 설명하기', stage:'탐구', fixed:'ai' },
   { id:'example',   label:'📇 예시 들어주기',       stage:'탐구', fixed:null, def:'ai' },
-  { id:'checkwork', label:'✅ 내 답 맞았는지 확인하기', stage:'탐구', fixed:'ai' },
   { id:'nextq',     label:'❓ 다음에 무엇을 할지 정하기', stage:'탐구', fixed:null, def:'ai' },
   { id:'error_find', label:'🧐 의심 가는 부분 먼저 찾아보기', stage:'마무리', fixed:null, def:'ai' },
-  { id:'summarize',  label:'📝 배운 내용 정리하기', stage:'마무리', fixed:null, def:'me' },
-  { id:'strategy_choice', label:'🧭 공부 방법 정하기',         stage:'항상 나', fixed:'me' },
-  { id:'connect_make',    label:'🔗 배운 것끼리 서로 연결하기',    stage:'항상 나', fixed:'me' },
-  { id:'self_judge',      label:'🔍 AI 말이 맞는지 내가 확인하기',  stage:'항상 나', fixed:'me' },
-  { id:'reflect_write',   label:'💭 되돌아보며 쓰기',   stage:'항상 나', fixed:'me' }
+  { id:'summarize',  label:'📝 배운 내용 정리하기', stage:'마무리', fixed:null, def:'me' }
 ];
 // 요청사항 3: 힌트 크기(지원강도)를 고르면 과업 분담도 그에 맞는 꾸러미로 한 번에 세팅된다.
 // high(많이 도움)일수록 AI가 더 많이 맡고, low(조금 도움)일수록 학생이 더 많이 맡는다 — 물론
@@ -1581,6 +1563,20 @@ function renderStart(){
   $$('#st-support .choice').forEach(x=> x.classList.toggle('is-selected', x.dataset.v===stSupport));
   initTaskBlocks(); applySupportPreset(stSupport); renderTaskBlocks();
   fillStartSubjects();
+  // 원리5 · 지침3: 그동안 주로 고른 힌트 크기를 안내 문구로 보여준다(값 자체는 위에서
+  // 이미 지난 선택으로 미리 골라 놨으니, 여기서는 "왜 이게 골라졌는지"만 설명).
+  const supportHintEl = $('#st-support-hint');
+  if(supportHintEl){
+    if(!acc || !acc.sessions.length){ supportHintEl.textContent = ''; }
+    else {
+      const counts = {};
+      acc.sessions.forEach(s=>{ if(s.support) counts[s.support] = (counts[s.support]||0)+1; });
+      const mostUsed = Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];
+      supportHintEl.textContent = lastSess && lastSess.residual && lastSess.residual.nextSupport
+        ? `지난 공부를 마치며 다음엔 힌트 크기를 "${SUPPORT_LABEL[stSupport]}"(으)로 하겠다고 골라서 미리 맞춰뒀어요.${mostUsed && mostUsed!==stSupport ? ` (지금까지는 힌트 크기를 "${SUPPORT_LABEL[mostUsed]}"(으)로 제일 자주 골랐어요.)` : ''}`
+        : mostUsed ? `지금까지 힌트 크기를 "${SUPPORT_LABEL[mostUsed]}"(으)로 제일 자주 골랐어요.` : '';
+    }
+  }
 }
 // 과목은 국어·영어·수학·사회·과학 5개만 남긴다. 고1은 원본 데이터 키가
 // "국어(공통)"/"통합사회"처럼 달라서, 화면 표시만 5개 이름으로 맞추고 실제 성취기준
@@ -1611,7 +1607,7 @@ function initTaskBlocks(){
   TASK_BLOCKS.forEach(b=> stTaskBlocks[b.id] = b.fixed || b.def);
 }
 function renderTaskBlocks(){
-  const aiBox = $('#tb-ai'), meBox = $('#tb-me'), lockedAiBox = $('#tb-locked-ai'), lockedMeBox = $('#tb-locked-me');
+  const aiBox = $('#tb-ai'), meBox = $('#tb-me');
   if(!aiBox) return;
   const movable = TASK_BLOCKS.filter(b=>!b.fixed);
   const stages = ['탐구','마무리'];
@@ -1625,10 +1621,6 @@ function renderTaskBlocks(){
   };
   aiBox.innerHTML = bySide('ai');
   meBox.innerHTML = bySide('me');
-  lockedAiBox.innerHTML = TASK_BLOCKS.filter(b=>b.fixed==='ai').map(b=>
-    `<div class="task-block locked"><span><span class="lock-ic">🔒</span> ${esc(b.label)}</span></div>`).join('');
-  lockedMeBox.innerHTML = TASK_BLOCKS.filter(b=>b.fixed==='me').map(b=>
-    `<div class="task-block locked"><span><span class="lock-ic">🔒</span> ${esc(b.label)}</span></div>`).join('');
 }
 function fillStartStds(){
   const band=bandOf($('#st-band').value), subj=$('#st-subject').value;
@@ -2126,6 +2118,10 @@ function renderStream(){
       const label = j==='accept'?'👍 좋아요':j==='hold'?'🤔 잘 모르겠어요':j==='comment'?'💭 다른 생각':'🔍 판단하기';
       extra = `<button type="button" class="judge-trigger ${stCls}" data-id="${t.id}">${label}</button>`;
       if(session.ctx.subject==='영어' && window.speechSynthesis && t.text) extra += `<button type="button" class="icon-btn speak-btn" data-id="${t.id}" title="영어 발음으로 들어보기" style="padding:0 10px;height:26px;font-size:11px;margin-left:6px">🔊 들어보기</button>`;
+      // 원리10 [대화 중: 대화 전반 지침] 3: "필요 시 자신의 대화가 나온 산출 과정을 학습자가
+      // 이해할 수 있도록 제공한다" — 일반 대화형 AI 말풍선에 "왜 이렇게 말했어?" 버튼을 둔다.
+      if(t.phase==='explore' && !t.structured && !t.kind && t.text) extra += `<button type="button" class="icon-btn explain-btn" data-id="${t.id}" title="이 말이 왜 나왔는지 설명 보기" style="padding:0 10px;height:26px;font-size:11px;margin-left:6px">🧭 왜 이렇게 말했어?</button>`;
+      if(t.explain && t.explainOpen) extra += `<div class="explain-box">🧭 ${esc(t.explain)}</div>`;
       if(j==='comment' && (t.comment||'').trim()) extra += `<div class="comment-pill"><b>내 다른 생각:</b> ${esc(t.comment)}</div>`;
       if(t.kind==='prior-pick') extra += priorPickHTML();
       if(t.kind==='strategy-pick') extra += strategyPickHTML(pendingStrategyPick);
@@ -2307,6 +2303,28 @@ function suggestStrategyCheck(){
   const altNames = others.slice(0,2).map(s=>`${s.emoji} ${s.label}`).join(', ') || '다른 방법';
   pushNote(`"잘 모르겠어요"가 이어지고 있어요. 지금 방법이 잘 안 맞을 수도 있어요 — 위 [🔄 방법 바꾸기]에서 ${altNames} 같은 방법으로 바꿔볼 수 있어요. 그대로 계속해도 좋아요, 정하는 건 나예요.`);
   ai('학습자가 최근 AI 말에 "잘 모르겠어요"를 연달아 표시했다(막혔다는 신호). (1) 어디서 이해가 끊겼는지 짚어 보는 점검 질문 1개를 던지되, (2) 지금 방법 대신 시도해볼 만한 다른 공부 방법이 있다는 것도 짧게 언급해. 최종 선택은 학습자가 한다. 쉬운 말로, 질문은 1개만.', 'monitor');
+}
+// 원리10 [대화 중: 대화 전반 지침] 3: AI가 방금 한 말이 대화의 어느 부분을 참고해서 나온
+// 건지, 학습자가 요청하면 쉬운 말로 설명해준다. 지원강도·과업분담 같은 내부 설정값은
+// 언급하지 않고, 오직 학습자가 실제로 한 말에 근거해서만 설명하게 한다(내부값 유출 방지
+// 원칙은 그대로 지킨다).
+async function explainAiTurn(tid){
+  const t = session.turns.find(x=>x.id===tid); if(!t || t.role!=='ai') return;
+  if(t.explain){ t.explainOpen = !t.explainOpen; renderStream(); return; }
+  if(busy) return;
+  busy = true; syncComposeLock(); renderStream();
+  try{
+    const idx = session.turns.indexOf(t);
+    const hist = session.turns.slice(0, idx+1).filter(x=>x.role!=='note').map(x=>({ role:x.role==='me'?'user':'assistant', content:x.text||'(표/마인드맵 결과)' }));
+    const raw = await callLLM([
+      { role:'system', content:'너는 방금 너(AI)가 한 말이 왜 나왔는지 학습자에게 쉬운 말로 설명하는 보조자다. 지원강도·과업분담 같은 내부 설정값(숫자·영단어 라벨)은 절대 언급하지 말고, 오직 학습자가 대화에서 실제로 한 말·고른 방법에 근거해서만 설명해라. "네가 ~라고 말해서 ~한 거야"처럼 직접 말하듯, 2문장 이내, 마크다운 금지.' },
+      ...hist,
+      { role:'user', content: '방금 네가 한 말, 내 어떤 말이나 상황을 참고해서 그렇게 답한 건지 설명해줘.' }
+    ]);
+    t.explain = stripMarkdown(String(raw)).trim() || '지금은 설명을 만들지 못했어요.';
+  }catch(e){ t.explain = '지금은 설명을 만들지 못했어요.'; }
+  t.explainOpen = true;
+  busy = false; syncComposeLock(); renderStream();
 }
 
 /* ===== 학습자가 직접 수행한 산출물(마인드맵·드릴·체크리스트)에 대한 AI 피드백 =====
@@ -3668,6 +3686,8 @@ function init(){
     if(fd){ fade(false); return; }
     const spk = e.target.closest('.speak-btn');
     if(spk){ const t = session.turns.find(x=>x.id===spk.dataset.id); if(t) speakText(t.text); return; }
+    const eb = e.target.closest('.explain-btn');
+    if(eb){ explainAiTurn(eb.dataset.id); return; }
     const rb = e.target.closest('.struct-review-btn');
     if(rb){ if(!busy) reviewStruct(rb.dataset.tid); return; }
     // ----- 이해도 체크포인트(원리9 이해 점검) -----
