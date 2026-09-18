@@ -260,7 +260,13 @@
   .home-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin:16px 0}
   @media(max-width:820px){ .home-grid{grid-template-columns:1fr} }
   .home-grid .span-2{grid-column:1/-1}
-  .widget{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow)}
+  .widget{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow);min-width:0}
+  .prompt-charts-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,7fr);gap:16px;align-items:center;width:100%;min-width:0}
+  .prompt-chart-col{position:relative;width:100%;min-width:0;height:160px}
+  @media(max-width:620px){
+    .prompt-charts-grid{grid-template-columns:1fr;gap:16px}
+    .prompt-chart-col{height:150px}
+  }
   .widget-head{display:flex;align-items:center;gap:11px;margin-bottom:14px}
   .widget-head .badge-ic{width:38px;height:38px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-size:18px}
   .widget-head h4{font-size:14px;font-weight:800}
@@ -583,13 +589,19 @@
         <div class="widget-head"><span class="badge-ic c-amber">🧭</span><div><h4>메타인지 지식 변화</h4><small>이해·전략·연결 질문 유형별로 회차마다 어떻게 바뀌는지</small></div></div>
         <canvas id="agg-meta-chart" height="160"></canvas>
       </div>
-      <!-- 원리3 [메인 대시보드 설계 지침] 3, 원리12: 프롬프트 구체성·논리성·명시성 지표. -->
-      <div class="widget span-2">
+      <!-- 원리3 [메인 대시보드 설계 지침] 3, 원리12: 프롬프트 구체성·논리성·명시성 지표.
+           요청사항: 막대 3, 꺾은선 7 비율 분할 및 컴포넌트 박스 내 완벽 안착 -->
+      <div class="widget span-2" style="overflow:hidden">
         <div class="widget-head"><span class="badge-ic c-purple">✍️</span><div><h4>내 프롬프트 지표</h4><small>되짚기에서 스스로 고르고 매긴 구체성·논리성·명시성(1~5)</small></div></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-          <canvas id="agg-prompt-bar-chart" height="150"></canvas>
-          <canvas id="agg-prompt-line-chart" height="150"></canvas>
+        <div id="agg-prompt-wrap" class="prompt-charts-grid">
+          <div class="prompt-chart-col">
+            <canvas id="agg-prompt-bar-chart"></canvas>
+          </div>
+          <div class="prompt-chart-col">
+            <canvas id="agg-prompt-line-chart"></canvas>
+          </div>
         </div>
+        <div id="agg-prompt-empty" hidden></div>
       </div>
     </div>
 
@@ -1487,24 +1499,50 @@ function renderHome(){
     PROMPT_RATE_DIMS.forEach(d=> avgPerDim[d.k] = ratings.reduce((a,r)=>a+r[d.k],0)/ratings.length);
     promptSessAvg.push(avgPerDim);
   });
+  const promptWrap = $('#agg-prompt-wrap'), promptEmpty = $('#agg-prompt-empty');
   const promptBarCanvas = $('#agg-prompt-bar-chart'), promptLineCanvas = $('#agg-prompt-line-chart');
   if(aggPromptBarChart){ aggPromptBarChart.destroy(); aggPromptBarChart=null; }
   if(aggPromptLineChart){ aggPromptLineChart.destroy(); aggPromptLineChart=null; }
   if(promptRatingsFlat.length){
+    if(promptWrap) promptWrap.hidden = false;
+    if(promptEmpty) promptEmpty.hidden = true;
     promptBarCanvas.hidden = false; promptLineCanvas.hidden = false;
     const avgs = PROMPT_RATE_DIMS.map(d=> promptRatingsFlat.reduce((a,r)=>a+r[d.k],0)/promptRatingsFlat.length);
     aggPromptBarChart = new Chart(promptBarCanvas, {
       type:'bar',
       data:{ labels: PROMPT_RATE_DIMS.map(d=>d.label), datasets:[{ label:'평균(1~5)', data:avgs, backgroundColor:'#8b5cf6', borderRadius:6 }] },
-      options:{ scales:{ y:{ min:0, max:5 } }, plugins:{ legend:{ display:false } } }
+      options:{
+        responsive: true,
+        maintainAspectRatio: false,
+        scales:{
+          y:{ min:0, max:5, ticks:{ stepSize:1, font:{size:11} } },
+          x:{ ticks:{ font:{size:11} } }
+        },
+        plugins:{ legend:{ display:false } }
+      }
     });
     const dimColors = { specificity:'#8b5cf6', logic:'#12a05f', clarity:'#f59e0b' };
     aggPromptLineChart = new Chart(promptLineCanvas, {
       type:'line',
       data:{ labels: promptSessAvg.map((s,i)=>`${i+1}회`), datasets: PROMPT_RATE_DIMS.map(d=>({ label:d.label, data: promptSessAvg.map(s=>s[d.k]), borderColor:dimColors[d.k], backgroundColor:dimColors[d.k]+'22', tension:.3 })) },
-      options:{ scales:{ y:{ min:0, max:5 } }, plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, boxWidth:10 } } } }
+      options:{
+        responsive: true,
+        maintainAspectRatio: false,
+        scales:{
+          y:{ min:0, max:5, ticks:{ stepSize:1, font:{size:11} } },
+          x:{ ticks:{ font:{size:11} } }
+        },
+        plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, boxWidth:10 } } }
+      }
     });
-  } else { promptBarCanvas.hidden = true; promptLineCanvas.hidden = true; }
+  } else {
+    if(promptWrap) promptWrap.hidden = true;
+    if(promptEmpty){
+      promptEmpty.hidden = false;
+      promptEmpty.innerHTML = emptyState('✍️', '되짚기에서 내가 쓴 프롬프트를 평가하면<br>여기에 지표 변화가 나타나요.');
+    }
+    promptBarCanvas.hidden = true; promptLineCanvas.hidden = true;
+  }
   $('#agg-residual').innerHTML = withResidual.length
     ? withResidual.slice().reverse().map(s=>{
         const pre=s.prior.diagScore, post=s.residual.postScore;
