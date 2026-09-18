@@ -574,7 +574,7 @@
       <div class="widget span-2">
         <div class="widget-head"><span class="badge-ic c-purple">🔁</span><div><h4>공부 전·후 비교 (혼자 풀어보기)</h4><small>AI와 이야기하기 전 점수와, AI 없이 혼자 풀었을 때 점수를 나란히 봐요 — 과목마다 다른 색 선이에요</small></div></div>
         <canvas id="agg-residual-chart" height="130" style="margin-bottom:12px"></canvas>
-        <div id="agg-residual"></div>
+        <div class="stack" id="agg-residual" style="gap:14px"></div>
       </div>
       <!-- 원리3 [메인 대시보드 설계 지침] 2: "대화 전후의 변화도 평균"을 막대그래프로도 보여준다
            (위 꺾은선은 시간 흐름용, 이 막대는 과목별 평균 향상량용). -->
@@ -607,7 +607,7 @@
 
     <div class="widget">
       <div class="widget-head"><span class="badge-ic c-pink">📚</span><div><h4>지난 공부 기록</h4><small>눌러서 무엇을 배웠는지 다시 떠올려 봐요</small></div></div>
-      <div class="stack" id="sess-list" style="gap:10px"></div>
+      <div class="stack" id="sess-list" style="gap:14px"></div>
     </div>
 
     <!-- 요청사항(12번째 피드백) 2: 위 위젯들이 데이터가 쌓이면 어떻게 보이는지 미리 보고
@@ -1690,8 +1690,12 @@ function makeSampleSession(spec, idx){
     startedAt: date, endedAt: date
   };
 }
+// 요청사항: "5개만 나오다가 새로고침하면 40개씩 생긴다" — 버튼을 여러 번 누르면(또는 두 번
+// 눌리면) 누를 때마다 5개씩 계속 쌓이던 버그였다. 먼저 기존 예시 데이터를 지우고 다시 5개만
+// 채워서, 몇 번을 눌러도 항상 예시 데이터가 5개로 유지되게 한다(실제 기록은 그대로 둔다).
 function seedSampleSessions(){
   const acc = account(); if(!acc) return;
+  acc.sessions = acc.sessions.filter(s=>!s.isSample);
   SAMPLE_SESSIONS_SPEC.forEach((spec,i)=> acc.sessions.push(makeSampleSession(spec,i)));
   flushSave();
   renderHome();
