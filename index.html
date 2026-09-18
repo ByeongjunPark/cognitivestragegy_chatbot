@@ -278,16 +278,6 @@
   .strat-row.top .lab{color:var(--accent-ink)}
   .strat-row .crown{font-size:13px}
 
-  .support-row{display:flex;align-items:center;gap:9px;font-size:12.5px;margin:8px 0}
-  .support-row .lab{width:52px;flex:none;color:var(--muted);font-weight:700}
-  .support-dot{width:11px;height:11px;border-radius:50%;flex:none}
-  .support-row .pill{font-size:11.5px;font-weight:800;padding:3px 10px;border-radius:999px}
-
-  .meta-card{border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:12px;padding:11px 13px;margin-bottom:9px;background:var(--surface-2)}
-  .meta-card:last-child{margin-bottom:0}
-  .meta-card .d{font-size:11px;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:5px}
-  .meta-card .txt{font-size:12.5px;color:var(--ink);margin-top:5px;line-height:1.5}
-
   .empty-state{text-align:center;padding:26px 10px;color:var(--muted)}
   .empty-state .big{font-size:30px;margin-bottom:8px}
   .empty-state p{font-size:12.5px;line-height:1.5}
@@ -571,23 +561,6 @@
         <div class="widget-head"><span class="badge-ic c-teal">📊</span><div><h4>과목별 성취도</h4><small>사후 진단(없으면 사전 진단) 점수를 과목별로 평균 내요</small></div></div>
         <div id="agg-subject"></div>
       </div>
-      <div class="widget">
-        <!-- 요청사항(7번째 피드백) 2: "AI 위임 vs 나의 주도"를 이분법적 비율(몇 대 몇)로 보는 게
-             맞는지 의문이라는 의견 — 도넛(파이)은 두 조각이 100%를 나눠 갖는 모양이라 "경쟁"처럼
-             보인다. 제로섬으로 안 보이게 막대 두 개(각각 따로인 횟수)로 바꾸고, 문구도 "우열"이
-             아니라 "둘 다 있었던 순간들을 따로 세어본 것"이라고 명확히 한다(아래 캡션 참고). -->
-        <div class="widget-head"><span class="badge-ic c-purple">💭</span><div><h4>내가 스스로 물은 순간 · AI에게 맡긴 순간</h4><small>우열이 아니라 각자 몇 번이었는지 따로 세어봐요</small></div></div>
-        <canvas id="agg-pie" height="170"></canvas>
-        <p class="hint" id="agg-pie-caption" style="text-align:center;margin-top:10px"></p>
-      </div>
-      <div class="widget">
-        <div class="widget-head"><span class="badge-ic c-amber">🪜</span><div><h4>AI 도움 크기 변화</h4><small>공부할수록 점점 스스로!</small></div></div>
-        <div id="agg-support"></div>
-      </div>
-      <div class="widget span-2">
-        <div class="widget-head"><span class="badge-ic c-teal">🧠</span><div><h4>내가 스스로 점검하며 답한 내용</h4><small>공부 시작 전에 나눈 이야기 모음</small></div></div>
-        <div id="agg-meta"></div>
-      </div>
       <div class="widget span-2">
         <div class="widget-head"><span class="badge-ic c-purple">🔁</span><div><h4>공부 전·후 비교 (혼자 풀어보기)</h4><small>AI와 이야기하기 전 점수와, AI 없이 혼자 풀었을 때 점수를 나란히 봐요 — 과목마다 다른 색 선이에요</small></div></div>
         <canvas id="agg-residual-chart" height="130" style="margin-bottom:12px"></canvas>
@@ -599,9 +572,11 @@
         <div class="widget-head"><span class="badge-ic c-teal">📈</span><div><h4>과목별 향상 평균</h4><small>사전 진단 대비 사후(또는 혼자 풀어보기) 평균 향상 점수</small></div></div>
         <canvas id="agg-subject-delta-chart" height="160"></canvas>
       </div>
-      <!-- 원리3 [메인 대시보드 설계 지침] 4: 메타인지적 지식 정도 지표를 꺾은선(시간 변화)으로. -->
+      <!-- 원리3 [메인 대시보드 설계 지침] 4: 메타인지적 지식 정도 지표를 꺾은선(시간 변화)으로 —
+           요청사항(9번째 피드백) 1: 이해질문·전략질문·연결질문 3가지 유형별로 각각 채점되고
+           있으니(원리7), 하나로 뭉친 평균이 아니라 유형별로 3개 선을 따로 그린다. -->
       <div class="widget">
-        <div class="widget-head"><span class="badge-ic c-amber">🧭</span><div><h4>메타인지 지식 변화</h4><small>나 단계(스스로 점검) 점수가 회차마다 어떻게 바뀌는지</small></div></div>
+        <div class="widget-head"><span class="badge-ic c-amber">🧭</span><div><h4>메타인지 지식 변화</h4><small>이해·전략·연결 질문 유형별로 회차마다 어떻게 바뀌는지</small></div></div>
         <canvas id="agg-meta-chart" height="160"></canvas>
       </div>
       <!-- 원리3 [메인 대시보드 설계 지침] 3, 원리12: 프롬프트 구체성·논리성·명시성 지표. -->
@@ -857,9 +832,11 @@
         <p class="callout info" id="hint-reflect-b-box" style="margin:8px 0" hidden></p>
         <textarea class="textarea" id="in-reflect" placeholder="제일 도움 됐던 질문 / 아쉬웠던 질문 / 다음엔 이렇게 물어볼래요"></textarea>
       </div>
-      <div class="callout info" id="residual-cue">
-        <b>혼자서 풀어보기</b> — 이야기하며 배운 게 나에게 얼마나 남았는지, AI 도움 없이 비슷한 문제 4개를 혼자 풀어서 공부 전과 후 점수를 비교해 볼 수 있어요. 지금 하지 않아도 되고, 나중에 <b>내 학습터</b>에서도 다시 할 수 있어요.
-        <div style="margin-top:10px"><button class="btn btn-sm btn-accent" id="btn-goto-residual">지금 해 보기 →</button></div>
+      <!-- 요청사항(9번째 피드백) 2: "잔여물 확인은 다 해야 하는 필수 단계다" — 예전엔
+           "지금 안 해도 돼요"라는 선택적 안내 카드였다. 되짚기의 세 번째 단계(다)로 명시하고,
+           건너뛰는 경로(저장하고 바로 끝내기)를 없애 반드시 거쳐가게 한다. -->
+      <div class="callout info">
+        <b>다음 단계: 혼자서 풀어보기</b> — 이야기하며 배운 게 나에게 얼마나 남았는지, AI 도움 없이 비슷한 문제 4개를 풀어서 공부 전과 후 점수를 비교해요. 되짚기의 마지막 단계예요.
       </div>
     </div>
 
@@ -867,7 +844,7 @@
       <button class="btn btn-ghost" id="reflect-back">← 이야기로 돌아가기</button>
       <span class="filler"></span>
       <button class="btn btn-primary" id="reflect-next-a" disabled>다음: 내가 쓴 질문 보기 →</button>
-      <button class="btn btn-primary" id="reflect-save" hidden>저장하고 내 공부방으로</button>
+      <button class="btn btn-primary" id="reflect-next-b" hidden>다음: 혼자 풀어보기 →</button>
     </div>
   </section>
 
@@ -877,6 +854,10 @@
       <div class="eyebrow">혼자서 풀어보기</div>
       <h1 class="headline">이번엔 AI 없이, 내 힘으로 풀어요</h1>
       <p class="subhead">여기서는 AI와 이야기할 수 없어요. 풀이 방법은 비슷하지만 내용만 바꾼 문제 네 개(비슷한 문제 둘, 다르게 바꾼 문제 둘)를 혼자 풀고, 왜 그렇게 풀었는지 적어요. AI가 채점해서, 처음에 봤던 사전 진단 점수와 나란히 비교해요.</p>
+    </div>
+    <div class="cycle-wrap" style="border:1px solid var(--line);border-radius:14px;margin-bottom:16px">
+      <div class="cycle-title">되돌아보기 순서</div>
+      <div class="cycle-strip" id="residual-strip"></div>
     </div>
     <div id="res-gate" class="card stack">
       <div class="callout warn"><b>지금은 AI 도움을 받을 수 없어요.</b> 이야기하며 배운 것이 나에게 얼마나 남았는지 확인하는 순서예요.</div>
@@ -1327,7 +1308,6 @@ const SUBJECT_EMOJI = { 국어:'📖', 수학:'🔢', 영어:'🔤', 사회:'�
   통합사회:'🌍', 한국사:'🏛️', 통합과학:'🔬', 과학탐구실험:'🧪' };
 function emptyState(icon, text){ return `<div class="empty-state"><div class="big">${icon}</div><p>${text}</p></div>`; }
 
-let aggPie = null;
 let aggResidualChart = null;
 let aggSubjectDeltaChart = null;
 let aggMetaChart = null;
@@ -1387,43 +1367,13 @@ function renderHome(){
       }).join('')
     : emptyState('📊', '과목을 고르고 공부하면<br>여기에 과목별 점수가 쌓여요.');
 
-  // 내 생각 vs AI 도움 (누적)
-  let self=0, ai=0, stuck=0, turns=0;
-  S.forEach(s=>{ (s.turns||[]).forEach(t=>{ if(t.role==='me'){ turns++; ((t.initiative||'self')==='self'?self++:ai++); } }); stuck += s.stuckCount||0; });
+  // 요청사항(9번째 피드백) 1: 메인 대시보드 정리 — "내가 스스로 물은 순간·AI에게 맡긴 순간"
+  // 막대, "AI 도움 크기 변화" 점 목록, "내가 스스로 점검하며 답한 내용" 텍스트 모음 3개 위젯을
+  // 없앤다(각 지표의 원천 데이터는 여전히 세션에 남아 있고, AI 종합분석 위젯에서는 계속 쓴다).
+  let stuck=0, turns=0;
+  S.forEach(s=>{ (s.turns||[]).forEach(t=>{ if(t.role==='me') turns++; }); stuck += s.stuckCount||0; });
   $('#agg-stuck').textContent = stuck;
   $('#agg-turns').textContent = turns;
-  const pieCanvas = $('#agg-pie');
-  if(turns===0){
-    pieCanvas.hidden = true;
-    $('#agg-pie-caption').innerHTML = '';
-    if(!pieCanvas.parentElement.querySelector('.empty-state')){
-      pieCanvas.insertAdjacentHTML('beforebegin', emptyState('💬','대화를 나누면 여기에 그래프가 생겨요'));
-    }
-  } else {
-    pieCanvas.hidden = false;
-    const ph = pieCanvas.parentElement.querySelector('.empty-state'); if(ph) ph.remove();
-    $('#agg-pie-caption').innerHTML = `내가 스스로 물은 순간 <b style="color:var(--purple-ink)">${self}번</b> · AI에게 맡긴 순간 <b style="color:var(--amber-ink)">${ai}번</b> — 둘 다 공부하다 보면 자연스러운 선택이에요.`;
-    if(aggPie) aggPie.destroy();
-    aggPie = new Chart(pieCanvas, {
-      type:'bar',
-      data:{ labels:['내가 스스로 물은 순간','AI에게 맡긴 순간'], datasets:[{ data:[self,ai], backgroundColor:['#8b5cf6','#f59e0b'], borderRadius:6, maxBarThickness:46 }] },
-      options:{ indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{ beginAtZero:true, ticks:{ precision:0 } } } }
-    });
-  }
-
-  // AI 도움 크기 변화 (색깔 점으로)
-  const SUPPORT_DOT = { high:'var(--warn)', mid:'var(--amber)', low:'var(--accent)' };
-  const SUPPORT_PILLBG = { high:'var(--warn-wash)', mid:'var(--amber-wash)', low:'var(--accent-wash)' };
-  const SUPPORT_PILLINK = { high:'#9a3412', mid:'var(--amber-ink)', low:'var(--accent-ink)' };
-  $('#agg-support').innerHTML = S.length
-    ? S.map((s,i)=>`<div class="support-row"><span class="lab">${i+1}번째</span><span class="support-dot" style="background:${SUPPORT_DOT[s.support]||'#ccc'}"></span><span class="pill" style="background:${SUPPORT_PILLBG[s.support]};color:${SUPPORT_PILLINK[s.support]}">${SUPPORT_LABEL[s.support]||'-'}</span></div>`).join('')
-    : emptyState('🪜', '아직 기록이 없어요');
-
-  // 스스로 점검하며 답한 내용
-  const metas = S.filter(s=>s.meta && (s.meta.raw||s.meta.u));
-  $('#agg-meta').innerHTML = metas.length
-    ? metas.slice().reverse().map(s=>`<div class="meta-card"><div class="d">🗓️ ${s.startedAt.slice(0,10)} · ${SUBJECT_EMOJI[s.ctx.subject]||'📘'} ${esc(trim(s.ctx.std,36))}${s.meta.score!=null?` · 진단 ${s.meta.score}점`:''}</div><div class="txt">${esc(s.meta.raw || [s.meta.u,s.meta.s,s.meta.c].filter(Boolean).join(' / '))}</div></div>`).join('')
-    : emptyState('🧠', '아직 없어요');
 
   // 요청사항 2: "혼자 풀어보기(잔여물 확인)"의 사전·사후 점수 비교를 대시보드에서도 볼 수 있게 한다
   // (그동안 계산은 됐지만 되짚기 화면 안에서만 보였고 여기엔 전혀 없었다).
@@ -1468,16 +1418,21 @@ function renderHome(){
       options:{ plugins:{ legend:{ display:false } } }
     });
   } else { deltaCanvas.hidden = true; }
-  // 원리3 [메인 대시보드 설계 지침] 4: 메타인지적 지식 정도 지표 — 나 단계 점수를 회차별 꺾은선으로.
+  // 요청사항(9번째 피드백) 1: "메타인지 지식 지표는 이해질문·전략질문·연결질문 3가지 유형별로
+  // 이미 채점되고 있으니(원리7 · gradeMeta의 scoreDetail), 하나로 뭉친 평균이 아니라 유형별로
+  // 3개 선을 따로 그려야 한다" — 원리3 [메인 대시보드 설계 지침] 4.
   const metaCanvas = $('#agg-meta-chart');
   if(aggMetaChart){ aggMetaChart.destroy(); aggMetaChart=null; }
-  const metaScored = S.filter(s=>s.meta && s.meta.score!=null);
+  const metaScored = S.filter(s=>s.meta && s.meta.scoreDetail);
   if(metaScored.length){
     metaCanvas.hidden = false;
+    const META_DIMS = [ {k:'understand', label:'이해질문', color:'#f59e0b'}, {k:'strategy', label:'전략질문', color:'#8b5cf6'}, {k:'connect', label:'연결질문', color:'#0d9488'} ];
     aggMetaChart = new Chart(metaCanvas, {
       type:'line',
-      data:{ labels: metaScored.map((s,i)=>`${i+1}회`), datasets:[{ label:'스스로 점검 점수', data: metaScored.map(s=>s.meta.score), borderColor:'#f59e0b', backgroundColor:'#f59e0b22', tension:.3 }] },
-      options:{ scales:{ y:{ min:0, max:100 } }, plugins:{ legend:{ display:false } } }
+      data:{ labels: metaScored.map((s,i)=>`${i+1}회`), datasets: META_DIMS.map(d=>({
+        label: d.label, data: metaScored.map(s=>s.meta.scoreDetail[d.k]), borderColor:d.color, backgroundColor:d.color+'22', tension:.3
+      })) },
+      options:{ scales:{ y:{ min:0, max:100 } }, plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, boxWidth:10 } } } }
     });
   } else { metaCanvas.hidden = true; }
   // 원리3 [메인 대시보드 설계 지침] 3 · 원리12: 프롬프트 구체성·논리성·명시성(되짚기 나 단계에서
@@ -3172,19 +3127,24 @@ function sendChat(){
    ============================================================ */
 let cpTrendChart=null;
 const STRUCT_TYPE_LABEL = { table:'📊 표', mindmap:'🕸️ 마인드맵', compare:'⚖️ 비교표', chain:'🔗 순서 사슬', drill:'🔁 반복 연습 체크', checklist:'🎯 아는지 체크리스트' };
+// 요청사항(9번째 피드백) 2: 잔여물 확인(혼자 풀어보기)을 되짚기의 세 번째 단계로 명시한다
+// (원리13) — 가·나는 되짚기 화면 안에서, 다는 별도 화면(잔여물 확인)에서 이어지지만 같은
+// 순서 표시 띠를 공유해 "지금 세 단계 중 어디쯤인지"가 화면이 바뀌어도 끊기지 않게 한다.
 const REFLECT_STEPS = [
   { k:'delegate', t:'가. 역할·위임 성찰' },
-  { k:'prompt',   t:'나. 질문(프롬프트) 성찰' }
+  { k:'prompt',   t:'나. 질문(프롬프트) 성찰' },
+  { k:'residual', t:'다. 혼자 풀어보기' }
 ];
-function renderReflectStrip(){
-  const cur = session.reflect.step || 'delegate';
+function renderWrapStrip(sel, cur){
   const idx = REFLECT_STEPS.findIndex(x=>x.k===cur);
-  $('#reflect-strip').innerHTML = REFLECT_STEPS.map((c,i)=>{
+  const el = $(sel); if(!el) return;
+  el.innerHTML = REFLECT_STEPS.map((c,i)=>{
     const cls = i<idx ? 'done' : i===idx ? 'now' : '';
     const arrow = i<REFLECT_STEPS.length-1 ? '<span class="cycle-arrow">→</span>' : '';
     return `<span class="cycle-node ${cls}">${cls==='done'?'✓ ':''}${c.t}</span>${arrow}`;
   }).join('');
 }
+function renderReflectStrip(){ renderWrapStrip('#reflect-strip', session.reflect.step || 'delegate'); }
 // 요청사항(3번째 피드백) 9: "내가 생각 3개·AI에게 맡김 3개"로 가짓수를 제한하지 말라는 지적을
 // 반영 — 원하는 만큼 자유롭게 태깅할 수 있다(전부 다 태깅해야 하는 것도 아니다).
 function tagCounts(){
@@ -3207,7 +3167,7 @@ function enterReflect(){
   $('#reflect-step-a').hidden = session.reflect.step!=='delegate';
   $('#reflect-step-b').hidden = session.reflect.step!=='prompt';
   $('#reflect-next-a').hidden = session.reflect.step!=='delegate';
-  $('#reflect-save').hidden = session.reflect.step!=='prompt';
+  $('#reflect-next-b').hidden = session.reflect.step!=='prompt';
   if(session.reflect.step==='delegate'){ $('#reflect-headline').textContent='누가 이끌었고, 무엇을 AI에게 맡겼나'; $('#reflect-subhead').innerHTML='여기는 대화하는 곳이 아니라 <b>내가 나눈 이야기를 쭉 펼쳐 보는 곳</b>이에요. 내가 한 말 중에서 <b>내가 스스로 생각해서 물은 것</b>과 <b>AI에게 답을 맡긴 것</b>을 원하는 만큼 골라 보세요.'; }
   else { $('#reflect-headline').textContent='내가 무엇을 물었나'; $('#reflect-subhead').innerHTML='이번엔 내가 <b>AI에게 썼던 질문들만</b> 다시 살펴봐요. 내 생각을 더 잘 끌어내려면 다음엔 어떻게 물었어야 할지 적어 보세요.'; }
 
@@ -3296,11 +3256,6 @@ function enterReflect(){
     $('#prompt-rate-rows').innerHTML = PROMPT_RATE_DIMS.map(d=>promptRateRowHTML(d, pr[d.k])).join('');
   }
   $('#in-reflect').value = session.reflect.note || '';
-  // 요청사항(5번째 피드백) — "여기 있었는데 또 안 보인다": v11에서 HTML의 hidden 속성은
-  // 지웠지만, 여기 JS가 enterReflect()를 부를 때마다 무조건 다시 hidden=true로 덮어써서
-  // "혼자 풀어보기(잔여물 확인)" 안내 카드가 실제로는 한 번도 안 보이고 있었다(진짜 원인).
-  // #residual-cue는 #reflect-step-b 안에 있고 그 부모가 이미 session.reflect.step으로
-  // 보이고 숨겨지니, 여기서 따로 강제로 숨길 필요가 전혀 없었다 — 그 줄을 통째로 지운다.
 }
 /* ===== 요청사항 3: 성찰이 "빈 칸에 글쓰기"로만 끝나지 않도록, 원하면 AI에게 "질문 하나"를
    받을 수 있게 한다. 단, AI가 성찰문을 대신 써주거나 요약해주지는 않는다 — 이 세션에서 실제로
@@ -3340,12 +3295,13 @@ function goReflectStepB(){
   session.reflect.step = 'prompt';
   enterReflect();
 }
-function saveReflectAndFinish(goResidual){
+// 요청사항(9번째 피드백) 2: 잔여물 확인은 이제 선택이 아니라 필수 단계라, 여기서 바로
+// 저장하고 끝내는 경로를 없앴다 — 항상 잔여물 확인으로 넘어가고, 최종 저장은 그 화면의
+// [저장하고 내 공부방으로](res-finish)에서만 일어난다.
+function goToResidual(){
   session.reflect.note = anonymize($('#in-reflect').value.trim());
   session.endedAt = new Date().toISOString();
-  if(goResidual){ show('residual'); return; }
-  commitSession();
-  show('home');
+  show('residual');
 }
 function commitSession(){
   const acc = account(); if(!acc) return;
@@ -3359,6 +3315,7 @@ function commitSession(){
    잔여물 확인 (AI 없음 - 문제 생성/채점만 LLM 보조)
    ============================================================ */
 function enterResidual(){
+  renderWrapStrip('#residual-strip', 'residual');
   $('#res-std').textContent = `${session.ctx.code} · ${trim(session.ctx.std,44)}`;
   $('#res-strat').textContent = session.strategyLabel || '안 골랐어요';
   $('#res-prescore').textContent = session.prior.diagScore!=null ? session.prior.diagScore+'점' : '측정 안 됨';
@@ -3920,8 +3877,7 @@ function init(){
     if(session.reflect.step==='prompt'){ session.reflect.step='delegate'; enterReflect(); return; }
     session.phase='explore'; show('chat');
   });
-  $('#reflect-save').addEventListener('click', ()=> saveReflectAndFinish(false));
-  $('#btn-goto-residual').addEventListener('click', ()=> saveReflectAndFinish(true));
+  $('#reflect-next-b').addEventListener('click', goToResidual);
 
   $('#res-answer-strat').addEventListener('click', e=>{
     const b=e.target.closest('.choice'); if(!b) return;
