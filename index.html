@@ -225,6 +225,8 @@
   @media(max-width:760px){.grid-2{grid-template-columns:1fr}}
   .box{border:1px solid var(--line);border-radius:14px;padding:18px}
   .box h4{font-size:13px;font-weight:800;margin-bottom:12px}
+  .box.prompt-pick:hover{border-color:var(--muted)}
+  .box.prompt-pick.is-selected{border-color:var(--accent);background:var(--accent-wash)}
   .metric{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--line);color:var(--ink-2)}
   .metric:last-child{border:0}
   .metric b{color:var(--ink)}
@@ -587,9 +589,28 @@
         <div id="agg-meta"></div>
       </div>
       <div class="widget span-2">
-        <div class="widget-head"><span class="badge-ic c-purple">🔁</span><div><h4>공부 전·후 비교 (혼자 풀어보기)</h4><small>AI와 이야기하기 전 점수와, AI 없이 혼자 풀었을 때 점수를 나란히 봐요</small></div></div>
+        <div class="widget-head"><span class="badge-ic c-purple">🔁</span><div><h4>공부 전·후 비교 (혼자 풀어보기)</h4><small>AI와 이야기하기 전 점수와, AI 없이 혼자 풀었을 때 점수를 나란히 봐요 — 과목마다 다른 색 선이에요</small></div></div>
         <canvas id="agg-residual-chart" height="130" style="margin-bottom:12px"></canvas>
         <div id="agg-residual"></div>
+      </div>
+      <!-- 원리3 [메인 대시보드 설계 지침] 2: "대화 전후의 변화도 평균"을 막대그래프로도 보여준다
+           (위 꺾은선은 시간 흐름용, 이 막대는 과목별 평균 향상량용). -->
+      <div class="widget">
+        <div class="widget-head"><span class="badge-ic c-teal">📈</span><div><h4>과목별 향상 평균</h4><small>사전 진단 대비 사후(또는 혼자 풀어보기) 평균 향상 점수</small></div></div>
+        <canvas id="agg-subject-delta-chart" height="160"></canvas>
+      </div>
+      <!-- 원리3 [메인 대시보드 설계 지침] 4: 메타인지적 지식 정도 지표를 꺾은선(시간 변화)으로. -->
+      <div class="widget">
+        <div class="widget-head"><span class="badge-ic c-amber">🧭</span><div><h4>메타인지 지식 변화</h4><small>나 단계(스스로 점검) 점수가 회차마다 어떻게 바뀌는지</small></div></div>
+        <canvas id="agg-meta-chart" height="160"></canvas>
+      </div>
+      <!-- 원리3 [메인 대시보드 설계 지침] 3, 원리12: 프롬프트 구체성·논리성·명시성 지표. -->
+      <div class="widget span-2">
+        <div class="widget-head"><span class="badge-ic c-purple">✍️</span><div><h4>내 프롬프트 지표</h4><small>되짚기에서 스스로 고르고 매긴 구체성·논리성·명시성(1~5)</small></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <canvas id="agg-prompt-bar-chart" height="150"></canvas>
+          <canvas id="agg-prompt-line-chart" height="150"></canvas>
+        </div>
       </div>
     </div>
 
@@ -818,8 +839,15 @@
     <!-- 나: 프롬프트(질문) 궤적 성찰 -->
     <div id="reflect-step-b" class="card stack" hidden>
       <div>
-        <h4 style="font-size:13px;font-weight:800;margin-bottom:10px">내가 AI에게 썼던 질문들</h4>
+        <h4 style="font-size:13px;font-weight:800;margin-bottom:10px">내가 AI에게 썼던 질문들 — 하나를 눌러서 골라봐요</h4>
         <div class="stack" id="prompt-list" style="gap:8px"></div>
+      </div>
+      <!-- 원리12 [대화 이후 성찰 지침] 2: 학습자가 고른 프롬프트 하나를 구체성·논리성·명시성
+           3가지 리커트척도(1~5)로 스스로 체크하게 한다(맞다 틀리다가 아니라 스스로 판단). -->
+      <div id="prompt-rate-wrap" hidden>
+        <h4 style="font-size:13px;font-weight:800;margin-bottom:4px">고른 질문, 스스로 점수 매겨보기</h4>
+        <p class="hint" style="margin-bottom:10px" id="prompt-rate-quote"></p>
+        <div class="stack" id="prompt-rate-rows" style="gap:12px"></div>
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
@@ -888,6 +916,13 @@
         </div>
       </div>
       <div class="callout accent" id="res-report" hidden></div>
+      <!-- 원리13 [대화 이후 성찰 지침] 3: "어려웠던 점이나 AI와의 대화 이후로 새롭게 알게 된
+           점을 성찰일지로 남기도록 한다" — 결과 판단(res-judge)과는 별개로, 공부 전체를 마치며
+           남기는 마지막 성찰일지를 따로 둔다. -->
+      <div>
+        <label class="field-label" for="res-journal">마지막으로 — 이번에 어려웠던 점이나, 이 공부를 하면서 새롭게 알게 된 점을 적어봐요</label>
+        <textarea class="textarea" id="res-journal" placeholder="예: 처음엔 ~가 헷갈렸는데 ~하면서 알게 됐어요 / AI랑 이야기하고 나서 ~를 새롭게 알았어요"></textarea>
+      </div>
       <div class="nav"><span class="filler"></span><button class="btn btn-primary" id="res-finish">저장하고 내 공부방으로</button></div>
     </div>
   </section>
@@ -1141,11 +1176,19 @@ const trim = (s,n) => (s && s.length>n) ? s.slice(0,n)+'…' : (s||'');
 const todayStr = () => new Date().toISOString().slice(0,10);
 // 원리3(대화과정의 기록 및 시각화): 서버(Redis)에 영구 저장되기 전에 전화번호·이메일·주민번호
 // 패턴을 비식별화한다. 목표·채팅·되짚기·잔여물 답변 등 모든 자유 서술 입력에 적용한다.
+// 원리3 [설계 전체 지침] 2: "학습자가 개인정보·민감정보를 넣으면 즉시 비식별화하고 '개인정보
+// 및 민감정보는 채팅 창에 쓰지 말아달라'는 팝업창을 띄운다" — 지금까지는 비식별화만 조용히
+// 하고 팝업은 없었다. 실제로 패턴이 걸렸을 때만 알린다(매 입력마다 뜨면 방해가 되니).
 function anonymize(str){
-  return String(str)
-    .replace(/01[016789]-?\d{3,4}-?\d{4}/g, '[전화번호 보호]')
-    .replace(/[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g, '[이메일 보호]')
-    .replace(/\d{6}-[1-4]\d{6}/g, '[주민번호 보호]');
+  const s = String(str);
+  const RE_PHONE = /01[016789]-?\d{3,4}-?\d{4}/, RE_EMAIL = /[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/, RE_RRN = /\d{6}-[1-4]\d{6}/;
+  const hit = RE_PHONE.test(s) || RE_EMAIL.test(s) || RE_RRN.test(s);
+  const out = s
+    .replace(new RegExp(RE_PHONE,'g'), '[전화번호 보호]')
+    .replace(new RegExp(RE_EMAIL,'g'), '[이메일 보호]')
+    .replace(new RegExp(RE_RRN,'g'), '[주민번호 보호]');
+  if(hit) modal('개인정보는 안 돼요', '전화번호·이메일·주민번호처럼 보이는 내용이 있어서 자동으로 가렸어요. 개인정보나 민감정보는 채팅 창에 쓰지 말아 주세요.');
+  return out;
 }
 
 /* ---------- persistence : 서버(Redis) 전용, localStorage 미사용 ---------- */
@@ -1286,6 +1329,11 @@ function emptyState(icon, text){ return `<div class="empty-state"><div class="bi
 
 let aggPie = null;
 let aggResidualChart = null;
+let aggSubjectDeltaChart = null;
+let aggMetaChart = null;
+let aggPromptBarChart = null;
+let aggPromptLineChart = null;
+const SUBJECT_LINE_COLORS = ['#8b5cf6','#12a05f','#f59e0b','#0891b2','#dc2626','#4338ca','#be185d'];
 let homeAnalysisText = null; // 요청사항(7번째 피드백) 4: 버튼을 눌렀을 때만 채워지고, 다시 그려도 유지된다.
 function renderHome(){
   const acc = account(); if(!acc) return show('auth');
@@ -1304,11 +1352,21 @@ function renderHome(){
   const topStrat = STRATS.find(st=>st.id===topId);
   $('#agg-top-strategy').textContent = topStrat ? topStrat.label : '아직 없어요';
   $('#agg-top-emoji').textContent = topStrat ? topStrat.emoji : '🏆';
+  // 원리3 [메인 대시보드 설계 지침] 1: "인지전략 별 학습 효과성의 정도"도 함께 보여준다 —
+  // 그 전략을 쓴 세션의 "혼자 풀어보기" 점수(없으면 사전 진단 점수)를 전략별로 평균 낸다.
+  const effByStrat = {};
+  S.forEach(s=>{
+    const score = (s.residual && s.residual.postScore!=null) ? s.residual.postScore : (s.prior && s.prior.diagScore!=null ? s.prior.diagScore : null);
+    if(score==null) return;
+    strategyIdsOf(s).forEach(id => (effByStrat[id]=effByStrat[id]||[]).push(score));
+  });
   $('#agg-strategy').innerHTML = Object.keys(sc).length
     ? STRATS.map(st=>{
         const n = sc[st.id]||0;
         const isTop = st.id===topId && n>0;
-        return `<div class="strat-row${isTop?' top':''}"><span class="emoji">${st.emoji}</span><span class="lab">${st.label}</span><span class="track"><i style="width:${n/scMax*100}%"></i></span><span class="num">${n}</span>${isTop?'<span class="crown">🏆</span>':''}</div>`;
+        const effArr = effByStrat[st.id];
+        const eff = effArr && effArr.length ? Math.round(effArr.reduce((a,b)=>a+b,0)/effArr.length) : null;
+        return `<div class="strat-row${isTop?' top':''}"><span class="emoji">${st.emoji}</span><span class="lab">${st.label}</span><span class="track"><i style="width:${n/scMax*100}%"></i></span><span class="num">${n}</span>${eff!=null?`<span class="pill" style="margin-left:6px;background:var(--accent-wash);color:var(--accent-ink)" title="이 방법을 쓴 뒤 평균 점수">효과 ${eff}점</span>`:''}${isTop?'<span class="crown">🏆</span>':''}</div>`;
       }).join('')
     : emptyState('🌱', '아직 골라본 방법이 없어요.<br>첫 공부에서 골라볼까요?');
 
@@ -1376,15 +1434,73 @@ function renderHome(){
   if(aggResidualChart){ aggResidualChart.destroy(); aggResidualChart=null; }
   if(withResidual.length){
     chartCanvas.hidden = false;
+    // 원리3 [메인 대시보드 설계 지침] 2: "과목 별 꺾은선 그래프(시간의 변화)"로도 보여준다 —
+    // 전체 평균(사전 진단) 1개 선 위에, 과목마다 "혼자 풀 때" 점수를 다른 색 선으로 얹는다.
+    const subjSet = [...new Set(withResidual.map(s=>s.ctx.subject).filter(Boolean))];
+    const subjDatasets = subjSet.map((subj,i)=>({
+      label: `${SUBJECT_EMOJI[subj]||'📘'} ${subj} (혼자 풀 때)`,
+      data: withResidual.map(s=> s.ctx.subject===subj ? s.residual.postScore : null),
+      borderColor: SUBJECT_LINE_COLORS[i%SUBJECT_LINE_COLORS.length],
+      backgroundColor: SUBJECT_LINE_COLORS[i%SUBJECT_LINE_COLORS.length]+'22',
+      spanGaps:true, tension:.3
+    }));
     aggResidualChart = new Chart(chartCanvas, {
       type:'line',
       data:{ labels: withResidual.map((s,i)=>`${i+1}회`), datasets:[
-        { label:'공부 전(사전 진단)', data: withResidual.map(s=>s.prior.diagScore), borderColor:'#8b5cf6', backgroundColor:'#8b5cf622', tension:.3 },
-        { label:'혼자 풀 때', data: withResidual.map(s=>s.residual.postScore), borderColor:'#12a05f', backgroundColor:'#12a05f22', tension:.3 }
+        { label:'공부 전(사전 진단, 전체 평균)', data: withResidual.map(s=>s.prior.diagScore), borderColor:'#94a3b8', backgroundColor:'#94a3b822', borderDash:[4,3], tension:.3 },
+        ...subjDatasets
       ] },
       options:{ scales:{ y:{ min:0, max:100 } }, plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, boxWidth:10 } } } }
     });
   } else { chartCanvas.hidden = true; }
+  // 원리3 [메인 대시보드 설계 지침] 2: "대화 전 후의 변화도 평균"을 막대그래프로 과목별로.
+  const deltaCanvas = $('#agg-subject-delta-chart');
+  if(aggSubjectDeltaChart){ aggSubjectDeltaChart.destroy(); aggSubjectDeltaChart=null; }
+  const bySubjDelta = {};
+  withResidual.forEach(s=>{ const subj=s.ctx.subject; if(!subj) return; (bySubjDelta[subj]=bySubjDelta[subj]||[]).push(s.residual.postScore - s.prior.diagScore); });
+  const deltaSubjKeys = Object.keys(bySubjDelta);
+  if(deltaSubjKeys.length){
+    deltaCanvas.hidden = false;
+    const avgDeltas = deltaSubjKeys.map(k=>Math.round(bySubjDelta[k].reduce((a,b)=>a+b,0)/bySubjDelta[k].length));
+    aggSubjectDeltaChart = new Chart(deltaCanvas, {
+      type:'bar',
+      data:{ labels: deltaSubjKeys.map(k=>`${SUBJECT_EMOJI[k]||'📘'} ${k}`), datasets:[{ label:'평균 향상 점수', data:avgDeltas, backgroundColor: avgDeltas.map(v=>v>=0?'#12a05f':'#dc2626'), borderRadius:6 }] },
+      options:{ plugins:{ legend:{ display:false } } }
+    });
+  } else { deltaCanvas.hidden = true; }
+  // 원리3 [메인 대시보드 설계 지침] 4: 메타인지적 지식 정도 지표 — 나 단계 점수를 회차별 꺾은선으로.
+  const metaCanvas = $('#agg-meta-chart');
+  if(aggMetaChart){ aggMetaChart.destroy(); aggMetaChart=null; }
+  const metaScored = S.filter(s=>s.meta && s.meta.score!=null);
+  if(metaScored.length){
+    metaCanvas.hidden = false;
+    aggMetaChart = new Chart(metaCanvas, {
+      type:'line',
+      data:{ labels: metaScored.map((s,i)=>`${i+1}회`), datasets:[{ label:'스스로 점검 점수', data: metaScored.map(s=>s.meta.score), borderColor:'#f59e0b', backgroundColor:'#f59e0b22', tension:.3 }] },
+      options:{ scales:{ y:{ min:0, max:100 } }, plugins:{ legend:{ display:false } } }
+    });
+  } else { metaCanvas.hidden = true; }
+  // 원리3 [메인 대시보드 설계 지침] 3 · 원리12: 프롬프트 구체성·논리성·명시성(되짚기 나 단계에서
+  // 학습자가 스스로 매긴 값)을 평균 막대 + 회차별 꺾은선으로.
+  const promptRated = S.filter(s=>s.reflect && s.reflect.promptRating && PROMPT_RATE_DIMS.every(d=>s.reflect.promptRating[d.k]!=null));
+  const promptBarCanvas = $('#agg-prompt-bar-chart'), promptLineCanvas = $('#agg-prompt-line-chart');
+  if(aggPromptBarChart){ aggPromptBarChart.destroy(); aggPromptBarChart=null; }
+  if(aggPromptLineChart){ aggPromptLineChart.destroy(); aggPromptLineChart=null; }
+  if(promptRated.length){
+    promptBarCanvas.hidden = false; promptLineCanvas.hidden = false;
+    const avgs = PROMPT_RATE_DIMS.map(d=> promptRated.reduce((a,s)=>a+s.reflect.promptRating[d.k],0)/promptRated.length);
+    aggPromptBarChart = new Chart(promptBarCanvas, {
+      type:'bar',
+      data:{ labels: PROMPT_RATE_DIMS.map(d=>d.label), datasets:[{ label:'평균(1~5)', data:avgs, backgroundColor:'#8b5cf6', borderRadius:6 }] },
+      options:{ scales:{ y:{ min:0, max:5 } }, plugins:{ legend:{ display:false } } }
+    });
+    const dimColors = { specificity:'#8b5cf6', logic:'#12a05f', clarity:'#f59e0b' };
+    aggPromptLineChart = new Chart(promptLineCanvas, {
+      type:'line',
+      data:{ labels: promptRated.map((s,i)=>`${i+1}회`), datasets: PROMPT_RATE_DIMS.map(d=>({ label:d.label, data: promptRated.map(s=>s.reflect.promptRating[d.k]), borderColor:dimColors[d.k], backgroundColor:dimColors[d.k]+'22', tension:.3 })) },
+      options:{ scales:{ y:{ min:0, max:5 } }, plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, boxWidth:10 } } } }
+    });
+  } else { promptBarCanvas.hidden = true; promptLineCanvas.hidden = true; }
   $('#agg-residual').innerHTML = withResidual.length
     ? withResidual.slice().reverse().map(s=>{
         const pre=s.prior.diagScore, post=s.residual.postScore;
@@ -1478,6 +1594,10 @@ function openSessDetail(s){
       <h4 style="font-size:13px;font-weight:800;margin:4px 0 8px">그때 남긴 돌아보기</h4>
       ${s.reflect.noteA?`<p class="hint" style="margin-bottom:6px"><b>역할 되돌아보기:</b> ${esc(s.reflect.noteA)}</p>`:''}
       ${s.reflect.note?`<p class="hint"><b>질문 돌아보기:</b> ${esc(s.reflect.note)}</p>`:''}
+    </div>` : ''}
+    ${(s.residual && s.residual.journal) ? `<div>
+      <h4 style="font-size:13px;font-weight:800;margin:4px 0 8px">그때 남긴 성찰일지 (혼자 풀어보기 이후)</h4>
+      <p class="hint">${esc(s.residual.journal)}</p>
     </div>` : ''}
     <div>
       <h4 style="font-size:13px;font-weight:800;margin:4px 0 8px">그때 할 일 분담</h4>
@@ -1664,10 +1784,10 @@ function startSession(){
     checkpointInterval: 4, checkpointForceSoon:false, lowUnderstandFlag:false,
     checkpoints:[], turnsSinceCheckpoint:0, pendingCheckpoint:false,
     turns:[],
-    reflect:{ note:'', noteA:'', tags:{}, step:'delegate' },
+    reflect:{ note:'', noteA:'', tags:{}, step:'delegate', promptRating:null },
     // 원리13: 사전 진단(prior.diagScore)과 같은 채점 기준의 사후 진단(items 4문항, postScore)을
     // 나란히 비교한다. 사후 진단에 응답할 때도 학습자가 스스로 인지 전략을 고른다(answerStrategy).
-    residual:{ started:false, items:[], result:null, postScore:null, judge:null, comment:'', nextSupport:null, answerStrategy:null }
+    residual:{ started:false, items:[], result:null, postScore:null, judge:null, comment:'', nextSupport:null, answerStrategy:null, journal:'' }
   };
   show('chat');
 }
@@ -2012,6 +2132,21 @@ function renderStream(){
         }
         return;
       }
+      // 원리1·2: 도움 크기를 시스템이 바로 줄이지 않고, 먼저 제안 카드를 띄워 학습자가 직접
+      // 줄일지·그대로 둘지 고르게 한다(fade() 참고).
+      if(t.kind==='fade-propose'){
+        if(t.answered){
+          const msg = t.accepted ? `AI 도움을 "${SUPPORT_LABEL[session.support]}"(으)로 줄였어요.` : `이번엔 도움 크기를 그대로 두기로 했어요.`;
+          box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="bubble">🪜 ${esc(msg)}</div></div>`);
+        } else {
+          box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card">
+            <div class="msc-title">🪜 AI 도움을 줄여볼까요?</div>
+            <p style="font-size:13px;color:var(--ink);margin:2px 0 8px">요즘 계속 잘 이해하고 있는 것 같아요. 힌트를 지금보다 적게 받아볼래요? 정하는 건 나예요.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-sm btn-primary fade-accept">줄여볼래요</button><button type="button" class="btn btn-sm btn-ghost fade-decline">이번엔 그대로 둘래요</button></div>
+          </div></div>`);
+        }
+        return;
+      }
       if(t.kind==='meta-score' && t.meta){
         const row = (label,val)=>`<div class="msc-row"><span>${label}</span><span class="bar"><i style="width:${val}%"></i></span><b>${val}점</b></div>`;
         box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card">
@@ -2058,6 +2193,20 @@ const UNDERSTAND_LEVELS = [
   { n:4, emoji:'😊', label:'꽤 잘 알아요' },
   { n:5, emoji:'🤩', label:'완전 잘 알아요' }
 ];
+// 원리12 [대화 이후 성찰 지침] 2: "학습자는 자신이 작성한 프롬프트의 구체성·논리성·명시성을
+// 리커트척도 기반으로 체크하게 한다." 되짚기 나 단계(질문 궤적 성찰)에서 학습자가 고른 질문
+// 하나를 이 세 축으로 스스로 1~5점 매긴다(AI가 대신 채점하지 않는다 — 원리2).
+const PROMPT_RATE_DIMS = [
+  { k:'specificity', label:'구체성', desc:'무엇을 알고 싶은지 얼마나 자세히 담았나요?' },
+  { k:'logic',       label:'논리성', desc:'앞뒤 흐름이 얼마나 자연스럽게 이어졌나요?' },
+  { k:'clarity',     label:'명시성', desc:'무엇을 원하는지 얼마나 분명하게 드러났나요?' }
+];
+function promptRateRowHTML(dim, val){
+  return `<div>
+    <div class="field-label" style="margin-bottom:6px">${dim.label} <span style="color:var(--muted);font-weight:500">— ${esc(dim.desc)}</span></div>
+    <div class="understand-pick" data-rate-dim="${dim.k}">${[1,2,3,4,5].map(n=>`<button type="button" class="u-chip ${val===n?'is-selected':''}" data-dim="${dim.k}" data-n="${n}"><span class="u-emoji">${n}</span></button>`).join('')}</div>
+  </div>`;
+}
 function priorPickHTML(){
   return `<div class="understand-pick" data-pick="prior">` +
     UNDERSTAND_LEVELS.map(u=>`<button type="button" class="u-chip ${session.prior.score===u.n?'is-selected':''}" data-n="${u.n}"><span class="u-emoji">${u.emoji}</span><span>${u.label}</span></button>`).join('') +
@@ -2165,7 +2314,7 @@ function saveJudgeModal(){
   if(v==='accept' && !wasAccept){
     session.acceptStreak++;
     session.holdStreak = 0;
-    if(session.acceptStreak>=2){ session.acceptStreak=0; renderStream(); fade(); return; }
+    if(session.acceptStreak>=2){ session.acceptStreak=0; renderStream(); proposeFade(); return; }
   } else if(v==='hold'){
     session.acceptStreak = 0;
     // 원리9: 학습자가 스스로 판단을 미룬 신호(잘 모르겠어요)가 쌓이면, 클릭을 기다리지 않고
@@ -2848,14 +2997,26 @@ function capLength(s, max=420){
   if(lastEnd > max*0.35) return cut.slice(0, lastEnd).trim();
   return cut.trim() + '…';
 }
-function fade(){
-  if(session.support==='high') session.support='mid';
-  else if(session.support==='mid') session.support='low';
-  else return;
-  paintSupport();
-  const wrap = $('#scaffold-wrap');
-  if(wrap){ wrap.classList.remove('flash'); void wrap.offsetWidth; wrap.classList.add('flash'); setTimeout(()=>wrap.classList.remove('flash'), 1000); }
-  pushNote(`AI 도움을 "${SUPPORT_LABEL[session.support]}"(으)로 조금 줄였어요. 잘 이해하고 있는 것 같아서요. 바로 위 단계 표시 바에서 지금 어디쯤인지 볼 수 있어요.`);
+// 원리1 [대화 중 지침] 2·3: "이해도 지표가 좋아도 AI가 곧바로 줄이지 않고, 도움 하향을
+// 학습자에게 제안한 뒤, 줄일지 여부는 학습자가 선택하고 AI는 그 선택을 반영한다." — 예전엔
+// 좋아요·이해도 체크포인트가 연달아 좋으면 시스템이 바로 줄여버렸다(제안·선택 단계가 없었다).
+// 이제 카드로 먼저 제안하고, 학습자가 [줄여볼래요]/[그대로 둘래요]를 직접 고르게 한다.
+function proposeFade(){
+  if(session.support!=='high' && session.support!=='mid') return; // low면 더 줄일 데가 없다
+  session.turns.push({ id:uid(), role:'note', kind:'fade-propose', answered:false });
+  renderStream();
+}
+function fade(accepted){
+  const t = [...session.turns].reverse().find(x=>x.kind==='fade-propose' && !x.answered);
+  if(t){ t.answered = true; t.accepted = !!accepted; }
+  if(accepted){
+    if(session.support==='high') session.support='mid';
+    else if(session.support==='mid') session.support='low';
+    paintSupport();
+    const wrap = $('#scaffold-wrap');
+    if(wrap){ wrap.classList.remove('flash'); void wrap.offsetWidth; wrap.classList.add('flash'); setTimeout(()=>wrap.classList.remove('flash'), 1000); }
+  }
+  renderStream();
 }
 function sendChat(){
   const el=$('#chat-input'); const v=anonymize(el.value.trim());
@@ -3121,11 +3282,19 @@ function enterReflect(){
     : '<p class="hint">아직 남긴 코멘트가 없어요. 대화 중 AI 말풍선 아래 [다른 생각]을 눌러 남길 수 있어요.</p>';
   $('#in-reflect-a').value = session.reflect.noteA || '';
 
-  // 나 단계: 학습자가 실제로 입력한 프롬프트만 순서대로 펼쳐 보여준다(원리12).
+  // 나 단계: 학습자가 실제로 입력한 프롬프트만 순서대로 펼쳐 보여준다(원리12). [대화 이후
+  // 성찰 지침] 1: "핵심적으로 성찰해볼 프롬프트를 학습자 스스로 고를 수 있게 한다" — 그냥
+  // 읽기만 하던 목록을 눌러서 고를 수 있게 한다.
   const prompts = session.turns.filter(t=>t.role==='me');
+  const pr = session.reflect.promptRating;
   $('#prompt-list').innerHTML = prompts.length
-    ? prompts.map((t,i)=>`<div class="box" style="padding:11px 14px"><div class="hint" style="margin-bottom:4px">#${i+1} · ${t.delegate?'AI에게 답을 맡긴 질문':'내가 생각한 질문'}</div><div style="font-size:13.5px">${esc(t.text)}</div></div>`).join('')
+    ? prompts.map((t,i)=>`<div class="box prompt-pick ${pr && pr.turnId===t.id ? 'is-selected' : ''}" data-tid="${t.id}" style="padding:11px 14px;cursor:pointer"><div class="hint" style="margin-bottom:4px">#${i+1} · ${t.delegate?'AI에게 답을 맡긴 질문':'내가 생각한 질문'}${pr && pr.turnId===t.id ? ' · ✅ 고른 질문' : ''}</div><div style="font-size:13.5px">${esc(t.text)}</div></div>`).join('')
     : '<p class="hint">아직 입력한 질문이 없어요.</p>';
+  $('#prompt-rate-wrap').hidden = !pr;
+  if(pr){
+    $('#prompt-rate-quote').textContent = `"${trim(pr.text,70)}"`;
+    $('#prompt-rate-rows').innerHTML = PROMPT_RATE_DIMS.map(d=>promptRateRowHTML(d, pr[d.k])).join('');
+  }
   $('#in-reflect').value = session.reflect.note || '';
   // 요청사항(5번째 피드백) — "여기 있었는데 또 안 보인다": v11에서 HTML의 hidden 속성은
   // 지웠지만, 여기 JS가 enterReflect()를 부를 때마다 무조건 다시 hidden=true로 덮어써서
@@ -3333,6 +3502,7 @@ function renderResidualResult(){
   $$('#res-judge .choice').forEach(b=> b.classList.toggle('is-selected', b.dataset.v===session.residual.judge));
   $('#res-comment').hidden = session.residual.judge!=='comment';
   $('#res-comment').value = session.residual.comment||'';
+  $('#res-journal').value = session.residual.journal||'';
   $$('#next-support .choice').forEach(b=> b.classList.toggle('is-selected', b.dataset.v===session.residual.nextSupport));
   if(session.residual.judge){
     $('#res-report').hidden=false;
@@ -3535,6 +3705,10 @@ function init(){
     }
     const jt = e.target.closest('.judge-trigger');
     if(jt){ openJudgeModal(jt.dataset.id); return; }
+    const fa = e.target.closest('.fade-accept');
+    if(fa){ fade(true); return; }
+    const fd = e.target.closest('.fade-decline');
+    if(fd){ fade(false); return; }
     const spk = e.target.closest('.speak-btn');
     if(spk){ const t = session.turns.find(x=>x.id===spk.dataset.id); if(t) speakText(t.text); return; }
     const rb = e.target.closest('.struct-review-btn');
@@ -3578,7 +3752,7 @@ function init(){
       // (4~5) 연달아 2번 나오면 같은 방식으로 줄어들게 해, 더 안정적으로 반영되게 한다.
       if(t.score!=null && t.score>=4){
         session.cpHighStreak = (session.cpHighStreak||0) + 1;
-        if(session.cpHighStreak>=2){ session.cpHighStreak=0; fade(); }
+        if(session.cpHighStreak>=2){ session.cpHighStreak=0; proposeFade(); }
       } else { session.cpHighStreak = 0; }
       renderStream(); syncComposeLock();
       return;
@@ -3724,6 +3898,21 @@ function init(){
     if(cur===v){ delete session.reflect.tags[id]; enterReflect(); return; } // 다시 누르면 선택 해제
     session.reflect.tags[id] = v; enterReflect();
   });
+  $('#prompt-list').addEventListener('click', e=>{
+    const b = e.target.closest('.prompt-pick'); if(!b) return;
+    const tid = b.dataset.tid;
+    const t = session.turns.find(x=>x.id===tid); if(!t) return;
+    const cur = session.reflect.promptRating;
+    // 다시 누르면 선택 해제(다른 질문으로 바꿔 고를 수 있게), 아니면 새로 고른 질문으로 교체.
+    session.reflect.promptRating = (cur && cur.turnId===tid) ? null : { turnId:tid, text:t.text, specificity:null, logic:null, clarity:null };
+    enterReflect();
+  });
+  $('#prompt-rate-rows').addEventListener('click', e=>{
+    const b = e.target.closest('.u-chip'); if(!b) return;
+    const dim = b.closest('[data-rate-dim]').dataset.rateDim;
+    if(session.reflect.promptRating) session.reflect.promptRating[dim] = +b.dataset.n;
+    enterReflect();
+  });
   $('#reflect-next-a').addEventListener('click', goReflectStepB);
   $('#hint-reflect-a').addEventListener('click', ()=> requestReflectHint('a'));
   $('#hint-reflect-b').addEventListener('click', ()=> requestReflectHint('b'));
@@ -3766,8 +3955,12 @@ function init(){
   $('#res-submit').addEventListener('click', submitResidual);
   $('#res-judge').addEventListener('click', e=>{ const b=e.target.closest('.choice'); if(!b) return; session.residual.judge=b.dataset.v; renderResidualResult(); });
   $('#res-comment').addEventListener('input', e=>{ session.residual.comment = e.target.value; });
+  $('#res-journal').addEventListener('input', e=>{ session.residual.journal = e.target.value; });
   $('#next-support').addEventListener('click', e=>{ const b=e.target.closest('.choice'); if(!b) return; session.residual.nextSupport=b.dataset.v; renderResidualResult(); });
-  $('#res-finish').addEventListener('click', ()=>{ commitSession(); modal('저장했어요','돌아보기와 혼자 풀어보기 결과를 내 공부방에 저장했어요.'); show('home'); });
+  $('#res-finish').addEventListener('click', ()=>{
+    session.residual.journal = anonymize((session.residual.journal||'').trim());
+    commitSession(); modal('저장했어요','돌아보기와 혼자 풀어보기 결과를 내 공부방에 저장했어요.'); show('home');
+  });
 
   $('#modal-ok').addEventListener('click', ()=> $('#scrim').classList.remove('open'));
   $('#scrim').addEventListener('click', e=>{ if(e.target===$('#scrim')) $('#scrim').classList.remove('open'); });
