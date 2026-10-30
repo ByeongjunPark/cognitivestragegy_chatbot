@@ -6,6 +6,16 @@
 <title>AI와 공부하고 되돌아보기</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="curriculum_standards.js"></script>
+<!-- (2026-10 전문가 사용성 평가 반영) 설정·말투·용어·방어선·점수 표시·원문 검색을 별도 파일로 분리 -->
+<script src="js/mode-config.js"></script>
+<script src="js/tone.js"></script>
+<script src="js/glossary.js"></script>
+<script src="js/lib/guards.js"></script>
+<script src="js/lib/scoring.js"></script>
+<script src="js/lib/rag.js"></script>
+<script src="js/class-ui.js"></script>
+<script src="js/math-input.js"></script>
+<script src="js/onboarding.js"></script>
 <style>
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
 
@@ -848,6 +858,55 @@
   .qa-toggle{min-height:32px}
   .msc-ind{display:flex;flex-wrap:wrap;gap:4px 10px;margin:-2px 0 6px;font-size:12px;color:var(--muted)}
   .msc-ind span.on{color:var(--accent-ink);font-weight:600}
+  /* ===== (2026-10 전문가 사용성 평가 반영) ===== */
+  .todo-line{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:10px 0 0;font-size:13.5px;color:var(--ink);background:var(--accent-wash);border-radius:10px;padding:8px 12px}
+  .todo-line .todo-est{font-size:12px;color:var(--muted)}
+  .pb-progress{font-size:12.5px;color:var(--ink-2);padding:6px 14px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pb-progress .pb-mode{font-size:11px;border:1px solid var(--line-strong);border-radius:999px;padding:0 8px;color:var(--muted)}
+  .tb-presets{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+  .tb-live{font-size:12.5px;color:var(--ink);background:var(--surface-2);border:1px dashed var(--line-strong);border-radius:10px;padding:8px 12px;margin:10px 0 0}
+  .lv3-row{display:grid;grid-template-columns:7.5em 1fr auto;gap:8px;align-items:center;margin:6px 0 2px;font-size:13px}
+  .lv3-bar{height:8px;background:var(--line);border-radius:999px;overflow:hidden}
+  .lv3-bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
+  .lv3-bar.l0 i{background:#9aa4ae} .lv3-bar.l1 i{background:#f59e0b} .lv3-bar.lx i{background:transparent}
+  .lv3-txt{font-size:12.5px}
+  .lv-block{border-radius:10px;padding:8px 10px;margin-top:8px}
+  .lv-block.pre{background:#eef5ff} .lv-block.meta{background:var(--accent-wash)}
+  .lv-block-t{font-size:12px;font-weight:800;color:var(--ink-2)}
+  .lv-chip.pre{background:#eef5ff;color:#1d4ed8} .lv-chip.meta{background:var(--accent-wash);color:var(--accent-ink)}
+  .calib-note{font-size:12.5px;color:#1d4ed8;background:#eef5ff;border-radius:8px;padding:6px 10px;margin:8px 0 0}
+  .mode-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .goal-help{margin-top:8px}
+  .goal-help .chip,.cp-rchips .chip,[data-pick="choice"] .chip{font-size:12.5px}
+  .scope-panel summary{cursor:pointer;list-style:none}
+  .source-card{border-left:3px solid #2563eb}
+  .meta-form .mf-row{border-top:1px dashed var(--line);padding-top:10px}
+  .meta-form .mf-row:first-child{border-top:0;padding-top:0}
+  .meta-form .mf-text{margin-top:6px}
+  .pp-reply{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+  .shallow-hint{color:#b45309;margin:6px 0}
+  .judge-err{display:flex;gap:6px;align-items:center;font-size:13px;margin:4px 0 8px;color:#9a3412}
+  .pin-warn{margin-bottom:8px}
+  .pin-names{font-size:13px;text-align:center;margin:6px 0}
+  .pin-card{border:2px dashed var(--line-strong);border-radius:14px;padding:16px;text-align:center}
+  .pin-card .pc-nick{font-weight:800} .pin-card .pc-pics{font-size:44px;letter-spacing:6px} .pin-card .pc-names{font-size:14px;color:var(--ink-2)}
+  .glance-row{margin:8px 0}
+  .glance-row b{font-size:13px} .glance-row p{margin:2px 0 0;font-size:13.5px;color:var(--ink)}
+  .info-i{border:0;background:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px}
+  .qa-help{display:block;font-size:10.5px;color:var(--muted);font-weight:500;max-width:16em;white-space:normal}
+  .so-help{font-size:11.5px;margin:0 6px 0 2px}
+  .struct-how{padding:0 16px;margin:0 0 6px}
+  .step-editor{border:1px solid var(--line-strong);border-radius:12px;padding:10px;margin:6px 0;background:var(--surface)}
+  .step-row{display:grid;grid-template-columns:4em 1fr;gap:6px;align-items:center;margin:4px 0}
+  .step-n{font-size:12px;font-weight:700;color:var(--muted)}
+  .note-more summary{display:inline;cursor:pointer;color:var(--accent-ink);font-size:12px}
+  .mic-for{border:1px solid var(--line-strong)!important;border-style:solid!important;background:var(--surface);border-radius:999px;font-size:12px;padding:3px 8px;cursor:pointer}
+  .no-sr .mic-for,.no-sr #btn-mic{display:none!important}
+  .reflect-one #reflect-step-a .req-tag{display:none}
+  .reflect-one #reflect-step-a .field-label[for="in-reflect-a"]::after{content:' (선택)';color:var(--muted);font-weight:500}
+  @media (max-width:480px){ .lv3-row{grid-template-columns:6em 1fr} .lv3-txt{grid-column:1/-1} .qa-help{display:none} }
+  .mode-class40 .sc-when,.mode-class40 .kt-line{display:none} /* 한 차시: 방법 카드는 한 줄 설명만("이럴 때 좋아요"는 자세히 모드에서) */
+  .reflect-split > *{min-width:0} .tl-card .txt,.pp-text{overflow-wrap:anywhere} /* (WP6-2) 360px에서 돌아보기 가로 스크롤 없애기 */
 </style>
 </head>
 <body>
@@ -872,7 +931,8 @@
   <section class="screen" data-screen="auth">
     <div class="auth-brand"><span class="dot"></span> AI와 공부하고 되돌아보기</div>
     <div class="rail">
-      <div class="eyebrow">시작하기</div>
+      <div class="eyebrow">시작하기  <p class="todo-line" hidden></p>
+    </div>
       <h1 class="headline">그림 비밀번호로 들어가는 나만의 공부방</h1>
       <p class="subhead">이름이나 전화번호는 필요 없어요. <b>부를 이름(별명)</b>과 <b>좋아하는 그림 4개</b>만 정하면 돼요. 다음에 다시 들어오면 지난 공부 기록이 그대로 이어져요.</p>
     </div>
@@ -906,7 +966,8 @@
   <!-- ============ 내 학습터 (누적 대시보드) ============ -->
   <section class="screen" data-screen="home">
     <div class="rail">
-      <div class="eyebrow">내 공부방</div>
+      <div class="eyebrow">내 공부방  <p class="todo-line" hidden></p>
+    </div>
       <h1 class="headline"><span id="home-name">친구</span>님, 지금까지 공부한 걸 모아 봤어요</h1>
       <p class="subhead" id="home-summary-line">공부할 때마다 대화·공부 방법·스스로 답한 내용이 여기에 쌓여요. 아래에서 그동안의 모습을 보고, 준비되면 새 공부를 시작해요.</p>
     </div>
@@ -970,7 +1031,7 @@
         <div id="agg-prompt-empty" hidden></div>
       </div>
       <div class="gp" data-panel="meta" hidden>
-        <p class="gp-read">읽는 법: 공부를 시작할 때 "스스로 점검" 질문에 답한 내용을 세 가지로 본 점수예요. 헷갈리는 곳을 잘 짚었는지(이해), 공부 방법과 이유를 말했는지(전략), 다른 것과 연결했는지(연결).</p>
+        <p class="gp-read">읽는 법: 공부를 시작할 때 "스스로 점검" 질문에 답한 내용을 세 가지로 살펴봤어요(아직 낯설어요 → 해 보는 중이에요 → 잘 짚었어요). 헷갈리는 곳을 잘 짚었는지(이해), 공부 방법과 이유를 말했는지(전략), 다른 것과 연결했는지(연결).</p>
         <p class="gp-sum" id="gs-sum-meta"></p>
         <div id="gp-meta-last" class="stack" style="gap:4px;margin-bottom:10px" hidden></div>
         <div class="gp-empty" id="gp-empty-meta" hidden>공부를 2번 이상 끝내면 흐름 그래프가 생겨요.</div>
@@ -992,16 +1053,18 @@
   <!-- ============ 세션 시작 (슬림 폼: 성취기준만) ============ -->
   <section class="screen" data-screen="start">
     <div class="rail">
-      <div class="eyebrow">새 공부</div>
+      <div class="eyebrow">새 공부  <p class="todo-line" hidden></p>
+    </div>
       <h1 class="headline">오늘 공부하고 싶은 것을 적어요</h1>
-      <p class="subhead">교과서 단원 이름을 몰라도 괜찮아요. 무엇을 공부하고 싶은지 <b>내 말로 자유롭게</b> 적으면, 거기에 맞는 성취기준을 시스템이 찾아 줘요. 나머지(내가 아는 것 확인하기·공부 방법 고르기)는 따로 적는 게 아니라 <b>AI와 이야기하면서</b> 자연스럽게 해요.</p>
+      <p class="subhead">단원 이름을 몰라도 괜찮아요. <b>내 말로</b> 적으면 맞는 내용을 찾아 줘요.</p>
     </div>
     <div class="card stack">
+      <div class="callout info" id="practice-banner" hidden><b>연습 모드</b> — 연습한 기록은 성장 그래프에 들어가지 않아요. 마음 편히 눌러 봐요.</div>
+      <div class="mode-row" id="st-mode" role="group" aria-label="공부 방식"></div>
       <div class="row-2">
         <div>
           <label class="field-label" for="st-band">학년</label>
           <select class="select" id="st-band"></select>
-          <p class="hint">3·4학년, 5·6학년, 중1~3학년은 학년군으로 묶여 있어서, 같은 묶음이면 배울 내용이 같아요.</p>
         </div>
         <div>
           <label class="field-label" for="st-subject">과목 <span style="color:var(--muted);font-weight:500">(안 골라도 돼요)</span></label>
@@ -1009,8 +1072,10 @@
         </div>
       </div>
       <div>
-        <label class="field-label" for="st-topic">오늘 공부하고 싶은 것 <span style="color:var(--muted);font-weight:500">(자세히 적을수록 잘 찾아요 — 딱 맞는 내용을 1~3개 알아서 찾아드려요)</span></label>
+        <label class="field-label" for="st-topic">오늘 공부하고 싶은 것 <span style="color:var(--muted);font-weight:500">(예시 문장을 눌러도 돼요)</span></label>
         <textarea class="textarea" id="st-topic" rows="2" placeholder="예: 분수를 그림으로 나타내면서 더하는 방법을 알고 싶어요 / 광합성이 뭔지 실험으로 알아보고 싶어요"></textarea>
+        <div class="chip-list goal-help" id="st-goal-help" aria-label="예시 문장 — 누르면 칸에 채워져요"></div>
+        <div id="st-narrow" class="callout info" style="margin-top:8px" hidden></div>
         <div class="nav" style="margin:8px 0 0;justify-content:flex-start;gap:10px">
           <button type="button" class="btn btn-sm btn-accent" id="st-match-btn">딱 맞는 내용 찾기</button>
           <span class="hint" id="st-match-status"></span>
@@ -1052,7 +1117,14 @@
         <label class="field-label" style="margin-bottom:6px">오늘 할 일, 누가 얼마나 맡을까요?</label>
         <p class="hint" style="margin:0 0 10px">아래 5가지는 <b>AI가 해도 되고 내가 해도 되는 일</b>이에요. 막대를 밀어서 AI와 내가 얼마나씩 맡을지 정해요.</p>
         <p class="hint" id="tb-recent-hint" style="margin:0 0 10px"></p>
+        <!-- (WP1-1, 전문가2 "단순한 프리셋") 한 번에 정하고, 필요하면 아래 막대로 하나씩 고친다 -->
+        <div class="tb-presets" role="group" aria-label="한 번에 정하기">
+          <button type="button" class="chip tb-preset" data-preset="ai">AI가 많이 도와줘요</button>
+          <button type="button" class="chip tb-preset" data-preset="half">같이 해요</button>
+          <button type="button" class="chip tb-preset" data-preset="me">내가 먼저 해 볼래요</button>
+        </div>
         <div class="stack" id="tb-sliders" style="gap:14px"></div>
+        <p class="tb-live" id="tb-live" aria-live="polite"></p>
         <div class="fixed-role-row">
           <div class="fixed-role-col">
             <h6>AI가 항상 하는 일 <span style="font-weight:500;color:var(--muted)">(맡는 일 자체는 안 바뀌어요, "바로 나설지"만 골라요)</span></h6>
@@ -1076,7 +1148,8 @@
   <!-- ============ 대화 ============ -->
   <section class="screen" data-screen="chat">
     <div class="rail">
-      <div class="eyebrow">AI와 이야기하기</div>
+      <div class="eyebrow">AI와 이야기하기  <p class="todo-line" hidden></p>
+    </div>
       <h1 class="headline">이야기하면서 같이 알아가요</h1>
     </div>
     <div class="chatwrap">
@@ -1091,6 +1164,7 @@
             방법 <span id="strategy-badge-text">-</span>
           </span>
           <button class="head-link" id="btn-change-strategy" hidden>바꾸기</button>
+          <button class="head-link" id="btn-my-diag" title="지금까지 내 진단 결과 보기">내 진단 보기</button>
           <button class="btn btn-sm" id="chat-finish" hidden>이야기 끝내기</button>
         </div>
       </div>
@@ -1098,6 +1172,8 @@
         <div class="gs-row"><b>오늘 배울 것</b><span id="gs-std"></span><button type="button" class="head-link" id="gs-source" title="AI가 참고하는 교육과정 근거 보기">근거 자료</button></div>
         <div class="gs-row" id="gs-extra-row" hidden><b>함께 다루는 것</b><span id="gs-extra"></span></div>
         <div class="gs-row" id="gs-goal-row" hidden><b>오늘 목표</b><span id="gs-goal"></span></div>
+        <!-- (WP3-5, 전문가7 "탐구 범위 가이드 창") 오늘 다루는 핵심 낱말. 학생 말이 범위와 다르면 막지 않고 알리기만 한다 -->
+        <details class="gs-row scope-panel" id="scope-panel" hidden><summary><b>오늘 탐구 범위</b> <span class="hint">눌러서 보기</span></summary><div class="chip-list" id="scope-list" style="margin-top:6px"></div></details>
       </div>
       <div class="scaffold-wrap" id="scaffold-wrap">
         <div class="scaffold-title">AI 도움 크기 <span class="scaffold-hint">— 잘 이해할수록 자동으로 줄어들고, 다시 늘지는 않아요</span></div>
@@ -1123,6 +1199,7 @@
           <span class="pn-arrow">다음 →</span>
         </button>
         <button class="stuck" id="btn-stuck" hidden>막혔어요</button>
+        <button type="button" class="stuck" id="btn-help-boost" hidden title="다음 AI 답 두 번만 조금 더 자세히 도와줘요. 그다음엔 원래대로 돌아가요.">한 단계 더 도와주세요</button>
         <div class="quick-actions" id="quick-actions" hidden></div>
         <!-- 요청사항: "수식을 제대로 인식 못한다" — 손글씨 인식(Vision)이 분수·지수·근호 같은
              기호를 놓칠 수 있어, 타이핑으로 정확하게 넣을 수 있는 수식 기호 버튼을 보조로 둔다. -->
@@ -1149,12 +1226,13 @@
   <!-- ============ 되짚기: 가(역할·위임 성찰) → 나(프롬프트 성찰) ============ -->
   <section class="screen" data-screen="reflect">
     <div class="rail">
-      <div class="eyebrow">돌아보기</div>
+      <div class="eyebrow">돌아보기  <p class="todo-line" hidden></p>
+    </div>
       <h1 class="headline" id="reflect-headline">누가 이끌었고, 내가 무엇을 물었나</h1>
       <p class="subhead" id="reflect-subhead">여기는 대화하는 곳이 아니라 <b>내가 나눈 이야기를 쭉 펼쳐 보는 곳</b>이에요. 내가 한 말 중에서 <b>내가 스스로 생각해서 물은 것</b>과 <b>AI에게 답을 맡긴 것</b>을 원하는 만큼 골라 보세요.</p>
     </div>
     <div class="cycle-wrap" style="border:1px solid var(--line);border-radius:14px;margin-bottom:16px">
-      <div class="cycle-title">3단계 · 돌아보기 순서</div>
+      <div class="cycle-title" style="display:flex;justify-content:space-between;gap:8px"><span>3단계 · 돌아보기 순서</span><button type="button" class="head-link my-diag-btn">내 진단 보기</button></div>
       <div class="cycle-strip" id="reflect-strip"></div>
     </div>
 
@@ -1212,7 +1290,8 @@
           <button type="button" class="btn btn-sm btn-ghost" id="hint-reflect-a">막막하면 — 질문 하나 받기</button>
         </div>
         <p class="callout info" id="hint-reflect-a-box" style="margin:8px 0" hidden></p>
-        <div class="starters" data-for="in-reflect-a"><button type="button">나는 ___할 때 AI에게 맡겼어요.</button><button type="button">다음엔 ___해서 내가 먼저 생각해 볼래요.</button></div>
+        <div class="starters" data-for="in-reflect-a"><button type="button" class="mic-for" data-for="in-reflect-a" aria-label="말로 쓰기">🎤 말로 쓰기</button><button type="button">나는 ___할 때 AI에게 맡겼어요.</button><button type="button">다음엔 ___해서 내가 먼저 생각해 볼래요.</button></div>
+        <p class="hint shallow-hint" id="shallow-a" hidden></p>
         <textarea class="textarea" id="in-reflect-a" placeholder="예: 나는 계산이 헷갈릴 때 AI에게 맡겼어요. 다음엔 먼저 내 방법으로 풀어 보고 물어볼래요."></textarea>
       </div>
     </div>
@@ -1237,14 +1316,29 @@
           <button type="button" class="btn btn-sm btn-ghost" id="hint-reflect-b">막막하면 — 질문 하나 받기</button>
         </div>
         <p class="callout info" id="hint-reflect-b-box" style="margin:8px 0" hidden></p>
-        <div class="starters" data-for="in-reflect"><button type="button">"___"라고 물었을 때 도움이 됐어요.</button><button type="button">다음엔 ___처럼 더 자세히 물어볼래요.</button></div>
+        <div class="starters" data-for="in-reflect"><button type="button" class="mic-for" data-for="in-reflect" aria-label="말로 쓰기">🎤 말로 쓰기</button><button type="button">"___"라고 물었을 때 도움이 됐어요.</button><button type="button">다음엔 ___처럼 더 자세히 물어볼래요.</button></div>
+        <p class="hint shallow-hint" id="shallow-b" hidden></p>
         <textarea class="textarea" id="in-reflect" placeholder="예: &quot;왜 분모를 같게 해?&quot;라고 물었을 때 도움이 됐어요. 다음엔 내가 헷갈리는 부분을 먼저 말하고 물어볼래요."></textarea>
       </div>
       <!-- 요청사항(9번째 피드백) 2: "잔여물 확인은 다 해야 하는 필수 단계다" — 예전엔
            "지금 안 해도 돼요"라는 선택적 안내 카드였다. 되짚기의 세 번째 단계(다)로 명시하고,
            건너뛰는 경로(저장하고 바로 끝내기)를 없애 반드시 거쳐가게 한다. -->
       <div class="callout info">
-        <b>마지막: 혼자서 풀어보기</b> — 배운 게 나에게 얼마나 남았는지, AI 도움 없이 비슷한 문제 4개를 풀어 공부 전과 후를 비교해요. <b>다음 시간에 푸는 걸 권해요</b> — 시간이 조금 지난 뒤에 풀어야 정말 남은 것을 알 수 있어요. 내 공부방의 [이어서 하기]로 바로 시작할 수 있어요.
+        <b>마지막: 혼자서 풀어보기</b> — 배운 게 나에게 얼마나 남았는지, AI 도움 없이 공부 전 "아는 것 확인"과 같은 수의 비슷한 문제를 풀어 공부 전과 후를 비교해요. <b>다음 시간에 푸는 걸 권해요</b> — 시간이 조금 지난 뒤에 풀어야 정말 남은 것을 알 수 있어요. 내 공부방의 [이어서 하기]로 바로 시작할 수 있어요.
+      </div>
+    </div>
+
+    <!-- (WP5-3, 전문가5 "점검 결과 → 전략 조정·재시도") 이번 결과에서 약했던 쪽에 맞춘 방법 후보 2개 중 하나를 고르면 다음 공부 시작 때 미리 골라져 있다(선택은 여전히 학습자 몫).
+         (보완 G3, 전문가7 "사고의 확산"·EN3 호기심) 더 궁금해진 것 한 가지를 남겨 다음 공부로 잇는다. 둘 다 선택. -->
+    <div id="reflect-next" class="card stack" hidden>
+      <div>
+        <label class="field-label">다음엔 이렇게 해 볼래요? <span class="opt-tag">선택</span></label>
+        <p class="hint" id="np-why" style="margin:0 0 6px"></p>
+        <div class="chip-list" id="np-list"></div>
+      </div>
+      <div>
+        <label class="field-label" for="in-wonder">오늘 공부하다가 더 궁금해진 것 <span class="opt-tag">선택</span></label>
+        <input class="input" id="in-wonder" maxlength="120" placeholder="예: 겨울에는 왜 해가 일찍 질까?" />
       </div>
     </div>
 
@@ -1258,12 +1352,13 @@
   <!-- ============ 잔여물 확인 (AI 없음) ============ -->
   <section class="screen" data-screen="residual">
     <div class="rail">
-      <div class="eyebrow">혼자서 풀어보기</div>
+      <div class="eyebrow">혼자서 풀어보기  <p class="todo-line" hidden></p>
+    </div>
       <h1 class="headline">이번엔 AI 없이, 내 힘으로 풀어요</h1>
-      <p class="subhead">여기서는 AI와 이야기할 수 없어요. 대화 중에 썼던 방법으로 풀기 좋은 "쌍둥이 문제" 네 개(비슷한 문제 둘, 다르게 바꾼 문제 둘)를 혼자 풀고, 왜 그렇게 풀었는지 적어요. AI가 채점해서, 처음에 봤던 사전 진단 점수와 나란히 비교해요.</p>
+      <p class="subhead">여기서는 AI와 이야기할 수 없어요. 공부 전 "아는 것 확인"과 같은 종류의 "쌍둥이 문제"를 혼자 풀고, 왜 그렇게 풀었는지 적어요. 공부 전 점수와 나란히 비교해요. 정답과 풀이는 다 낸 뒤에 볼 수 있어요.</p>
     </div>
     <div class="cycle-wrap" style="border:1px solid var(--line);border-radius:14px;margin-bottom:16px">
-      <div class="cycle-title">3단계 · 돌아보기 순서</div>
+      <div class="cycle-title" style="display:flex;justify-content:space-between;gap:8px"><span>3단계 · 돌아보기 순서</span><button type="button" class="head-link my-diag-btn">내 진단 보기</button></div>
       <div class="cycle-strip" id="residual-strip"></div>
     </div>
     <!-- 요청사항(11번째 피드백) 7: "전략을 또 고르지 말고, 대화 중에 썼던 전략을 그대로 불러와
@@ -1274,21 +1369,23 @@
       <div class="callout warn"><b>지금은 AI 도움을 받을 수 없어요.</b> 이야기하며 배운 것이 나에게 얼마나 남았는지 확인하는 순서예요.</div>
       <div class="kv"><span>오늘 배운 내용</span><b id="res-std">-</b></div>
       <div class="kv"><span>이야기할 때 쓴 방법</span><b id="res-strat">-</b></div>
-      <div class="kv"><span>공부 시작 전 사전 진단 점수</span><b id="res-prescore">-</b></div>
+      <div class="kv"><span>공부 시작 전 "아는 것 확인" 점수</span><b id="res-prescore">-</b></div>
       <p class="hint">문제마다 대화 중 썼던 방법 중 하나와 짝지어져요 — 그 방법으로 풀면 돼요.</p>
-      <button class="btn btn-primary" id="res-start">문제 받기 (4문항)</button>
+      <button class="btn btn-primary" id="res-start">문제 받기</button>
     </div>
     <div id="res-quiz" hidden class="stack">
       <div class="stack" id="res-items"></div>
-      <div class="callout warn" id="res-warn" hidden>네 문제의 풀이와 설명을 모두 적어야 낼 수 있어요.</div>
+      <div class="callout warn" id="res-warn" hidden>모든 문제의 풀이와 꼭 적을 설명을 써야 낼 수 있어요.</div>
       <div class="nav"><span class="filler"></span><button class="btn btn-primary" id="res-submit" disabled>내고 공부 전·후 비교 보기</button></div>
     </div>
     <div id="res-result" hidden class="card stack">
       <h4 style="font-size:15px;font-weight:800">네 가지로 살펴본 결과 (잘했다·못했다 판정은 안 해요)</h4>
       <!-- 원리13 [대화 이후 성찰 지침] 2: "제출을 하고 나면 사전 대비 사후의 인지적 능력 변화도를 가시화된 그래프로 보여준다" -->
       <div class="pp-graph" id="res-graph" role="img"></div>
-      <table class="axis-tbl"><thead><tr><th>무엇을</th><th>이번 결과</th><th>공부할 때와 비교</th></tr></thead><tbody id="axis-body"></tbody></table>
-      <div class="callout">정답 점수(사전·사후 진단)만 시스템이 같은 기준으로 채점해요. 설명을 잘 했는지, 배운 방법을 잘 옮겨 썼는지, 실력이 늘었는지는 <b>내가 스스로 판단할 몫</b>이라 자료만 보여주고 정하지 않아요.</div>
+      <details class="side-more" id="res-reveal"></details>
+      <details class="side-more" id="axis-wrap"><summary>네 가지로 자세히 보기</summary>
+      <table class="axis-tbl"><thead><tr><th>무엇을</th><th>이번 결과</th><th>공부할 때와 비교</th></tr></thead><tbody id="axis-body"></tbody></table></details>
+      <div class="callout">정답 점수(공부 전 확인·혼자 풀 때 확인)만 시스템이 같은 기준으로 채점해요. 설명을 잘 했는지, 배운 방법을 잘 옮겨 썼는지, 실력이 늘었는지는 <b>내가 스스로 판단할 몫</b>이라 자료만 보여주고 정하지 않아요.</div>
       <div>
         <label class="field-label">이 결과를 보고 — 전보다 나아진 것 같나요?</label>
         <div class="choices" id="res-judge" style="grid-template-columns:repeat(3,1fr)">
@@ -1304,7 +1401,7 @@
            남기는 마지막 성찰일지를 따로 둔다. -->
       <div>
         <label class="field-label" for="res-journal">마지막으로 <span class="req-tag">꼭 적어요 · 한 문장 이상</span> — 이번에 어려웠던 점이나, 이 공부를 하면서 새롭게 알게 된 점을 적어봐요</label>
-        <div class="starters" data-for="res-journal"><button type="button">처음엔 ___가 어려웠는데,</button><button type="button">이제 ___를 알게 됐어요.</button></div>
+        <div class="starters" data-for="res-journal"><button type="button" class="mic-for" data-for="res-journal" aria-label="말로 쓰기">🎤 말로 쓰기</button><button type="button">처음엔 ___가 어려웠는데,</button><button type="button">이제 ___를 알게 됐어요.</button></div>
         <textarea class="textarea" id="res-journal" placeholder="예: 처음엔 ~가 헷갈렸는데 ~하면서 알게 됐어요 / AI랑 이야기하고 나서 ~를 새롭게 알았어요"></textarea>
       </div>
       <div class="nav"><span class="filler"></span><span style="display:flex;flex-direction:column;align-items:flex-end"><button class="btn btn-primary" id="res-finish" disabled>저장하고 내 공부방으로</button><span class="gate-hint" id="res-finish-gate"></span></span></div>
@@ -1337,6 +1434,7 @@
     </div>
     <div id="judge-comment-wrap" hidden>
       <label class="field-label" for="judge-comment">어떤 다른 생각이 들었어요?</label>
+      <label class="judge-err"><input type="checkbox" id="judge-error" /> AI가 틀린 것 같아요 (선생님께 알려요)</label>
       <textarea class="textarea" id="judge-comment" placeholder="내 생각을 적어요"></textarea>
     </div>
     <div class="nav" style="margin:0">
@@ -1481,12 +1579,14 @@ const TASK_BLOCKS = [
   { id:'reflect_method', label:'내가 어떻게 공부하는지 돌아보기', fixed:'me' },
   { id:'judge_reason',   label:'내 생각이 맞는지 스스로 판단하기', fixed:'me' },
   // 다(유동적) — def는 0~100 슬라이더 시작값(50 이상=AI 쪽, 미만=학습자 쪽으로 실행에 반영).
-  { id:'define_problem', label:'문제가 뭔지 명확히 정하기',     stage:'탐구', fixed:null, def:70 },
-  { id:'explain_result', label:'내가 만든 것 설명하기',       stage:'탐구', fixed:null, def:65 },
-  { id:'summarize_key',  label:'핵심만 요약해서 보여주기',      stage:'마무리', fixed:null, def:65 },
+  { id:'define_problem', label:'문제가 뭔지 명확히 정하기',     stage:'탐구', fixed:null, def:50 },
+  { id:'explain_result', label:'내가 만든 것 설명하기',       stage:'탐구', fixed:null, def:50 },
+  { id:'summarize_key',  label:'핵심만 요약해서 보여주기',      stage:'마무리', fixed:null, def:50 },
   { id:'draft_first',    label:'과제 초안 먼저 써보기',        stage:'탐구', fixed:null, def:30 },
-  { id:'structure_complex', label:'복잡한 문제, 풀이 순서 짜주기', stage:'탐구', fixed:null, def:70 }
+  { id:'structure_complex', label:'복잡한 문제, 풀이 순서 짜주기', stage:'탐구', fixed:null, def:50 }
 ];
+// (전문가4 "기본값 조정", WP1-1 🔶 연구진 권장안) 자기주도 지원이 목적이라 AI 쪽(65~70)에 치우친 시작값을 반반(50)으로 낮췄다.
+// 초안 쓰기만 30(학습자 쪽) 유지. 지난 설정이 있으면 applyDefaultTaskBlocks가 최근 5회 평균을 쓰므로 기존 학생은 그대로다.
 // 요청사항(11번째 피드백) 1: "AI 힌트 크기 고르는 것을 없애라"로 지원강도 선택 자체는 없앴다.
 // 요청사항(13번째 피드백) · 원리5-지침3: "최근 설정 내역에서 주로 설정한 이전 선택을 정보로
 // 제공한다" — 힌트 크기가 없어진 지금은 이 지침이 적용될 유일한 설정이 과업 분담이라, 지난
@@ -1518,17 +1618,12 @@ const SUPPORT_STEPS = [
 // (개선) 실제 Solar 테스트에서 모델이 "거의 그대로 물어봐" 지시를 무시하고 설명·문제풀이로 새는 일이
 // 잦았다. 점검 질문(q)은 코드가 그대로 붙이고, 모델에게는 학습자 답에 대한 한 문장 반응만 맡긴다.
 const SCAFFOLD_ORDER = [
-  { key:'understand', q:'지금까지 이야기한 것 중에서 스스로 확신이 안 서는 부분이 있다면 어디야? 그 이유도 같이 말해줄래?', instr:`[원리7-① 이해 스캐폴딩] 학습자는 바로 직전에 자신감을 이미 숫자(1~5)로 골랐다. 그 숫자를 또 묻지 말고, 거의 그대로 이렇게만 물어봐: "지금까지 이야기한 것 중에서 스스로 확신이 안 서는 부분이 있다면 어디야? 그 이유도 같이 말해줄래?" 질문은 1개만.` },
-  { key:'strategy',   q:'이 내용을 공부할 때 너는 어떤 순서로 하면 좋을 것 같아? 그렇게 생각한 이유도 말해줄래?', instr:`[원리7-② 전략 스캐폴딩] 아래 예시 중 하나를 골라 거의 그대로 1개만 물어봐: "이 문제에 접근할 때 어떤 순서로 생각을 풀어갔는지 말해줄 수 있어? 그리고 그 방법을 선택한 이유는?" 또는 "지금 막혔다면, 이전에 비슷한 문제를 풀 때 썼던 방법 중에 적용해볼 만한 게 있을까?" 질문은 1개만.` },
-  { key:'connect',    q:'이 내용을 전에 배운 것이나 네 생활과 연결해 보면, 어떤 공통점이나 예가 떠올라?', instr:`[원리7-③ 연결 스캐폴딩] 아래 예시 중 하나를 골라 거의 그대로 1개만 물어봐: "이 내용을 지난 시간에 배운 개념과 연결 지어보면 어떤 공통점이나 차이점이 보여?" 또는 "이걸 네 일상이나 실제 사례에 적용해본다면 구체적으로 어떤 상황을 예로 들 수 있을까?" 질문은 1개만.` }
+  { key:'understand', q:CS.COPY.scaffoldQ.understand, instr:`[원리7-① 이해 스캐폴딩] 학습자는 바로 직전에 자신감을 이미 숫자(1~5)로 골랐다. 그 숫자를 또 묻지 말고, 거의 그대로 이렇게만 물어봐: "지금까지 이야기한 것 중에서 스스로 확신이 안 서는 부분이 있다면 어디야? 그 이유도 같이 말해줄래?" 질문은 1개만.` },
+  { key:'strategy',   q:CS.COPY.scaffoldQ.strategy, instr:`[원리7-② 전략 스캐폴딩] 아래 예시 중 하나를 골라 거의 그대로 1개만 물어봐: "이 문제에 접근할 때 어떤 순서로 생각을 풀어갔는지 말해줄 수 있어? 그리고 그 방법을 선택한 이유는?" 또는 "지금 막혔다면, 이전에 비슷한 문제를 풀 때 썼던 방법 중에 적용해볼 만한 게 있을까?" 질문은 1개만.` },
+  { key:'connect',    q:CS.COPY.scaffoldQ.connect, instr:`[원리7-③ 연결 스캐폴딩] 아래 예시 중 하나를 골라 거의 그대로 1개만 물어봐: "이 내용을 지난 시간에 배운 개념과 연결 지어보면 어떤 공통점이나 차이점이 보여?" 또는 "이걸 네 일상이나 실제 사례에 적용해본다면 구체적으로 어떤 상황을 예로 들 수 있을까?" 질문은 1개만.` }
 ];
 // (개선) 원리7: 짧은 답 되묻기용 예시(학생이 무엇을 더 말하면 되는지 보여 준다).
-const META_REASK = {
-  usual:      '예를 들어 "교과서를 두 번 읽어요", "문제를 많이 풀어요"처럼 평소에 하는 방법을 하나만 말해 줘.',
-  understand: '예를 들어 "○○는 알겠는데 왜 그렇게 되는지는 헷갈려"처럼 말해 줘.',
-  strategy:   '예를 들어 "먼저 뜻을 읽고, 그다음 예를 찾아볼래"처럼 순서를 말해 줘.',
-  connect:    '예를 들어 "지난번에 배운 ○○랑 비슷해"나 "집에서 ○○할 때랑 같아"처럼 말해 줘.'
-};
+const META_REASK = CS.COPY.metaReask; // 해요체 사전(tone.js)
 function isShallowAnswer(v){
   const t = String(v||'').replace(/\s+/g,'');
   if(t.length < 6) return true;
@@ -1682,6 +1777,7 @@ async function generateTaskSpec(strat){
 적용할 공부 방법: ${strat.label}(${strat.theory})
 이 방법의 과업 원칙: ${STRAT_TASK_GUIDE[strat.id]||strat.verb}
 도움 정도: ${session.support==='high'?'과업을 작게 쪼개고 첫 단서를 준다':session.support==='mid'?'방향만 준다':'과업만 주고 단서는 주지 않는다'}
+${session.ctx.subject==='수학' && (session.tasks||[]).length ? `앞서 낸 과업: ${(session.tasks||[]).slice(-3).map(t=>'"'+t.task+'"').join(', ')} — 이번에는 같은 성취기준 안에서 유형이나 난이도가 다른 문제(예: 계산 → 문장제 → 오류 찾기 → 거꾸로 풀기)로 낸다. 새 문제는 1개만.` : ''}
 ${lastEval ? `직전 시도 진단: 빠진 점=${(lastEval.missing||[]).join(', ')||'없음'}, 착오 유형=${lastEval.errorType||'-'} — 이번 과업은 이 부분을 다시 다룰 수 있게 해라.` : ''}
 규칙: 과업은 지금까지 대화에서 다룬 실제 내용(아래 대화 이력)을 소재로 하고, 해설의 범위를 벗어나지 마라. 과업 1개만, 학생이 한 번의 답으로 해낼 수 있는 크기로. 과업 문장 안에 정답·풀이·계산 결과·"예:" 예시 답을 절대 넣지 마라(학습자가 할 몫이다). 성공 기준은 학습자의 답에서 눈으로 확인할 수 있는 것으로, 각 20자 안팎.
 {"task":"학습자에게 줄 과업(한두 문장, 학년에 맞는 쉬운 말)","target":"이 과업이 다루는 핵심 내용","form":"결과물 형태","criteria":["성공 기준1","성공 기준2","성공 기준3"],"commonErrors":["예상 착오1","예상 착오2"]}`;
@@ -1707,7 +1803,7 @@ async function issueTask(strat, leadInstr){
     : ` 지금 방법(${strat?strat.label:'선택한 방법'})의 원칙에 맞는 과업 1개를 내라: ${strat?STRAT_TASK_GUIDE[strat.id]:''}`;
   const structHint = offerStructs ? ` 표·마인드맵·사슬 같은 활동판은 화면에 버튼으로 따로 뜨니, 네가 직접 만들어 보여주지 마라.` : '';
   session._suppressCp = true;
-  try{ await ai(leadInstr + specInstr + structHint + ` "~해볼까?"처럼 허락을 구하지 말고 "~를 해봐"처럼 과업을 분명히 내려라.`, offerStructs ? 'struct-offer' : null, offerStructs); } finally { session._suppressCp = false; }
+  try{ await ai(leadInstr + specInstr + structHint + ` "~해 볼까요?"처럼 허락을 구하지 말고 "~를 해 봐요"처럼 과업을 분명히 내려라.`, offerStructs ? 'struct-offer' : null, offerStructs); } finally { session._suppressCp = false; }
   if(spec){
     const t = [...session.turns].reverse().find(x=>x.role==='ai' && !x.structured);
     if(t) t.taskId = spec.id;
@@ -1756,7 +1852,7 @@ function onTaskEvaluated(ev){
 function evalFeedbackInstr(spec, ev){
   const strat = STRATS.find(x=>x.id===spec.stratId);
   return `학습자가 방금 과업("${spec.task}")을 시도했다. 아래는 성공 기준에 비춘 진단이다(너만 참고). 충족: ${ev.met.join(' / ')||'없음'}. 빠진·어긋난 점: ${ev.missing.join(' / ')||'없음'}. 착오 유형(추정): ${ev.errorType}. 방법 사용: ${ev.strategyUsed?'씀':'안 씀'}.
-이 진단에 근거해 피드백하라: (1) 학습자가 실제로 쓴 낱말을 그대로 짚으며 잘한 점 1가지, (2) 빠지거나 어긋난 점이 있으면 1가지를 "내가 보기엔 ~ 부분이 ~해서 헷갈린 것 같아"처럼 이유와 함께 알려주되 정답을 통째로 불러주지 말고 고칠 단서만 줘라(착오 유형을 쉬운 말로), ${ev.strategyUsed?'':'(3) 답만 쓰고 '+(strat?strat.label:'고른 방법')+' 방법은 아직 안 썼다는 점도 짚어라, '}마지막으로 "이 진단에 동의해? 그리고 ${strat?strat.label:'이 방법'}이 이번에 도움이 됐어?"처럼 학습자가 스스로 판단하게 1개만 물어라. 새 문제나 다음 과업은 절대 덧붙이지 마라(다음 과업은 시스템이 따로 낸다). 진단을 판결처럼 단정하지 말고, 학습자가 반박할 수 있게 열어 둬라. 5문장 이내.`;
+이 진단에 근거해 피드백하라: (1) 학습자가 실제로 쓴 낱말을 그대로 짚으며 잘한 점 1가지, (2) 빠지거나 어긋난 점이 있으면 1가지를 "제가 보기엔 ~ 부분이 ~해서 헷갈린 것 같아요"처럼 이유와 함께 알려주되 정답을 통째로 불러주지 말고 고칠 단서만 줘라(착오 유형을 쉬운 말로), ${ev.strategyUsed?'':'(3) 답만 쓰고 '+(strat?strat.label:'고른 방법')+' 방법은 아직 안 썼다는 점도 짚어라, '}마지막으로 "이 진단에 동의해? 그리고 ${strat?strat.label:'이 방법'}이 이번에 도움이 됐어?"처럼 학습자가 스스로 판단하게 1개만 물어라. 새 문제나 다음 과업은 절대 덧붙이지 마라(다음 과업은 시스템이 따로 낸다). 진단을 판결처럼 단정하지 말고, 학습자가 반박할 수 있게 열어 둬라. 5문장 이내.`;
 }
 function taskCardHTML(spec){
   return `<div class="task-card"><div class="tc-head">이렇게 하면 성공이에요</div><ul>${spec.criteria.map(c=>`<li>${esc(c)}</li>`).join('')}</ul></div>`;
@@ -2004,6 +2100,7 @@ function show(name){
   $('#who').hidden = !authed; $('#btn-home').hidden = !authed; $('#btn-logout').hidden = !authed;
   if (authed) $('#who').textContent = DB.currentUser + ' 님';
   paintProcessBar();
+  try{ trackPhase(); paintTodo(); }catch(e){}
   if (name === 'home') renderHome();
   if (name === 'start') renderStart();
   if (name === 'chat') enterChat();
@@ -2082,11 +2179,14 @@ async function doAuth(){
     const j = await apiJSON('/api/auth', { method:'POST', body: JSON.stringify({
       mode: authTab==='signup' ? 'signup' : 'login', nickname:nick, pin:code
     }) });
-    DB.accounts = { [j.nickname]: j.data }; markSaved(j.data);
+    DB.accounts = { [j.nickname]: migrateAccountData(j.data) }; markSaved(j.data);
     DB.currentUser = j.nickname;
     show('home');
+    // (WP4-1·4-2) 가입하면 비밀번호 카드(그림 이름 포함)를, 처음 들어오면 둘러보기 6장을 보여 준다
+    if(authTab==='signup' && window._justSignedUp){ showPinCard(window._justSignedUp, j.nickname); window._justSignedUp = null; try{ localStorage.setItem('guideSeen:'+j.nickname, ''); }catch(_){} }
+    else maybeAutoGuide();
   }catch(e){
-    msg.hidden=false; msg.textContent = e.message;
+    msg.hidden=false; msg.textContent = e.message; window._justSignedUp = null;
   }finally{
     btn.disabled = false; refreshAuth();
   }
@@ -2131,10 +2231,15 @@ function renderHome(){
       const when = new Date(d.savedAt); const where = (d.screen==='residual' && d.session.residualDeferred && !(d.session.residual||{}).started) ? '3단계 혼자 풀어보기만 남았어요' : ({chat:'AI와 이야기하던 중', reflect:'돌아보던 중', residual:'혼자 풀어보던 중'}[d.screen] || '공부하던 중');
       db.innerHTML = `<div class="draft-banner"><b>지난번에 하던 공부가 있어요 — ${esc(d.session.ctx.subject)} · ${esc(trim(d.session.ctx.std,30))} (${where}, ${when.getMonth()+1}/${when.getDate()} ${String(when.getHours()).padStart(2,'0')}:${String(when.getMinutes()).padStart(2,'0')})</b><button type="button" class="btn btn-primary btn-sm" id="draft-resume">이어서 하기</button><button type="button" class="btn btn-ghost btn-sm" id="draft-discard">그만하기(기록만 남기기)</button></div>`;
       $('#draft-resume').onclick = resumeDraft;
+      // (WP5-2, 전문가7 "도중에 진단 평가서 확인") 끝내지 않아도 지금까지 결과를 볼 수 있다
+      $('#draft-resume').insertAdjacentHTML('afterend', '<button type="button" class="btn btn-sm" id="draft-diag">지금까지 결과 보기</button>');
+      $('#draft-diag').onclick = openDraftDiagnosis;
       $('#draft-discard').onclick = ()=>{ archiveDraft(); renderHome(); };
     } else db.innerHTML = '';
   }
-  const S = acc.sessions.filter(s=>!s.incomplete); // 통계·그래프는 끝낸 공부만
+  const S = acc.sessions.filter(s=>!s.incomplete && !s.practice); // 통계·그래프는 끝낸 공부만(연습 기록 제외, WP4-2)
+  { let gl = $('#home-glance'); if(!gl){ gl = document.createElement('div'); gl.id = 'home-glance'; $('#home-draft').insertAdjacentElement('afterend', gl); }
+    gl.innerHTML = S.length ? glanceCardHTML(S[S.length-1]) : ''; }
   $('#agg-sessions').textContent = S.length;
   const analysisBtn = $('#agg-analysis-btn'), analysisBox = $('#agg-analysis-box');
   if(analysisBtn) analysisBtn.hidden = S.length===0;
@@ -2194,7 +2299,7 @@ function renderHome(){
   // 막대, "AI 도움 크기 변화" 점 목록, "내가 스스로 점검하며 답한 내용" 텍스트 모음 3개 위젯을
   // 없앤다(각 지표의 원천 데이터는 여전히 세션에 남아 있고, AI 종합분석 위젯에서는 계속 쓴다).
   let stuck=0, turns=0;
-  S.forEach(s=>{ (s.turns||[]).forEach(t=>{ if(t.role==='me') turns++; }); stuck += s.stuckCount||0; });
+  S.forEach(s=>{ (s.turns||[]).forEach(t=>{ if(isTyped(t)) turns++; }); stuck += s.stuckCount||0; }); // (WP1-5) 직접 쓴 말만 센다
   $('#agg-stuck').textContent = stuck;
   $('#agg-turns').textContent = turns;
 
@@ -2227,7 +2332,8 @@ function renderHome(){
         { label:'혼자 풀 때', data: ppRows.map(s=>s.residual.postScore), borderColor:lineCol, backgroundColor:lineCol, borderWidth:3, pointRadius:5, tension:.25, clip:false }
       ] },
       options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:'index', intersect:false },
-        scales:{ y:{ min:0, max:100, ticks:{ stepSize:25, font:{size:11} }, title:{ display:true, text:'점수', font:{size:11} } }, x:{ ticks:{ font:{size:11} } } },
+        // (WP1-2) 학생 그래프는 숫자 대신 3단계 이름으로 읽는다(숫자는 교사 화면에서만)
+        scales:{ y:{ min:0, max:100, ticks:{ stepSize:50, font:{size:11}, callback: v => CS.LEVEL_LABELS[CS.level3(v)]||'' }, title:{ display:false } }, x:{ ticks:{ font:{size:11} } } },
         plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, boxWidth:12 } },
           tooltip:{ callbacks:{ title: it => { const s = ppRows[it[0].dataIndex]; return `${s.startedAt.slice(0,10)} · ${s.ctx.subject||''}`; }, label: c => ` ${c.dataset.label}: ${c.parsed.y}점`, footer: it => { const s = ppRows[it[0].dataIndex]; const d = s.residual.postScore - s.prior.diagScore; return `변화 ${d>0?'+':''}${d}점`; } } } } }
     });
@@ -2269,7 +2375,7 @@ function renderHome(){
       })) },
       options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:'index', intersect:false },
         scales:{ y:{ min:0, max:100, ticks:{ stepSize:25, font:{size:11} }, title:{ display:true, text:'점수', font:{size:11} } }, x:{ ticks:{ font:{size:11} } } },
-        plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, boxWidth:12, usePointStyle:true, sort:(a,b)=>a.datasetIndex-b.datasetIndex } }, tooltip:{ callbacks:{ title: it => `${it[0].dataIndex+1}회 · ${(metaScored[it[0].dataIndex].startedAt||'').slice(0,10)}`, label: c => ` ${c.dataset.label}: ${c.parsed.y}점` } } } }
+        plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, boxWidth:12, usePointStyle:true, sort:(a,b)=>a.datasetIndex-b.datasetIndex } }, tooltip:{ callbacks:{ title: it => `${it[0].dataIndex+1}회 · ${(metaScored[it[0].dataIndex].startedAt||'').slice(0,10)}`, label: c => ` ${c.dataset.label}: ${CS.LEVEL_LABELS[CS.level3(c.parsed.y)]}` } } } }
     });
   } else { metaCanvas.hidden = true; }
   // 원리3 [메인 대시보드 설계 지침] 3 · 원리12: 프롬프트 구체성·논리성·명시성(되짚기 나 단계에서
@@ -2355,7 +2461,7 @@ function renderHome(){
   $('#sess-list').innerHTML = LIST_ALL.length
     ? LIST_ALL.slice().reverse().slice(0, LIST_N).map(s=>{
         const emo = SUBJECT_EMOJI[s.ctx.subject] || '';
-        const turnsN = (s.turns||[]).filter(t=>t.role==='me').length; // 내가 보낸 말 수(위 통계와 같은 기준)
+        const turnsN = (s.turns||[]).filter(isTyped).length; // 내가 보낸 말 수(위 통계와 같은 기준)
         const note = s.incomplete ? `<span class="inc-tag">⏸ 끝내지 않은 공부</span><small class="inc-sub">${s.hidden?'숨긴 기록 · ':''}눌러서 이어서 끝내기</small>` : (esc(trim(s.reflect&&s.reflect.note,34)) || '돌아보기 안 씀');
         return `<div class="sess-item" data-id="${esc(s.id)}" style="cursor:pointer" role="button" tabindex="0"><div><div class="t">${emo} ${esc(trim(s.ctx.std,48))}</div><div class="d">${s.startedAt.slice(0,10)} · ${s.ctx.grade||s.ctx.band} ${s.ctx.subject} · 내 말 ${turnsN}번 · ${s.strategyLabel||'방법 안 고름'} · AI 도움 ${SUPPORT_LABEL[s.support]||'-'}</div></div><div class="note">${note}</div></div>`;
       }).join('')
@@ -2382,7 +2488,7 @@ async function runHomeAnalysis(){
     const sc = {}; S.forEach(s=> strategyIdsOf(s).forEach(id=> sc[id]=(sc[id]||0)+1));
     const topId = Object.keys(sc).sort((a,b)=>sc[b]-sc[a])[0];
     const topStrat = STRATS.find(x=>x.id===topId);
-    let self=0, ai_=0; S.forEach(s=>(s.turns||[]).forEach(t=>{ if(t.role==='me') ((t.initiative||'self')==='self'?self++:ai_++); }));
+    let self=0, ai_=0; S.forEach(s=>(s.turns||[]).forEach(t=>{ if(isTyped(t)) ((t.initiative||'self')==='self'?self++:ai_++); }));
     const bySubj = {};
     S.forEach(s=>{ const subj=s.ctx&&s.ctx.subject; if(!subj) return; const score=(s.residual&&s.residual.postScore!=null)?s.residual.postScore:(s.prior&&s.prior.diagScore!=null?s.prior.diagScore:null); if(score==null) return; (bySubj[subj]=bySubj[subj]||[]).push(score); });
     const subjLine = Object.keys(bySubj).map(k=>`${k} 평균 ${Math.round(bySubj[k].reduce((a,b)=>a+b,0)/bySubj[k].length)}점(${bySubj[k].length}회)`).join(', ') || '아직 없음';
@@ -2391,7 +2497,7 @@ async function runHomeAnalysis(){
       { role:'system', content:'너는 초·중·고 학생의 누적 학습 기록을 보고 짧게 코칭하는 도우미다. 점수로 잘한다/못한다를 평가하거나 다른 학생과 비교하지 말고, 이 학생의 패턴만 짚어 격려와 구체적 제안을 해라. 3~4문장, 쉬운 말, 마크다운·목록 금지.' },
       { role:'user', content:`끝낸 공부 ${S.length}회, 제일 자주 쓴 방법: ${topStrat?topStrat.label:'없음'}, 스스로 물은 순간 ${self}번 · AI에게 맡긴 순간 ${ai_}번, 과목별 평균 점수: ${subjLine}, 막혔어요를 누른 총 횟수 ${stuck}.\n이 학생의 공부 패턴에서 눈에 띄는 점 1~2가지와, 다음에 시도해보면 좋을 것 1가지를 학생에게 직접 말하듯 알려줘.` }
     ]);
-    homeAnalysisText = stripMarkdown(String(raw)).trim();
+    homeAnalysisText = polishAux(raw); // (WP1-4) 보조 출력도 같은 말투 방어선
   }catch(e){
     homeAnalysisText = '지금은 분석을 만들지 못했어요. 잠시 후 다시 시도해봐요.';
   }
@@ -2448,10 +2554,10 @@ function renderGrowth(S, sc, topStrat){
     // (그래프 점검 10-05) 점수가 내려가도 "비슷한 수준을 유지"라고 말하던 것을 바로잡는다 — 처음과 최근을 비교해
     // 5점 넘게 오른 것·내린 것을 그대로 알려 주고, 내린 것은 다음에 해 볼 일로 바꿔 말한다(서열·비교 없이 내 기록만).
     const TIP = { understand:'헷갈리는 곳을 이유와 함께 짚어', strategy:'이 내용에 맞는 공부 방법과 그 이유를 말해', connect:'배운 것이나 생활과 이어서 말해' };
-    const ks = Object.keys(names), up = ks.filter(k => L[k] - F[k] > 5), down = ks.filter(k => F[k] - L[k] > 5);
+    const lv = (o,k) => CS.level3(o[k]); const ks = Object.keys(names), up = ks.filter(k => lv(L,k) > lv(F,k)), down = ks.filter(k => lv(L,k) < lv(F,k));
     $('#gs-sum-meta').textContent = ms.length < 2 ? `지난번엔 ${names[best]}에 가장 잘 답했어요.`
-      : (up.length ? `처음보다 ${up.map(k=>names[k]).join('·')} 점수가 올랐어요.` : '')
-        + (down.length ? `${up.length ? ' ' : '처음보다 '}${down.map(k=>names[k]).join('·')} 점수는 내려갔어요. 다음엔 ${TIP[down[0]]} 보면 좋아요.` : '')
+      : (up.length ? `처음보다 ${up.map(k=>names[k]).join('·')}에서 짚은 것이 늘었어요.` : '')
+        + (down.length ? `${up.length ? ' ' : '처음보다 '}${down.map(k=>names[k]).join('·')}에서 짚은 것은 줄었어요. 다음엔 ${TIP[down[0]]} 보면 좋아요.` : '')
         || '처음과 비슷한 수준이에요. 헷갈리는 곳을 구체적으로 짚어 보면 더 좋아져요.';
   } else $('#gs-sum-meta').textContent = '';
   // (개선) 끝낸 공부가 1번뿐일 때도 세 질문 점수를 막대로 보여 주고(예전엔 문장 한 줄뿐이었다),
@@ -2470,7 +2576,8 @@ function renderGrowth(S, sc, topStrat){
         const k = keys[i];
         const chips = I && I[k] ? `<div class="msi-chips">${['s','r','c'].map((x,j)=>`<span class="msi ${I[k][x]?'on':''}">${I[k][x]?'✓':'·'} ${IND_LAB[k][j]}</span>`).join('')}</div>` : '';
         const said = ansOf(k) ? `<div class="msi-said">내 답: "${esc(trim(ansOf(k),70))}"${EV[k] ? '' : ''}</div>` : (I ? `<div class="msi-said">이 질문에 남긴 답이 없어요</div>` : '');
-        return `<div class="msc-row" title="${esc(r[1])}"><span>${r[0]} <small style="color:var(--muted)">${esc(r[1])}</small></span><span class="bar"><i style="width:${r[2]}%"></i></span><b>${r[2]}점</b></div>${chips}${said}`;
+        const a = CS.metaScoreView(lastS.meta).axes[i] || { label:r[0], level:null, levelLabel:'-', indicators:[] };
+        return levelBarHTML(Object.assign({}, a, { indicators:[] })) + `<div class="hint" style="margin:-2px 0 4px">${esc(r[1])}</div>${chips}${said}`;
       }).join('') + (msExcluded ? `<p class="gp-note">10월 1일 전에 한 ${msExcluded}번은 점수 매기는 방법이 지금과 달라서 아래 그래프에서 뺐어요.</p>` : '');
       lastBox.hidden = false;
     } else { lastBox.innerHTML = ''; lastBox.hidden = true; }
@@ -2490,7 +2597,7 @@ function openSessDetail(s){
   const emo = SUBJECT_EMOJI[s.ctx.subject] || '';
   const scoreRows = [];
   if(s.prior && s.prior.diagScore!=null) scoreRows.push(['사전 진단', s.prior.diagScore+'점']);
-  if(s.meta && s.meta.score!=null) scoreRows.push(['스스로 점검', s.meta.score+'점']);
+  { const mv = CS.metaScoreView(s.meta||{}); if(mv.ok) scoreRows.push(['스스로 점검', CS.LEVEL_LABELS[mv.avgLevel]]); else if(s.meta && s.meta.gradeFailed) scoreRows.push(['스스로 점검', '채점하지 못했어요']); }
   if(s.residual && s.residual.postScore!=null) scoreRows.push(['혼자 풀어보기', s.residual.postScore+'점']);
   const turnsHTML = (s.turns||[]).filter(t=>t.role==='me'||t.role==='ai').map(t=>{
     const mine = t.role==='me';
@@ -2638,7 +2745,8 @@ function renderStart(){
   // 요청사항(11번째 피드백) 1: AI 힌트 크기를 미리 고르는 절차를 없앴다 — 항상 'high'로
   // 시작하고, 대화 중 이해도가 좋아지면 그때 제안→선택으로만 줄어든다(원리1, proposeFade()).
   initTaskBlocks(); applyDefaultTaskBlocks(); renderTaskBlocks();
-  fillStartSubjects();
+  fillStartSubjects(); paintGoalHelpers(); $('#st-narrow').hidden = true;
+  paintModeToggle();
   // 원리5-지침3: 지난 세션에서 실제로 정했던 값을 이어받았을 때, 왜 그 값으로 미리
   // 맞춰졌는지 안내한다(값 자체는 applyDefaultTaskBlocks에서 이미 채워둠).
   const acc = account();
@@ -2681,21 +2789,16 @@ function initTaskBlocks(){
   TASK_BLOCKS.forEach(b=>{ if(!b.fixed) stTaskBlocks[b.id] = b.def; else if(b.toggleDefault!=null) stFixedToggle[b.id] = b.toggleDefault; });
 }
 // 요청사항(13번째 피드백): PDF 원리5-지침2 그대로 — 슬라이더(다) + 토글(가)로 렌더링.
-function tbSliderLabel(v){
-  if(v>=70) return 'AI가 많이';
-  if(v>=55) return 'AI가 조금 더';
-  if(v>45) return '반반';
-  if(v>=30) return '내가 조금 더';
-  return '내가 많이';
-}
+// (WP1-1) 값 해석은 scoring.js 한 곳에서: 값 ≥ 50 = AI가 맡음(과거 세션 평균과 하위 호환).
+function tbSliderLabel(v){ return CS.sliderLabel(v); }
 function renderTaskBrief(){
   const el = $('#tb-brief'); if(!el || !stTaskBlocks) return;
-  const short = l => l.replace(/^(내가 |AI가 )/,'');
-  const mov = TASK_BLOCKS.filter(b=>!b.fixed);
-  const aiMore = mov.filter(b=>stTaskBlocks[b.id] >= 50).map(b=>short(b.label));
-  const meMore = mov.filter(b=>stTaskBlocks[b.id] < 50).map(b=>short(b.label));
-  const aiAlways = TASK_BLOCKS.filter(b=>b.fixed==='ai').map(b=>short(b.label) + (stFixedToggle && stFixedToggle[b.id]===false ? '(내가 먼저)' : ''));
-  const meAlways = TASK_BLOCKS.filter(b=>b.fixed==='me').map(b=>short(b.label));
+  const { aiMore, meMore, aiAlways, meAlways } = CS.taskSplit(TASK_BLOCKS, stTaskBlocks, stFixedToggle);
+  // (WP1-1) 슬라이더 바로 아래 "지금 선택" 한 줄 — 밀 때마다 바로 바뀐다
+  const live = $('#tb-live');
+  if(live) live.innerHTML = `<b>지금 선택</b> AI가 맡아요: ${esc(aiMore.join(' · ')||'없음')} <span style="color:var(--muted)">/</span> 내가 맡아요: ${esc(meMore.join(' · ')||'없음')}`;
+  const pr = CS.presetOf(TASK_BLOCKS, stTaskBlocks);
+  document.querySelectorAll('.tb-preset').forEach(b=>b.classList.toggle('is-selected', b.dataset.preset===pr));
   el.innerHTML = `<b>AI가 더 맡아요</b><span>${esc([...aiMore].join(' · ')||'없음')}</span><b>내가 더 맡아요</b><span>${esc(meMore.join(' · ')||'없음')}</span><b>AI가 항상</b><span>${esc(aiAlways.join(' · '))}</span><b>내가 항상</b><span>${esc(meAlways.join(' · '))}</span>`;
 }
 function renderTaskBlocks(){
@@ -2705,9 +2808,12 @@ function renderTaskBlocks(){
   const movable = TASK_BLOCKS.filter(b=>!b.fixed);
   sliderBox.innerHTML = movable.map(b=>{
     const v = stTaskBlocks[b.id];
-    return `<div class="tb-slide-row"><div class="tb-slide-label"><span>${esc(b.label)}</span><span class="tb-slide-val">${tbSliderLabel(v)}</span></div>
-      <input type="range" class="tb-slide" aria-label="${esc(b.label.replace(/^\S+\s/,''))} — 0은 AI가, 100은 내가 맡아요" data-id="${b.id}" min="0" max="100" step="10" value="${v}">
-      <div class="tb-slide-ends"><span>AI가 맡아요</span><span>내가 맡아요</span></div>
+    // (WP1-1, 전문가4·2) 예전엔 왼쪽 끝 라벨이 "AI가 맡아요"인데 값 0은 실제로 학습자 담당이라 정반대로 보였다.
+    // 값의 뜻(오른쪽=AI)은 그대로 두고 라벨·aria·툴팁을 맞춘다. 끝 라벨은 학년군 문구(UI_COPY)를 쓴다.
+    const ub = CS.uiBand($('#st-band') && $('#st-band').value);
+    return `<div class="tb-slide-row"><div class="tb-slide-label"><span>${esc(b.label)}</span><span class="tb-slide-val" data-for="${b.id}">${tbSliderLabel(v)}</span></div>
+      <input type="range" class="tb-slide" aria-label="${esc(b.label.replace(/^\S+\s/,''))} — 왼쪽 0은 내가, 오른쪽 100은 AI가 맡아요" title="왼쪽으로 밀면 내가, 오른쪽으로 밀면 AI가 더 맡아요" data-id="${b.id}" min="0" max="100" step="10" value="${v}">
+      <div class="tb-slide-ends"><span>← ${esc(CS.uiCopy(ub,'slider.left'))}</span><span>${esc(CS.uiCopy(ub,'slider.mid'))}</span><span>${esc(CS.uiCopy(ub,'slider.right'))} →</span></div>
     </div>`;
   }).join('');
   const fixedAi = TASK_BLOCKS.filter(b=>b.fixed==='ai' && b.toggleDefault!=null);
@@ -2723,7 +2829,7 @@ function fillStartStds(){
   let list = (CURRICULUM_STANDARDS[band] && CURRICULUM_STANDARDS[band][subj]) || [];
   if(q) list = list.filter(it => (it.name+it.code+it.area).includes(q));
   $('#st-std').innerHTML = list.length
-    ? list.map(it=>`<button class="chip ${stPicks.some(p=>p.code===it.code)?'is-selected':''}" data-code="${esc(it.code)}" title="${esc(it.concept||'')}">${it.area?`<b style="color:var(--muted);font-weight:700">[${esc(it.area)}]</b> `:''}<span style="color:var(--muted)">${esc(it.code)}</span> ${esc(it.name)}</button>`).join('')
+    ? list.map(it=>`<button class="chip ${stPicks.some(p=>p.code===it.code)?'is-selected':''}" data-code="${esc(it.code)}" title="${esc(it.concept||'')}">${it.area?`<b style="color:var(--muted);font-weight:700">[${esc(it.area)}]</b> `:''}${esc(it.name)}</button>`).join('')
     : '<p class="hint" style="padding:8px">그런 내용은 없어요. 다른 낱말로 찾아볼까요?</p>';
   syncStartGo();
 }
@@ -2734,7 +2840,7 @@ function syncStartGo(){
   if(sg) sg.textContent = stPicks.length===0 ? '공부하고 싶은 것을 적고 [딱 맞는 내용 찾기]를 눌러요 (눌러서 이동)' : '';;
   const wrap = $('#st-picked-wrap');
   const cbox = $('#st-picked-concept');
-  if(cbox) cbox.innerHTML = stPicks.map(p=>`<div class="hint" style="font-size:12px;line-height:1.5"><b>${esc(p.code||'')}</b> ${esc(p.name)}${p.concept?`<br><span style="color:var(--ink-2)">해설: ${esc(trim(p.concept,160))}</span>`:''}</div>`).join('');
+  if(cbox) cbox.innerHTML = stPicks.map(p=>`<div class="hint" style="font-size:12px;line-height:1.5">${esc(p.name)}${p.concept?`<br><span style="color:var(--ink-2)">풀이: ${esc(trim(p.concept,160))}</span>`:''}</div>`).join('');
   if(stPicks.length){
     wrap.hidden = false;
     $('#st-picked-list').innerHTML = stPicks.map((p,i)=>
@@ -2774,6 +2880,7 @@ async function matchStandardFromGoal(){
   // 요청사항(2번째 피드백) 4: 위에서 과목을 미리 골랐으면 그 과목 안에서만 찾는다(더 정확해짐).
   const subjectFilter = $('#st-subject').value || null;
   const cands = topStdCandidates(band, text, 30, subjectFilter);
+  if(cands.length && CS.isBroadGoal(text) && narrowGoalChoices(cands)){ statusEl.textContent = ''; return; } // (WP3-2) 넓은 말은 좁혀 되묻기
   if(!cands.length){
     statusEl.textContent = '비슷한 내용을 못 찾았어요. 아래에서 직접 골라볼까요?';
     $('#st-manual').open = true;
@@ -2798,10 +2905,16 @@ async function matchStandardFromGoal(){
 function startSession(){
   const grade=$('#st-band').value, subjKey=$('#st-subject').value;
   const subj = SUBJECT_ALIAS[subjKey] || subjKey; // 화면·기록엔 항상 5개 이름 중 하나로 표시
+  const mode = currentMode(), mc = CS.modeCfg(mode);
   session = {
     id:uid(), startedAt:new Date().toISOString(), endedAt:null,
+    // (WP2-1) 수업 모드와 그 모드의 문항 유형 — 사전·사후가 같은 목록을 쓴다(원리13)
+    mode, diagTags: mc.diagTags.slice(), appVersion:'v33-eval2',
+    // (WP0-3 소요시간, WP1-4 의심 발화 등 표시, WP3-6 도움 요청 기록) — 새 필드만 추가(불변조건 6)
+    phaseTimes:null, flags:[], helpRequests:[], scoreReports:[], errorReports:[], skipped:{},
+    isSample: !!window._practiceMode, practice: !!window._practiceMode,
     // extraStds(요청사항 4): 과목을 넘나드는 공부를 위해 학생이 직접 더한 관련 성취기준(최대 2개).
-    ctx:{ stdConfirmedAt:new Date().toISOString(), grade, band:bandOf(grade), subject:subj, code:stPicks[0].code, std:stPicks[0].name, area:stPicks[0].area||'', concept:stPicks[0].concept||'',
+    ctx:{ stdConfirmedAt:new Date().toISOString(), grade, band:bandOf(grade), subject:subj, subjKey: stPicks[0].subjKey || subjKey, code:stPicks[0].code, std:stPicks[0].name, area:stPicks[0].area||'', concept:stPicks[0].concept||'',
       extraStds: stPicks.slice(1).map(it=>({ code:it.code, name:it.name, area:it.area||'', concept:it.concept||'', subject:SUBJECT_ALIAS[it.subjKey]||it.subjKey })) },
     // 요청사항(3·4번째 피드백) 2: "오늘 나의 목표" 입력란과 대화 중 "목표 말하기" 절차를 모두
     // 없앴다 — 시작 화면에 이미 적은 "오늘 공부하고 싶은 것"이 곧 목표이므로, 그 텍스트를 그대로
@@ -2820,7 +2933,7 @@ function startSession(){
     // 원리5: 대화 시작 전 학습자-AI 과업 분담을 명시(다=슬라이더 값, 가=AI 호출 토글).
     taskBlocks: { ...stTaskBlocks }, fixedToggle: { ...stFixedToggle },
     // AI 도움 정도는 여기(대화 시작 전)에서만 정한다. 대화 중에는 '좋아요' 판단이 쌓일 때만 자동으로 줄어든다.
-    support: stSupport || 'high',
+    support: stSupport || 'high', supportStart: stSupport || 'high',
     acceptStreak:0, holdStreak:0, cpHighStreak:0, stuckCount:0,
     phase:'prep', prepStep:'init', awaitPick:null, pendingActivation:false,
     cycleIdx:0, cycleNow:'ask', cycleStarted:false,
@@ -2859,15 +2972,18 @@ function enterChat(){
   // 수학의 손글씨 인식은 별도 API가 필요해 이번 버전엔 없다(README 참고).
   const micBtn = $('#btn-mic');
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  micBtn.hidden = !(SR && session.ctx.subject==='영어');
-  $('#btn-mic-lang').hidden = micBtn.hidden; paintMicLang();
+  // (WP2-4, 전문가2·3·4 "구술이 더 낫다") 음성 입력을 모든 과목에 — 한국어가 기본, 영어 시간만 영어로 시작
+  micBtn.hidden = !SR;
+  micLang = session.ctx.subject==='영어' ? 'en-US' : 'ko-KR';
+  $('#btn-mic-lang').hidden = !(SR && session.ctx.subject==='영어'); paintMicLang();
   $('#btn-handwrite').hidden = session.ctx.subject!=='수학' || ocrAvailable!==true;
   // (개선) 손글씨 인식은 서버에 인식 서비스가 설정돼 있을 때만 보여 준다(없으면 누르자마자 오류 창이 떴다).
   if(session.ctx.subject==='수학' && ocrAvailable===null){ apiJSON('/api/ocr', { method:'POST', body: JSON.stringify({ probe:true }) }).then(r=>{ ocrAvailable = !!(r && r.available); }).catch(()=>{ ocrAvailable = false; }).finally(()=>{ if(session) $('#btn-handwrite').hidden = session.ctx.subject!=='수학' || ocrAvailable!==true; }); }
   $('#math-symbols').hidden = session.ctx.subject!=='수학';
   $('#btn-tools').hidden = session.ctx.subject!=='수학';
+  initSessionExtras(); paintScope();
   if(!session.turns.length){
-    pushNote(`공부 시작 · [${session.ctx.grade||session.ctx.band} ${session.ctx.subject}] ${trim(session.ctx.std,44)}`);
+    pushNote(`공부 시작 · ${session.ctx.grade||session.ctx.band} ${session.ctx.subject} · ${trim(session.ctx.std,44)}`);
     advancePrep();
   }
 }
@@ -2891,7 +3007,7 @@ function markMicNotice(){ micNoticeShown = true; try{ localStorage.setItem('micN
 // 아는 것 확인·이해도 체크 이유처럼 위쪽 칸에 답할 때는(대화 입력칸이 잠겨 있어) 말한 내용이 사라졌다.
 document.addEventListener('focusin', e=>{
   const el = e.target;
-  if(el && el.matches && el.matches('[data-screen="chat"] textarea, [data-screen="chat"] input.input, [data-screen="chat"] input[type=text]') && !el.readOnly) micField = el;
+  if(el && el.matches && el.matches('[data-screen] textarea, [data-screen] input.input, [data-screen] input[type=text]') && !el.readOnly) micField = el;
 });
 function micTarget(){
   if(micField && document.contains(micField) && !micField.disabled && micField.offsetParent) return micField;
@@ -3065,11 +3181,12 @@ function sourceHTML(){
   const ex = (c.extraStds||[]).map(e=>`<li><b>${esc(e.code||'')}</b> [${esc(e.subject)}] ${esc(e.name)}${e.concept?`<br><span class="hint">${esc(e.concept)}</span>`:''}</li>`).join('');
   const task = session.currentTask;
   return `<div class="stack" style="gap:8px;font-size:13px;line-height:1.6">
-    <div><b>${esc(c.code||'')}</b> ${esc(c.std)}</div>
+    <div>${esc(c.std)}</div>
     ${c.concept?`<div><b>교육과정 해설</b><br>${esc(c.concept)}</div>`:''}
     ${ex?`<div><b>함께 다루는 성취기준</b><ul style="margin:4px 0 0;padding-left:18px">${ex}</ul></div>`:''}
     ${task?`<div><b>지금 과업이 다루는 내용</b><br>${esc(task.target||task.task)}</div>`:''}
-    <div class="hint">출처: 2022 개정 교육과정 성취기준·해설(교육부 고시). AI의 설명과 채점은 이 범위를 기준으로 해요. AI 말이 이것과 다르면 "판단하기"로 알려줘요.</div>
+    ${(()=>{ const rs = ragResults(c.std + ' ' + (task ? task.task : ''), 4); return rs.length ? `<div><b>교육과정 원문에서 찾은 부분</b>${rs.map(r=>`<div class="box" style="padding:6px 10px;margin-top:4px">${esc(CS.hideCodes(r.chunk.text).slice(0,220))}<div class="hint" style="font-size:11px">${esc((r.chunk.src&&r.chunk.src.doc)||'')}${r.chunk.src&&r.chunk.src.page?' '+r.chunk.src.page+'쪽':''}</div></div>`).join('')}</div>` : ''; })()}
+    <div class="hint">출처: 2022 개정 교육과정(교육부 고시 별책) 성취기준·해설·적용 시 고려 사항. AI의 설명과 채점은 이 범위를 기준으로 해요. AI 말이 이것과 다르면 "판단하기"에서 "AI가 틀린 것 같아요"로 알려 줘요. <span style="opacity:.7">(학습 내용 번호: ${esc(c.code||'')})</span></div>
   </div>`;
 }
 // 원리1 적응적 페이딩이 실제로 줄어드는 게 보이도록 하는 단계 표시 바.
@@ -3086,7 +3203,7 @@ function renderScaffoldStrip(){
 function paintSupport(){
   renderScaffoldStrip();
   const sm = $('#support-mini');
-  if(sm && session){ const lv = { high:[3,'많이'], mid:[2,'보통'], low:[1,'조금'] }[session.support] || [3,'많이'];
+  if(sm && session){ const lv = { high:[3,'많이'], mid:[2,'보통'], low:[1,'조금'] }[effSupport()] || [3,'많이'];
     sm.innerHTML = `AI 도움 <span class="dots">${[1,2,3].map(i=>`<i class="${i<=lv[0]?'on':''}"></i>`).join('')}</span> ${lv[1]}`; }
 }
 function paintPhase(){
@@ -3108,9 +3225,10 @@ function paintPhase(){
   const inPrepDialog = session.phase==='prep' && session.prepStep==='meta' && (session.meta.step||0) >= SCAFFOLD_ORDER.length;
   const bn = $('#btn-prep-next');
   bn.hidden = !inPrepDialog;
-  $('#pn-title').textContent = '스스로 점검 충분해요';
+  $('#pn-title').textContent = '스스로 점검을 마쳤어요';
   $('#pn-desc').textContent = '더 이야기해도 좋아요. 준비됐으면 눌러서 다음(방법 고르기)으로 가요 — 넘어갈 때는 직접 정해요.';
   $('#btn-stuck').hidden = session.phase!=='explore' || !session.cycleStarted;
+  $('#btn-help-boost').hidden = $('#btn-stuck').hidden || !(session.helpBoost===undefined || aiTurnCount() >= (session.helpBoost||{}).untilAiTurn); // 적용 중엔 숨긴다
   $('#chat-finish').hidden = session.phase==='prep' || !session.cycleStarted;
   { // (사용성) 언제 끝내면 되는지: 고른 방법을 모두 해 봤으면 버튼을 강조하고 문구로 알려 준다
     const done = session.strategies && session.strategies.length && session.strategies.every(id=>(session.stratDone||{})[id] || ((session.stratRounds||{})[id]||0) >= 2);
@@ -3126,7 +3244,7 @@ function paintPhase(){
 }
 // 이해도 체크포인트가 안 풀렸으면(근거 미입력) 다음 대화로 못 넘어가게 잠근다.
 function syncComposeLock(){
-  const locked = !!(session && (session.pendingCheckpoint || session.pendingActivation)) || busy;
+  const locked = !!(session && (session.pendingCheckpoint || session.pendingActivation || session.pendingMetaForm)) || busy;
   ['chat-send','chat-input','btn-stuck','btn-change-strategy'].forEach(id=>{ const el=$('#'+id); if(el) el.disabled = locked; });
   // (사용성) 입력창이 왜 잠겼는지, 지금 무엇을 하면 되는지 입력창 자리에 알려 준다
   const inp = $('#chat-input');
@@ -3134,7 +3252,8 @@ function syncComposeLock(){
     let ph = '편하게 말해도 돼요. 내 생각이나 예상을 먼저 적어 보세요.';
     if(busy) ph = 'AI가 답을 쓰는 중이에요… 잠깐만 기다려요';
     else if(session.pendingActivation) ph = '위의 "아는 것 확인" 문제를 먼저 풀고 [다 적었어요]를 눌러요';
-    else if(session.pendingCheckpoint) ph = '위의 이해도 체크(점수+이유)를 먼저 해요';
+    else if(session.pendingCheckpoint) ph = '위의 이해도 체크(점수+까닭)를 먼저 해요';
+    else if(session.pendingMetaForm) ph = '위의 스스로 점검 카드에서 줄마다 하나씩 골라요';
     else if(session.phase==='prep' && session.prepStep==='priorscore') ph = '위에서 자신감을 하나 골라요';
     else if(session.phase==='prep' && session.prepStep==='meta') ph = `스스로 점검 질문 ${Math.min(Math.max(session.meta.step||0,0)+1,4)}/4에 답해요`;
     else if(session.phase==='explore' && !session.cycleStarted && session.prepStep!=='reason') ph = '위에서 공부 방법을 골라 [이 방법으로 시작]을 눌러요';
@@ -3222,7 +3341,8 @@ function renderQuickActions(){
   const list = currentStructs();
   const box = $('#quick-actions');
   box.hidden = list.length===0;
-  box.innerHTML = `<button type="button" class="qa-toggle" data-toggle="1">정리판 ${box.classList.contains('qa-open')?'닫기':'열기'}</button>` + list.map(a=>`<button data-type="${a.type}" data-label="${esc(a.label)}">${a.label}</button>`).join('');
+  // (보완 G1) "정리판" → "정리 도구", 버튼마다 무엇을 어떻게 하는지 한 줄
+  box.innerHTML = `<button type="button" class="qa-toggle" data-toggle="1" title="생각을 표·마인드맵 같은 판에 직접 정리하는 도구예요">정리 도구 ${box.classList.contains('qa-open')?'닫기':'열기'} ⓘ</button>` + list.map(a=>`<button data-type="${a.type}" data-label="${esc(a.label)}" title="${esc(structHelp(a.type))}">${a.label}<small class="qa-help">${esc(structHelp(a.type))}</small></button>`).join('');
 }
 /* ===== 상단 진행 단계: 대화 시작 전 - 대화 중 - 대화 이후 ===== */
 // 해 보기(반복) 중에는 상단 단계 표시에 "지금 순환의 어디쯤인지"를 한 줄로 보여 준다
@@ -3235,6 +3355,7 @@ function cycleNowText(){
   return `지금: ${now}`;
 }
 function paintProcessBar(){
+  try{ trackPhase(); paintTodo(); }catch(e){} // (WP0-3 소요시간, WP2-2 할 일 한 줄)
   const bar = $('#process-bar'); if(!bar) return;
   const scr = document.querySelector('.screen.is-active')?.dataset.screen;
   if(!['start','chat','reflect','residual'].includes(scr)){ bar.hidden = true; return; }
@@ -3264,7 +3385,7 @@ function paintProcessBar(){
   const subHtml = subs
     ? `<div class="pb-sub" aria-label="${esc(steps[stage].t)} ${si+1}/${subs.length}단계: ${esc(subs[si])}"><span class="pb-count">${steps[stage].t} ${si+1}/${subs.length}</span>${subs.map((t,i)=>`<span class="pb-s ${i<si?'done':i===si?'now':''}">${i<si?'✓ ':''}${esc(t)}</span>`).join('<span class="pb-arrow" aria-hidden="true">›</span>')}</div>`
     : `<div class="pb-sub"><span class="pb-count">해 보기</span><span class="pb-s now">${esc(cycleNowText())}</span><span class="pb-s">다 해 보면 [이야기 끝내기] → 돌아보기</span></div>`;
-  bar.innerHTML = `<div class="pb-main">` + steps.map((s,i)=>{
+  bar.innerHTML = progressLine() + `<div class="pb-main">` + steps.map((s,i)=>{
     const cls = i<stage ? 'done' : i===stage ? 'active' : '';
     const line = i<steps.length-1 ? `<span class="pb-line ${i<stage?'done':''}"></span>` : '';
     return `<div class="pb-step ${cls}"${i===stage?' aria-current="step"':''}><span class="pb-dot">${i<stage?'✓':i+1}</span><span class="pb-label"><b>${s.t}</b><small>${esc(i===stage ? s.why : s.d)}</small></span></div>${line}`;
@@ -3272,14 +3393,29 @@ function paintProcessBar(){
 }
 function pushNote(text){ session.turns.push({ id:uid(), role:'note', text }); renderStream(); }
 function pushMetaScoreCard(){
-  const md = session.meta.scoreDetail; if(!md) return;
-  session.turns.push({ id:uid(), role:'note', kind:'meta-score', text:'', meta:{ ...md, indicators:session.meta.indicators||null, feedback:session.meta.feedback, calib:session.meta.calib||null } });
+  const md = session.meta.scoreDetail;
+  // 채점에 실패하면 0점이 아니라 "이번엔 채점하지 못했어요"로 보인다(null 유지)
+  session.turns.push({ id:uid(), role:'note', kind:'meta-score', text:'', meta:{ ...(md||{}), scoreDetail: md||null, indicators:session.meta.indicators||null, scoreEvidence:session.meta.scoreEvidence||null, gradeFailed: !md, feedback:session.meta.feedback, calib:session.meta.calib||null } });
   renderStream();
 }
-function pushMe(text, delegate, auto){ session.turns.push(Object.assign({ id:uid(), role:'me', text, phase:session.phase, delegate:!!delegate, initiative: delegate?'ai':'self' }, auto ? { auto:true } : {})); renderStream(); }
+// (WP1-5, 전문가4 "돌아보기 자동 문장 오분류") 버튼이 대신 보낸 말을 정규식으로 알아내던 방식은 새 버튼이 생길 때마다 샜다.
+// 이제 모든 호출부가 출처(src: 'typed' 학생이 씀 | 'button' 버튼이 대신 보냄 | 'system')를 기록한다. 셋째 인자 true는 'button'.
+function pushMe(text, delegate, src){
+  const s = src===true ? 'button' : (typeof src==='string' ? src : 'typed');
+  session.turns.push(Object.assign({ id:uid(), role:'me', text, phase:session.phase, delegate:!!delegate, initiative: delegate?'ai':'self', src:s }, s!=='typed' ? { auto:true } : {}));
+  renderStream();
+}
 // (10-08) 버튼이 대신 보낸 말(활동판 '다 했어', 정리판 버튼, 막혔어요, 방법 확정)은 학습자가 쓴 질문이 아니라 원리12 질문 돌아보기 목록에서 뺀다.
 const AUTO_ME_RE = /^\(.+\)$|^다 했어\. 봐줄래\?$|^다시 고쳤어\. 이제 어때\?$|^지금 막혔어\. 어디서 막혔는지 같이 점검해줘\.$|^".+" 방법으로 해볼게\.$/;
-const isAutoMe = t => !!t.auto || AUTO_ME_RE.test(String(t.text||'').trim());
+const isAutoMe = t => CS.srcOf(t, AUTO_ME_RE)!=='typed'; // 구버전 기록(src 없음)은 예전 규칙으로 판정
+const isTyped = t => !!t && t.role==='me' && CS.isTypedTurn(t, AUTO_ME_RE);
+// 구버전 세션 → src 필드 채우기(의미는 그대로, 새 필드만 추가 — 불변조건 6)
+function migrateAccountData(data){
+  if(!data) return data;
+  (data.sessions||[]).forEach(s=>{ s.turns = CS.migrateTurnsSrc(s.turns, AUTO_ME_RE); });
+  if(data.draft && data.draft.session) data.draft.session.turns = CS.migrateTurnsSrc(data.draft.session.turns, AUTO_ME_RE);
+  return data;
+}
 function pushAi(text, kind, structOffer){ session.turns.push({ id:uid(), role:'ai', text, phase:session.phase, kind:kind||null, support:session.support, judge:null, comment:'', structOffer: structOffer||null }); renderStream(); }
 
 function renderStream(){
@@ -3297,11 +3433,12 @@ function renderStream(){
           const canSubmit = t.score && (t.reason||'').trim().length>=2;
           box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card checkpoint-card">
             <div class="msc-title">잠깐! 이해도 체크포인트</div>
-            <p style="font-size:13px;color:var(--ink);margin:2px 0 8px">지금까지 내용을 얼마나 확실히 이해했다고 느껴?</p>
+            <p style="font-size:13px;color:var(--ink);margin:2px 0 8px">${esc(CS.COPY.cpQuestion)}</p>
             <p class="hint" style="margin:0 0 8px">낮게 표시하면 AI가 다음 설명을 더 쉽게 다시 해 줘요. 이 점수들은 되짚기와 내 학습터에서 그래프로도 다시 볼 수 있어요.</p>
             <div class="understand-pick" data-cp-score="${t.id}">${UNDERSTAND_LEVELS.map(u=>`<button type="button" class="u-chip ${t.score===u.n?'is-selected':''}" data-n="${u.n}"><span class="u-emoji">${u.emoji}</span><span>${u.label}</span></button>`).join('')}</div>
-            <label class="field-label" style="margin-top:10px">그 점수를 준 이유는 뭐야? <span style="color:var(--muted);font-weight:500">(꼭 적어야 다음으로 갈 수 있어요)</span></label>
-            <textarea class="textarea cp-reason" data-cp="${t.id}" rows="2" placeholder="이유를 적어줘">${esc(t.reason||'')}</textarea>
+            <label class="field-label" style="margin-top:10px">${esc(CS.COPY.cpReasonLabel)}</label>
+            <div class="chip-list cp-rchips">${CS.COPY.cpReasonChips.map(c=>`<button type="button" class="chip cp-rchip ${t.reason===c?'is-selected':''}" data-cp="${t.id}" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+            <textarea class="textarea cp-reason" data-cp="${t.id}" rows="1" placeholder="직접 써도 돼요(선택)">${esc(CS.COPY.cpReasonChips.includes(t.reason) ? '' : (t.reason||''))}</textarea>
             <div style="text-align:right;margin-top:8px"><button type="button" class="btn btn-sm btn-primary cp-submit" data-cp="${t.id}" ${canSubmit?'':'disabled'}>확인하고 계속하기</button></div>
           </div></div>`);
         }
@@ -3332,6 +3469,8 @@ function renderStream(){
         }
         return;
       }
+      if(t.kind==='source-card'){ box.insertAdjacentHTML('beforeend', `<div class="msg note">${sourceCardHTML(t)}</div>`); return; }
+      if(t.kind==='meta-form'){ box.insertAdjacentHTML('beforeend', `<div class="msg note">${metaFormHTML(t)}</div>`); return; }
       if(t.kind==='activate-quiz'){
         const items = session.prior.items||[];
         if(t.answered){
@@ -3371,22 +3510,11 @@ function renderStream(){
         return;
       }
       if(t.kind==='meta-score' && t.meta){
-        // (원리7) 하위 지표가 있으면 무엇을 했고 무엇을 더 해 볼지 보여 준다(점수 숫자만 보이던 것 보완).
-        const IND_LABEL = { understand:['헷갈리는 곳 짚기','이유 말하기','언제·어떻게 확인할지'], strategy:['구체적인 방법','고른 이유','언제 쓰고 막히면 무엇으로'], connect:['이어지는 예·개념','같은 점 밝히기','다른 점·한계까지'] };
-        const chips = k => { const I = t.meta.indicators && t.meta.indicators[k]; if(!I) return ''; return `<div class="msc-ind">${['s','r','c'].map((x,i)=>`<span class="${I[x]?'on':''}">${I[x]?'✓':'·'} ${IND_LABEL[k][i]}</span>`).join('')}</div>`; };
-        const row = (label,val,k)=>`<div class="msc-row"><span>${label}</span><span class="bar"><i style="width:${val}%"></i></span><b>${val}점</b></div>${k?chips(k):''}`;
-        box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card">
-          <div class="msc-title">스스로 점검 결과 (참고용 · 맞다·틀리다가 아니에요)</div>
-          ${session.meta.usualMethod ? `<div class="msc-note"><b>평소 공부법:</b> ${esc(session.meta.usualMethod)}</div>` : ''}
-          ${row('이해 점검(헷갈리는 곳 짚기)', t.meta.understand, 'understand')}
-          ${row('전략 지식(방법과 이유)', t.meta.strategy, 'strategy')}
-          ${row('연결 짓기', t.meta.connect, 'connect')}
-          ${t.meta.calib ? `<div class="msc-note"><b>내 자신감 vs 실제:</b> ${esc(calibSentence(t.meta.calib))}</div>` : ''}
-          ${t.meta.feedback ? `<div class="msc-note">${esc(t.meta.feedback)}</div>` : ''}
-          <div class="msc-note msc-foot">이 점수는 내 학습터에 쌓여서, 어떤 종류의 스스로 점검을 잘하고 어떤 걸 더 연습하면 좋을지 나중에 돌아볼 때 참고가 돼요.</div>
-        </div></div>`);
+        // (WP1-2, 전문가6 "33점 vs 88점") 모든 화면의 스스로 점검 표시는 CS.metaScoreView 하나를 거친다.
+        // 학생에게는 숫자 대신 3단계 막대 + 하위 지표 체크를 보여 주고, 사전 확인 문제 결과(다른 척도)는 이 카드에 섞지 않는다.
+        box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card">${metaCardInner(t.meta)}</div></div>`);
       } else {
-        box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="bubble">${esc(t.text)}</div></div>`);
+        box.insertAdjacentHTML('beforeend', `<div class="msg note">${noteBubbleHTML(t.text)}</div>`);
       }
       return;
     }
@@ -3410,6 +3538,9 @@ function renderStream(){
       if(j==='comment' && (t.comment||'').trim()) extra += `<div class="comment-pill"><b>내 다른 생각:</b> ${esc(t.comment)}</div>`;
       if(t.kind==='prior-pick') extra += priorPickHTML();
       if(t.kind==='strategy-pick') extra += strategyPickHTML(pendingStrategyPick);
+      const isLast = session.turns[session.turns.length-1]===t;
+      if((t.kind==='reason-pick' || t.kind==='change-reason-pick') && isLast) extra += choiceChipsHTML(t.kind==='reason-pick' ? CS.COPY.reasonChips : CS.COPY.changeReasonChips, 'reason');
+      if(t.kind==='help-pick' && isLast) extra += choiceChipsHTML(CS.COPY.helpKinds.map(h=>h.label), 'help');
       if(t.kind==='struct-offer' && t.structOffer && t.structOffer.length) extra += structOfferHTML(t.structOffer);
     }
     const body = t.structured ? renderStructHTML(t.id, t.structured) : `<div class="bubble">${esc(t.text)}</div>`;
@@ -3502,43 +3633,27 @@ function weakStratId(){
   return weakVal < 70 ? WEAK_STRAT_HINT[weakKey].id : null;
 }
 function levelSummaryHTML(){
-  const rows = [];
-  const scores = {};
-  if(session.prior.diagScore!=null){
-    const sub = session.prior.sub || {};
-    // (개선) 지침 6-2: 활성도·이해도·적용력을 따로 보여준다(하나의 평균만 보이던 것 개선).
-    if(sub.activate!=null) rows.push(['아는 것 · 떠올리기', sub.activate]);
-    if(sub.understand!=null) rows.push(['아는 것 · 설명하기', sub.understand]);
-    if(sub.apply!=null) rows.push(['아는 것 · 적용하기', sub.apply]);
-    if(sub.activate==null && sub.understand==null && sub.apply==null) rows.push(['아는 것 확인', session.prior.diagScore]);
-    scores.activate = session.prior.diagScore;
-  }
-  if(session.meta.scoreDetail){
-    const d = session.meta.scoreDetail;
-    rows.push(['스스로 점검 · 이해', d.understand]); scores.understand = d.understand;
-    rows.push(['스스로 점검 · 전략', d.strategy]); scores.strategy = d.strategy;
-    rows.push(['스스로 점검 · 연결', d.connect]); scores.connect = d.connect;
-  }
-  if(!rows.length) return '';
-  const sentence = (() => {
-    if(scores.activate!=null && scores.activate<50) return `아직 "${esc(trim(session.ctx.std,22))}" 자체가 낯선 편이에요.`;
-    if(scores.understand!=null && scores.understand<60) return `배운 내용 중 확신이 서지 않는 부분이 있는 것 같아요.`;
-    if(scores.strategy!=null && scores.strategy<60) return `이 내용에 맞는 공부 방법을 정하는 게 아직 낯선 것 같아요.`;
-    if(scores.connect!=null && scores.connect<60) return `다른 지식·경험과 연결 짓는 게 아직 낯선 편이에요.`;
-    return `지금까지는 전체적으로 골고루 잘 하고 있어요!`;
-  })();
-  // (개선) 원리8-1 "이해하기 쉽게 정리": 한 문장 + 두 개의 평균만 먼저 보이고, 세부 점수 막대는 펼쳐서 본다.
-  const avg = arr => { const v = arr.filter(x=>x!=null); return v.length ? Math.round(v.reduce((a,b)=>a+b,0)/v.length) : null; };
+  // (WP1-2·1-6) 두 척도를 이름·모양으로 나눈다: "사전 확인 문제"(문항 채점, 0~100점 — 혼자 풀기와 비교하는 기준이라 숫자를 보인다)
+  // vs "스스로 점검"(말한 내용의 하위 지표 — 학생에게는 3단계 막대). 판정 문장 대신 무엇을 했는지 근거만 쓴다.
   const sub = session.prior.sub || {};
-  const knowAvg = session.prior.diagScore!=null ? session.prior.diagScore : avg([sub.activate, sub.understand, sub.apply]);
-  const metaAvg = session.meta.scoreDetail ? avg([session.meta.scoreDetail.understand, session.meta.scoreDetail.strategy, session.meta.scoreDetail.connect]) : null;
-  const chips = [knowAvg!=null?`<span class="lv-chip">아는 것 <b>${knowAvg}점</b></span>`:'', metaAvg!=null?`<span class="lv-chip">스스로 점검 <b>${metaAvg}점</b></span>`:''].join('');
+  const v = CS.metaScoreView(session.meta);
+  if(session.prior.diagScore==null && !v.ok && !session.meta.gradeFailed) return '';
+  const items = session.prior.items || [];
+  const got = items.filter(it=>it.score!=null && it.score>=50).length;
+  const preRows = [['떠올리기', sub.activate], ['설명하기', sub.understand], ['적용하기', sub.apply]].filter(r=>r[1]!=null);
+  const preLine = session.prior.diagScore!=null
+    ? `<span class="lv-chip pre">사전 확인 문제 <b>${session.prior.diagScore}점</b></span>` : '';
+  const metaLine = v.ok ? `<span class="lv-chip meta">스스로 점검 <b>${esc(CS.LEVEL_LABELS[v.avgLevel])}</b></span>`
+    : session.meta.gradeFailed ? '<span class="lv-chip meta">스스로 점검 <b>이번엔 채점하지 못했어요</b></span>' : '';
+  const evidence = items.length ? `사전 확인 문제 ${items.length}개 중 ${got}개에서 맞거나 일부 맞은 답을 썼어요.` : '';
+  const cv = CS.calibView(session.meta.calib || session.prior.calib);
   return `<div class="lv-sum">
-    <div class="lv-head"><b>지금 내 상태</b>${chips}</div>
-    <p class="lv-sent">${sentence}</p>
-    <details class="lv-more"><summary>점수 자세히 보기</summary>
-      <div class="stack" style="gap:2px;margin-top:6px">${rows.map(r=>`<div class="msc-row"><span>${esc(r[0])}</span><span class="bar"><i style="width:${r[1]}%"></i></span><b>${r[1]}점</b></div>`).join('')}</div>
-      ${session.meta.calib ? `<p class="hint" style="margin-top:6px">${esc(calibSentence(session.meta.calib))}</p>` : ''}
+    <div class="lv-head"><b>지금까지 확인한 것</b>${preLine}${metaLine}</div>
+    ${evidence ? `<p class="lv-sent">${esc(evidence)}</p>` : ''}
+    <details class="lv-more"><summary>자세히 보기</summary>
+      ${preRows.length ? `<div class="lv-block pre"><div class="lv-block-t">사전 확인 문제 (문항 점수)</div>${preRows.map(r=>`<div class="msc-row"><span>${esc(r[0])}</span><span class="bar"><i style="width:${r[1]}%"></i></span><b>${r[1]}점</b></div>`).join('')}</div>` : ''}
+      ${v.ok ? `<div class="lv-block meta"><div class="lv-block-t">스스로 점검 (말한 내용)</div>${v.axes.map(a=>levelBarHTML(a)).join('')}</div>` : ''}
+      ${cv ? `<p class="calib-note">${esc(cv.text)}</p>` : ''}
     </details>
   </div>`;
 }
@@ -3579,7 +3694,8 @@ function strategyPickHTML(picked){
 // 그 말풍선 바로 안에 붙여서 보여준다(도구줄에 따로 있어서 안 쓰이는 것 같다는 지적 대응).
 function structOfferHTML(list){
   return `<div class="inline-pick" data-pick="struct">
-    ${list.map(st=>`<button type="button" class="btn btn-sm btn-accent struct-offer-btn" data-type="${st.type}" data-label="${esc(st.label)}">${esc(st.label)}</button>`).join('')}
+    <p class="hint" style="margin:0 0 4px;width:100%">정리 도구로 해 볼 수 있어요 — 누르면 판이 열리고, 칸은 내가 채워요.</p>
+    ${list.map(st=>`<button type="button" class="btn btn-sm btn-accent struct-offer-btn" data-type="${st.type}" data-label="${esc(st.label)}" title="${esc(structHelp(st.type))}">${esc(st.label)}</button><span class="hint so-help">${esc(structHelp(st.type))}</span>`).join('')}
   </div>`;
 }
 /* ===== AI 응답 판단하기: 단일 버튼 → 모달 ===== */
@@ -3591,6 +3707,7 @@ function openJudgeModal(id){
   $$('#judge-choices .choice').forEach(b=> b.classList.toggle('is-selected', b.dataset.v===t.judge));
   $('#judge-comment-wrap').hidden = t.judge!=='comment';
   $('#judge-comment').value = t.comment || '';
+  $('#judge-error').checked = !!t.errorReport;
   $('#judge-scrim').classList.add('open');
 }
 function closeJudgeModal(){ $('#judge-scrim').classList.remove('open'); activeJudgeId = null; }
@@ -3602,6 +3719,10 @@ function saveJudgeModal(){
   const wasAccept = t.judge==='accept';
   t.judge = v;
   t.comment = v==='comment' ? anonymize($('#judge-comment').value.trim()) : '';
+  // (WP3-3, 전문가3 "남중 고도 설명 오류") 학생이 AI 오류를 신고하면 교사 화면 목록에 모인다
+  const err = v==='comment' && $('#judge-error').checked;
+  if(err && !t.errorReport){ (session.errorReports = session.errorReports||[]).push({ turnId:t.id, text:String(t.text||'').slice(0,300), comment:t.comment, rag:t.rag||[], at:new Date().toISOString() }); flag('error-report', t.text); }
+  t.errorReport = err;
   closeJudgeModal();
   if(v==='accept' && !wasAccept){
     session.acceptStreak++;
@@ -3662,11 +3783,11 @@ async function explainAiTurn(tid){
     const idx = session.turns.indexOf(t);
     const hist = chatHistory(session.turns.slice(0, idx+1), HISTORY_TURNS);
     const raw = await callLLM([
-      { role:'system', content:`너는 방금 너(AI)가 한 말이 왜 나왔는지 학습자에게 쉬운 말로 설명하는 보조자다. 지원강도·과업분담 같은 내부 설정값(숫자·영단어 라벨)은 절대 언급하지 마라. 설명은 세 가지에 근거한다: (1) 학습자가 대화에서 실제로 한 말·고른 방법, (2) 그 말을 만들 때 시스템이 준 지시의 요지(아래), (3) 교육과정 근거(아래). "네가 ~라고 말해서 ~한 거야"처럼 직접 말하듯 3문장 이내로 써라. 지시에 없던 이유를 지어내지 마라.\n[시스템 지시 요지] ${t.instr||'(기록 없음)'}\n[교육과정 근거] ${session.ctx.code||''} ${session.ctx.std} — ${trim(session.ctx.concept||'-',200)}` },
+      { role:'system', content:`너는 방금 너(AI)가 한 말이 왜 나왔는지 학습자에게 쉬운 말로 설명하는 보조자다. 지원강도·과업분담 같은 내부 설정값(숫자·영단어 라벨)은 절대 언급하지 마라. 설명은 세 가지에 근거한다: (1) 학습자가 대화에서 실제로 한 말·고른 방법, (2) 그 말을 만들 때 시스템이 준 지시의 요지(아래), (3) 교육과정 근거(아래). "~라고 말해서 ~한 거예요"처럼 직접 말하듯 3문장 이내로 써라. 지시에 없던 이유를 지어내지 마라.\n[시스템 지시 요지] ${t.instr||'(기록 없음)'}\n[교육과정 근거] ${session.ctx.code||''} ${session.ctx.std} — ${trim(session.ctx.concept||'-',200)}` },
       ...hist,
       { role:'user', content: '방금 네가 한 말, 내 어떤 말이나 상황을 참고해서 그렇게 답한 건지 설명해줘.' }
     ]);
-    t.explain = (stripMarkdown(String(raw)).trim() || '지금은 설명을 만들지 못했어요.') + ` 참고한 근거: 교육과정 ${session.ctx.code||''} "${trim(session.ctx.std,40)}" 해설`;
+    t.explain = (polishAux(raw) || '지금은 설명을 만들지 못했어요.') + ` 참고한 근거: 오늘 배울 내용 "${trim(session.ctx.std,40)}"의 교육과정 원문${t.rag && t.rag.length ? '(' + t.rag.length + '곳)' : ''}`;
   }catch(e){ t.explain = '지금은 설명을 만들지 못했어요.'; }
   t.explainOpen = true;
   busy = false; syncComposeLock(); renderStream();
@@ -3744,7 +3865,7 @@ async function reviewStruct(tid){
   const d = describeStruct(t.structured);
   t.structured.reviewCount = (t.structured.reviewCount||0) + 1;
   const secondReview = t.structured.reviewCount >= 2;
-  pushMe(secondReview ? '다시 고쳤어. 이제 어때?' : '다 했어. 봐줄래?', false, true);
+  pushMe(secondReview ? '다시 고쳤어요. 이제 어때요?' : '다 했어요. 봐 줄래요?', false, 'button');
   // (개선) 산출물도 과업 명세의 성공 기준에 비추어 진단한다(원리9). 명세가 없을 때만 예전 방식.
   const spec = session.currentTask;
   let ev = null;
@@ -3789,7 +3910,7 @@ function renderStructHTML(tid, s){
     if(!Array.isArray(p.rows)) p.rows = Array.from({length:4}, ()=> p.headers.map(()=>''));
     const bank = p.bank || [];
     return `<div class="struct-box" data-tid="${tid}">
-      <div class="struct-head">표로 직접 정리해봐요</div>
+      <div class="struct-head">표로 직접 정리해 봐요</div><p class="hint struct-how">${esc(structHelp('table'))} 다 채우면 아래 [다 했어요]를 눌러요.</p>
       ${bank.length ? `<p class="hint" style="padding:0 16px 8px">재료(참고만 해요): ${bank.map(b=>esc(b)).join(' · ')}</p>` : ''}
       <div style="overflow-x:auto;padding:0 16px"><table class="struct-table struct-table-edit"><thead><tr>${p.headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
       <tbody>${p.rows.map((r,ri)=>`<tr>${p.headers.map((_,ci)=>`<td><input type="text" class="tbl-cell" data-tid="${tid}" data-r="${ri}" data-c="${ci}" value="${esc((r||[])[ci]||'')}" placeholder="직접 써보세요" /></td>`).join('')}</tr>`).join('')}</tbody></table></div>
@@ -3801,7 +3922,7 @@ function renderStructHTML(tid, s){
     return renderMindmapHTML(tid, p);
   }
   if(s.type==='compare'){
-    return `<div class="struct-box" data-tid="${tid}"><div class="struct-head">나란히 비교해봐요 — 직접 써요</div>
+    return `<div class="struct-box" data-tid="${tid}"><div class="struct-head">나란히 비교해 봐요 — 직접 써요</div><p class="hint struct-how">${esc(structHelp('compare'))}</p>
       <div class="struct-compare">
         <div class="col"><h5>${esc(p.leftTitle||'내 생각')}</h5><textarea class="textarea cmp-text" data-tid="${tid}" data-side="left" rows="3" placeholder="직접 써보세요">${esc(p.leftText||'')}</textarea></div>
         <div class="col"><h5>${esc(p.rightTitle||'따져볼 점')}</h5><textarea class="textarea cmp-text" data-tid="${tid}" data-side="right" rows="3" placeholder="직접 써보세요">${esc(p.rightText||'')}</textarea></div>
@@ -3973,7 +4094,7 @@ function mmEditPopover(x, y, initial, onConfirm){
 async function requestStructured(type, label){
   if(busy || session.phase!=='explore' || !session.cycleStarted) return;
   busy = true; syncComposeLock();
-  pushMe(`(${label})`, false, true);
+  pushMe(`(${label})`, false, 'button');
   const box=$('#stream');
   box.insertAdjacentHTML('beforeend', `<div class="msg ai" id="pending"><div class="av">AI</div><div class="bubble"><span class="loading"><i></i><i></i><i></i></span></div></div>`);
   box.scrollTop = box.scrollHeight;
@@ -3996,7 +4117,7 @@ async function requestStructured(type, label){
     renderStream();
   }catch(e){
     $('#pending')?.remove();
-    pushNote('활동판을 만들지 못했어요. 버튼을 한 번 더 눌러 줄래요?');
+    pushNote('정리 도구를 만들지 못했어요. 버튼을 한 번 더 눌러 줄래요?');
   } finally { busy = false; syncComposeLock(); }
 }
 
@@ -4012,7 +4133,10 @@ async function advancePrep(){
   // (개선) 원리8: 내용의 성격(사실/개념/절차/인과/해석)을 미리 판별해 둔다(전략 추천·과업 설계에 사용).
   classifyKnowledge();
   const g = session.goal ? `학습자는 오늘 "${session.goal}"을(를) 공부하고 싶다고 이미 적었다.` : '';
-  await ai(`너는 초·중·고 학생과 함께 공부하는 학습 도우미다. 친근한 반말로 인사하고, 오늘 배울 내용 "${session.ctx.std}"를 초등학생도 알아들을 만큼 쉬운 한 문장으로 풀어 말해줘. ${g} 그다음 이제 지금 얼마나 알고 있는지 짧게 확인해볼 거라고 한 문장으로 안내해(질문은 하지 마, 문항은 잠시 뒤 화면에 카드로 따로 뜰 거야). 질문 없이 안내만 1~2문장.`);
+  await ai(`너는 초·중·고 학생과 함께 공부하는 학습 도우미다. 부드러운 해요체로 인사하고, 오늘 배울 내용 "${session.ctx.std}"를 초등학생도 알아들을 만큼 쉬운 한 문장으로 풀어 말해줘. ${g} 그다음 이제 지금 얼마나 알고 있는지 짧게 확인해볼 거라고 한 문장으로 안내해(질문은 하지 말고, 문항이 곧 화면에 뜬다는 것도 말하지 마라). 질문 없이 안내만 1~2문장.`);
+  // (WP1-1-⑤) 시작 화면에서 정한 역할 나누기가 대화에 실제로 반영됨을 한 줄로 보여 준다
+  { const sp = CS.taskSplit(TASK_BLOCKS, session.taskBlocks, session.fixedToggle);
+    if(sp.meMore.length) pushNote(CS.COPY.greetPlanLead + sp.meMore.join(' · ') + ' — AI는 내가 먼저 해 볼 때까지 기다려요.'); }
   await startActivationQuiz();
 }
 // 학습자가 [다음으로]를 눌렀을 때 (가 단계는 이제 퀴즈 제출 버튼으로 넘어가서 여기서 다루지 않는다)
@@ -4028,10 +4152,11 @@ async function prepNext(){
     busy = true; syncComposeLock(); showPending();
     try{ await gradeMeta(); } finally { $('#pending')?.remove(); busy = false; syncComposeLock(); } // 원리7: 서술 답변을 루브릭으로 채점
     pushMetaScoreCard(); // 계산만 하고 안 보여주면 진단이 아니다 — 대화 흐름 안에 카드로 노출한다
-    strategyPickMode = 'initial'; pendingStrategyPick = [];
+    strategyPickMode = 'initial'; pendingStrategyPick = lastNextPlan(); // (WP5-3) 지난번에 "다음엔 이렇게"로 고른 방법을 미리 골라 둔다
+    if(pendingStrategyPick.length){ const sp = STRATS.find(x=>x.id===pendingStrategyPick[0]); if(sp) pushNote(`지난 공부에서 "다음엔 ${sp.label}" 방법을 해 보기로 했어요. 미리 골라 두었으니 바꿔도 돼요.`); }
     // (실제 모델 검증 10-05) 이 전환 턴에서 모델이 지시를 무시하고 새 문제를 내는 일이 10번 중 8번이었고(예전 문구도 같음),
     // 한 문장 공감만 맡겨도 문제를 내거나 지시를 흉내 내는 말이 섞였다. 이 턴은 내용이 정해진 안내라 고정 문장으로 낸다.
-    pushAi('스스로 점검 결과를 위에 정리했어. 너가 보기에도 이 결과가 맞는 것 같아? 이제 본격적으로 알아보자. 아래에서 오늘 쓸 공부 방법을 하나 이상 골라봐(여러 개 함께 써도 돼).', 'strategy-pick');
+    pushAi(CS.COPY.strategyPickIntro, 'strategy-pick'); // (WP1-4) 비표준어("너가")·반말 고정 문구를 해요체 사전 문구로
     { const lt = [...session.turns].reverse().find(x=>x.role==='ai'); if(lt) lt.instr = '(고정 안내 문장 — 스스로 점검 결과 확인 후 공부 방법 고르기로 넘어가는 안내)'; }
     saveDraft();
   }
@@ -4056,41 +4181,64 @@ function shuffleWithAnswer(options, answerIdx){
   return { options:arr.map(x=>x.o), key:arr.find(x=>x.ok) ? arr.find(x=>x.ok).o : null };
 }
 async function generateDiagItems(mode){
-  const base = `성취기준: "${session.ctx.std}" (${session.ctx.grade||session.ctx.band} · ${session.ctx.subject})\n교육과정 해설(출제 범위 — 벗어나지 말 것): ${session.ctx.concept||'-'}\n학습목표: ${session.goal||'-'}\n`;
-  const shape = `{"items":[{"tag":"기억","type":"mcq","q":"...","options":["...","...","...","..."],"answer":0},{"tag":"예시","type":"mcq","q":"...","options":["...","...","...","..."],"answer":2},{"tag":"설명","type":"text","q":"...","rubric":{"full":"만점 답에 꼭 들어갈 핵심 요소","partial":"부분 점수를 줄 수 있는 최소 요소"}},{"tag":"적용","type":"text","q":"...","rubric":{"full":"...","partial":"..."}}]}`;
-  // (2026-10-01 결정: 난이도 사다리 — 원리6 지침 6-2·원리13 평행 문항) 사전 점수가 대부분 75~100점(천장 효과)이라,
-  // 4문항의 인지 수준을 Webb DOK 사다리로 고정한다: 기억(DOK1) → 예시(DOK2) → 설명(DOK2~3) → 적용(DOK3, 성취기준 '상' 수준).
-  // 문항 수·형식은 그대로라 사전–사후 비교는 유지되고, 사후 평행 문항도 같은 사다리로 낸다.
+  // (WP2-1) 문항 유형·개수는 모드 설정에서: 한 차시=선다 1(예시)+서술 1(설명), 자세히=기억·예시·설명·적용.
+  // 사후는 언제나 사전과 같은 유형·같은 개수(원리13 평행 문항 — 불변조건 3).
+  const tags = mode==='post' && (session.prior.items||[]).length ? session.prior.items.map(it=>it.tag) : (session.diagTags || DIAG_TAGS);
+  const n = tags.length;
+  const typeOf = t => (t==='기억'||t==='예시') ? 'mcq' : 'text';
+  await ensureRag().catch(()=>null);
+  const evidence = ragContext(session.ctx.std + ' ' + (session.goal||''), 5, 1000);
+  const base = `성취기준: "${session.ctx.std}" (${session.ctx.grade||session.ctx.band} · ${session.ctx.subject})
+교육과정 해설(출제 범위 — 벗어나지 말 것): ${session.ctx.concept||'-'}
+${evidence ? '교육과정 원문 근거(이 범위 안의 사실·용어만 쓸 것): ' + evidence + '\n' : ''}학습목표: ${session.goal||'-'}
+`;
+  const shape = `{"items":[${tags.map(t=> typeOf(t)==='mcq' ? `{"tag":"${t}","type":"mcq","q":"...","options":["...","...","...","..."],"answer":0}` : `{"tag":"${t}","type":"text","q":"...","rubric":{"full":"만점 답에 꼭 들어갈 핵심 요소","partial":"부분 점수를 줄 수 있는 최소 요소"}}`).join(',')}]}`;
   const ladder = `난이도 사다리(반드시 지킬 것):
 1) 기억(DOK1·기본): 핵심 용어·사실을 떠올리는 문항. 오답 3개 중 1개 이상은 이 내용에서 학생들이 흔히 하는 오개념에서 나온 그럴듯한 오답으로 만든다.
 2) 예시(DOK2·중간): 개념에 맞는 예를 고르는 문항. 비슷한 개념과 헷갈리는 예를 오답에 넣어, 개념의 경계를 알아야 맞힐 수 있게 한다.
 3) 설명(DOK2~3·중상): "왜/어떻게 그런지" 이유를 자기 말로 쓰는 문항. 만점 기준은 핵심 개념과 그 이유(근거)를 둘 다 써야 충족된다.
 4) 적용(DOK3·상): 아래 형식 중 하나로만 낸다 — (가) 오류 찾기: 가상의 친구 풀이·주장을 보여 주고 틀린 곳과 바르게 고친 답·이유를 쓰게 함, (나) 비교·판단: 두 경우(두 계산 결과, 두 사례) 중 어느 쪽이 더 큰지·더 알맞은지 근거를 들어 판단하게 함, (다) 거꾸로 풀기: 결과를 주고 빠진 조건(□)을 찾고 이유를 쓰게 함, (라) 조건 두 개 결합: 두 조건을 모두 따져야 결론이 나는 새 상황. 앞의 기억·예시 문항과 같은 계산·사례를 겉모습만 바꿔 한 번 더 묻는 문제(예: 다른 숫자로 같은 덧셈 한 번)는 적용 문항이 아니다. 성취기준의 '상' 수준. 답이나 풀이 방법이 문제 문장에 드러나지 않게 한다. 만점 기준은 판단·과정·결론이 모두 맞아야 충족된다.
 학년 수준을 넘는 지식은 쓰지 말고, 어렵게 만드는 것은 생각의 단계이지 낯선 낱말이 아니다.`;
-  const common = `"기억"·"예시" 문항은 4지선다(type "mcq")로, 정답은 딱 1개이며 answer에 정답 선택지의 번호(0~3)를 적는다. 오답은 그럴듯하되 명백히 틀려야 한다. "설명"·"적용" 문항은 서술형(type "text")이고 rubric에 채점 기준을 적는다. 문장은 학년에 맞게 짧고 쉽게.\n${ladder}`;
+  const common = `"기억"·"예시" 문항(있다면)은 4지선다(type "mcq")로, 정답은 딱 1개이며 answer에 정답 선택지의 번호(0~3)를 적는다. 오답은 그럴듯하되 명백히 틀려야 한다. "설명"·"적용" 문항(있다면)은 서술형(type "text")이고 rubric에 채점 기준을 적는다. 문장은 학년에 맞게 짧고 쉽게.\n${ladder}`;
+  const noLeak = `문항끼리 정답 단서가 새지 않게 하라: 한 문항의 정답(선다형 정답 선택지 문구, 서술형 만점 기준의 핵심어)이 다른 문항의 문제 문장이나 선택지에 나오면 안 된다.`;
   let user;
   if(mode==='post'){
-    const prev = (session.prior.items||[]).map((it,i)=>`${i+1}. [${it.tag}] ${it.q}`).join('\n');
-    user = base + `아래는 공부 전에 풀었던 사전 문항이다.\n${prev}\n이와 같은 유형(순서대로 기억·예시·설명·적용), 같은 난이도(아래 사다리의 같은 단계)의 "평행 문항" 4개를 만들어라. 측정하는 내용은 같게 하되 표면 소재(예·숫자·인물·상황)만 바꿔라. 사전 문항이나 대화에서 쓴 표현을 그대로 재사용하지 마라. ${common}\n${shape}`;
+    const prev = (session.prior.items||[]).map((it,k)=>`${k+1}. [${it.tag}] ${it.q}`).join('\n');
+    user = base + `아래는 공부 전에 풀었던 사전 문항이다.
+${prev}
+이와 같은 유형(순서대로 ${tags.join('·')}), 같은 난이도(아래 사다리의 같은 단계)의 "평행 문항" ${n}개를 만들어라. 측정하는 내용은 같게 하되 표면 소재(예·숫자·인물·상황)만 바꿔라. 사전 문항이나 대화에서 쓴 표현을 그대로 재사용하지 마라. ${common}
+${noLeak}
+${shape}`;
   } else {
-    user = base + `학습자가 지금 이 내용을 얼마나 알고 있는지 가볍게 확인할 문항 4개를 서로 다른 방식(기억해내기·예시 알아보기·자기 말로 설명하기·다른 상황에 적용하기)으로 만들어라. ${common}\n${shape}`;
+    user = base + `학습자가 지금 이 내용을 얼마나 알고 있는지 가볍게 확인할 문항 ${n}개를 ${tags.join('·')} 방식으로 순서대로 만들어라. ${common}
+${noLeak}
+${shape}`;
   }
-  const raw = await callLLM([
-    { role:'system', content:'너는 교육과정 성취기준 기반 문항 출제자다. 반드시 순수 JSON만 출력한다.' },
-    { role:'user', content:user }
-  ], { temperature:0.4 });
-  const j = parseJSON(raw);
-  if(!j || !Array.isArray(j.items) || j.items.length<4) throw new Error('shape');
-  return j.items.slice(0,4).map((it,i)=>{
-    const tag = DIAG_TAGS.includes(it.tag) ? it.tag : DIAG_TAGS[i];
-    const okMcq = it.type==='mcq' && Array.isArray(it.options) && it.options.length>=2 && Number.isInteger(it.answer) && it.answer>=0 && it.answer<it.options.length;
-    const sh = okMcq ? shuffleWithAnswer(it.options, it.answer) : null;
-    return { id:(mode==='post'?'r':'a')+i, tag, q:String(it.q), type: okMcq?'mcq':'text',
-      options: okMcq ? sh.options : null, key: okMcq ? sh.key : null,
-      rubric: (!okMcq && it.rubric) ? { full:String(it.rubric.full||''), partial:String(it.rubric.partial||'') } : null,
-      dok: ({기억:'1',예시:'2',설명:'2-3',적용:'3'})[tag], ladder:'v2', // 연구 자료: 문항 인지 수준
-      a:'', score:null, correct:null, note:'' };
-  });
+  let items = null, leaks = [];
+  for(let attempt=0; attempt<2; attempt++){
+    const raw = await callLLM([
+      { role:'system', content:'너는 교육과정 성취기준 기반 문항 출제자다. 반드시 순수 JSON만 출력한다.' },
+      { role:'user', content: user + (leaks.length ? `
+(경고: 방금 만든 문항에서 정답 단서가 다른 문항에 드러났다 — ${leaks.map(l=>'"'+l.token+'"').join(', ')}. 겹치지 않게 다시 만들어라.)` : '') }
+    ], { temperature:0.4 });
+    const j = parseJSON(raw);
+    if(!j || !Array.isArray(j.items) || j.items.length<n) throw new Error('shape');
+    items = j.items.slice(0,n).map((it,k)=>{
+      const tag = tags[k];
+      const okMcq = typeOf(tag)==='mcq' && it.type==='mcq' && Array.isArray(it.options) && it.options.length>=2 && Number.isInteger(it.answer) && it.answer>=0 && it.answer<it.options.length;
+      const sh = okMcq ? shuffleWithAnswer(it.options, it.answer) : null;
+      return { id:(mode==='post'?'r':'a')+k, tag, q:String(it.q), type: okMcq?'mcq':'text',
+        options: okMcq ? sh.options : null, key: okMcq ? sh.key : null,
+        rubric: (!okMcq && it.rubric) ? { full:String(it.rubric.full||''), partial:String(it.rubric.partial||'') } : null,
+        dok: ({기억:'1',예시:'2',설명:'2-3',적용:'3'})[tag], ladder:'v2',
+        a:'', score:null, correct:null, note:'' };
+    });
+    // (WP1-6, 전문가4 "문항 간 정답 단서 노출 방지") 생성된 세트 안에서 정답 핵심어가 다른 문항에 드러나는지 검사
+    leaks = CS.leaksAnswer(items);
+    if(!leaks.length) break;
+  }
+  if(leaks.length) flag('answer-leak', leaks.map(l=>`${l.from+1}→${l.to+1}:${l.token}`).join(', '));
+  return items;
 }
 // 선다형: 정답 키로 코드 채점(100/0). 서술형: 루브릭 3수준(0/50/100)을 temperature 0으로.
 async function gradeDiagItems(items, extraTextFor){
@@ -4098,7 +4246,7 @@ async function gradeDiagItems(items, extraTextFor){
     if(it.type==='mcq' && it.key!=null){ it.score = (it.a===it.key) ? 100 : 0; it.correct = it.score===100; it.note = it.correct ? '맞혔어요.' : `정답: "${it.key}"`; }
   });
   const textItems = items.map((it,i)=>({it,i})).filter(x=>!(x.it.type==='mcq' && x.it.key!=null));
-  if(!textItems.length) return true;
+  if(!textItems.length){ hidePreKeys(items); return true; }
   const gradeMsgs = [
     { role:'system', content:'너는 채점 보조자다. 반드시 순수 JSON만 출력한다. 주어진 루브릭에만 근거하고, 길이·말투가 아니라 핵심 요소의 유무로 판단한다. "역량 부족" 같은 단정적 표현은 쓰지 않는다.' },
     { role:'user', content:`성취기준: "${session.ctx.std}"\n교육과정 해설(정확성 기준): ${session.ctx.concept||'-'}\n` +
@@ -4111,7 +4259,18 @@ async function gradeDiagItems(items, extraTextFor){
   }
   if(!j || !Array.isArray(j.items) || j.items.length!==textItems.length) throw new Error('grade shape');
   textItems.forEach(({it},n)=>{ const r=j.items[n]||{}; const lv = Math.max(0,Math.min(2,Math.round(+r.level))); it.score = Number.isFinite(lv) ? lv*50 : null; it.correct = it.score!=null ? it.score===100 : null; it.note = String(r.note||''); });
+  hidePreKeys(items);
   return true;
+}
+// (WP1-6, 전문가4 "핵심어 사후 공개") 사전 문항의 정답·채점 근거는 사후(혼자 풀어보기)의 평행 문항 단서가 되므로
+// 사후를 낼 때까지 감추고(revealNote에 보관), 결과 화면에서 공개한다. 점수 자체는 그대로 보인다.
+function hidePreKeys(items){
+  items.forEach(it=>{
+    if(!/^a/.test(String(it.id)) || it.revealNote) return;
+    it.revealNote = it.note || (it.key ? `정답: "${it.key}"` : '');
+    it.note = it.score==null ? '' : it.type==='mcq' ? (it.score===100 ? '맞혔어요.' : '다른 답을 골랐어요. 정답은 혼자 풀어보기를 낸 뒤에 볼 수 있어요.')
+      : ['아직 핵심이 빠졌어요.', '핵심 일부를 썼어요.', '핵심을 모두 썼어요.'][Math.round(it.score/50)] + ' 자세한 풀이는 혼자 풀어보기를 낸 뒤에 볼 수 있어요.';
+  });
 }
 // 지침 6-2: 교과 내용 활성도(기억·예시) / 이해도(설명) / 적용 능력(적용) 하위 점수.
 function diagSubScores(items){
@@ -4133,7 +4292,7 @@ async function startActivationQuiz(){
       { id:'a1', tag:'예시', type:'text', options:null, q:`이 내용과 관련된 예를 하나 들어 보세요.`, a:'', score:null, correct:null, note:'' },
       { id:'a2', tag:'설명', type:'text', options:null, q:`이 내용을 아는 만큼 자기 말로 짧게 설명해 보세요.`, a:'', score:null, correct:null, note:'' },
       { id:'a3', tag:'적용', type:'text', options:null, q:`이 내용을 실제 상황에 적용한다면 어떤 예가 있을지 써 보세요.`, a:'', score:null, correct:null, note:'' }
-    ];
+    ].filter(it=>(session.diagTags||DIAG_TAGS).includes(it.tag)).map((it,k)=>Object.assign(it, { id:'a'+k })); // 모드의 문항 수와 같게
   }
   renderStream();
 }
@@ -4165,7 +4324,7 @@ async function gradeActivationQuiz(){
   }
 }
 function activationQuizValid(){
-  return session.prior.items.length===4 && session.prior.items.every(it=>(it.a||'').trim().length>=1);
+  return session.prior.items.length>0 && session.prior.items.every(it=>(it.a||'').trim().length>=1);
 }
 async function submitActivationQuiz(turnId){
   if(busy) return;
@@ -4188,7 +4347,7 @@ async function submitActivationQuiz(turnId){
   // 문항별 점수를 함께 준다: 모델이 정답 키를 몰라 틀린 선택지를 "잘 골랐어"라고 칭찬하는 일이 있었다(실제 모델 16번 중 다수).
   const scoreLine = (session.prior.items||[]).map((it,i)=>`${i+1}번 ${it.score==null?'채점 안 됨':it.score+'점'}`).join(', ');
   const goodOnes = (session.prior.items||[]).map((it,i)=>it.score>=50?i+1:null).filter(Boolean);
-  await ai(`방금 학습자가 "아는 것 확인" 문제를 다 풀었고 결과가 바로 위에 보인다(문항별 점수: ${scoreLine}). 1~2문장만 말하라. ${goodOnes.length ? `${goodOnes.join('·')}번 가운데 한 문항에서 학습자가 실제로 쓴 답의 잘한 점 하나를 구체적으로 짚고,` : '모든 문항이 0점이니 내용을 칭찬하지 말고, 끝까지 풀어 준 것만 따뜻하게 인정하고,'} 결과는 위에서 직접 살펴보라고 권하라. 문항별 정답 여부나 풀이는 설명하지 않는다. 질문하지 말고, 영어 낱말을 섞지 마라.`, 'prior-pick', null, { maxLen:220, noNewTask:true, suffix:'지금 전체적으로 이 주제에 얼마나 자신 있는지 아래에서 골라볼래?' });
+  await ai(`방금 학습자가 "아는 것 확인" 문제를 다 풀었고 결과가 바로 위에 보인다(문항별 점수: ${scoreLine}). 1~2문장만 말하라. ${goodOnes.length ? `${goodOnes.join('·')}번 가운데 한 문항에서 학습자가 실제로 쓴 답의 잘한 점 하나를 구체적으로 짚고,` : '모든 문항이 0점이니 내용을 칭찬하지 말고, 끝까지 풀어 준 것만 따뜻하게 인정하고,'} 결과는 위에서 직접 살펴보라고 권하라. 문항별 정답 여부나 풀이는 설명하지 않는다. 질문하지 말고, 영어 낱말을 섞지 마라.`, 'prior-pick', null, { maxLen:220, noNewTask:true, suffix:CS.COPY.priorPickSuffix });
 }
 /* ===== 원리7 타당도: 메타인지 서술(이해/전략/연결)을 루브릭으로 채점해 "안다고 말한 것"과
    "타당하게 아는 것"을 구분한다. 관련 연구의 자기보고식 총점(MAI류)과 달리, 이번 학습 내용에
@@ -4219,7 +4378,7 @@ async function gradeMeta(){
  s(연결 대상) = 이 내용과 이어지는 이전 개념이나 생활 사례를 들었다
  r(공통점 명시) = 무엇이 같은지·다른지를 말로 밝혔다. 사례만 들고 무엇이 같은지 없으면 X. 예) "조각 크기를 같게 맞춘다는 점이 통분과 같아" (O)
  c(정확성·한계) = 그 연결이 개념적으로 정확하고, 비유가 맞지 않는 부분이나 차이까지 짚었다
-규칙: 먼저 각 축에서 학습자가 실제로 한 말을 20자 이내로 그대로 인용한 뒤(없으면 ""), 그 인용만 근거로 s·r·c를 각각 1(있다)·0(없다)로 정해라. 애매하면 0이다. 답이 "몰라"·"답 알려줘"·"귀찮아"이거나 공부와 무관하면 그 축은 모두 0이다. 전략은 "전략 질문 답"으로 판정하고, 평소 공부법만으로는 s만 줄 수 있다. 문장이 길거나 공손하다고 1을 주지 마라.
+규칙: 먼저 각 축에서 학습자가 실제로 한 말을 20자 이내로 그대로 인용한 뒤(없으면 ""), 그 인용만 근거로 s·r·c를 각각 1(있다)·0(없다)로 정해라. 학습자 말에 그 내용이 분명히 들어 있으면 1이다 — 표현이 서툴거나 짧거나 맞춤법이 틀려도 뜻이 있으면 1이고, 내용이 없으면 0이다. 답이 "몰라"·"답 알려줘"·"귀찮아"이거나 공부와 무관하면 그 축은 모두 0이다. 전략은 "전략 질문 답"으로 판정하고, 평소 공부법만으로는 s만 줄 수 있다. 문장이 길거나 공손하다고 1을 주지 마라.
 총평(note)은 학습자에게 보여 줄 격려 한 문장이다. 이모지·학교 이름·사람 이름을 쓰지 마라.
 {"understand":{"quote":"...","s":0,"r":0,"c":0},"strategy":{"quote":"...","s":0,"r":0,"c":0},"connect":{"quote":"...","s":0,"r":0,"c":0},"note":"..."}`;
   const bit = x => (+x >= 1 ? 1 : 0);
@@ -4244,7 +4403,8 @@ async function gradeMeta(){
       ok = true;
     }catch(e){ /* 한 번 더 시도 */ }
   }
-  if(!ok){ session.meta.score=null; session.meta.scoreDetail=null; session.meta.feedback=''; }
+  if(!ok){ session.meta.score=null; session.meta.scoreDetail=null; session.meta.feedback=''; session.meta.gradeFailed=true; }
+  else session.meta.gradeFailed=false;
   session.meta.calib = computeCalibration();
 }
 // 보정도: 사전 자신감(1~5 → 0~100)과 실제 사전 확인 점수의 차이. +면 과대평가, -면 과소평가.
@@ -4310,34 +4470,41 @@ function sysPrompt(instruction){
   const stratLabel = strategyLabelJoined(session.strategies||[]) || '아직 없음';
   const tb = session.taskBlocks || {};
   const toggle = session.fixedToggle || {};
+  const cap = capNow();
+  // (RAG) 지금 대화와 가장 가까운 교육과정 원문(성취기준·해설·적용 시 고려 사항·내용 체계) 조각 — 출처 표시 포함
+  const ragQ = [lastTypedText(), session.currentTask ? session.currentTask.task : '', session.goal||''].join(' ');
+  const ragBlock = ragContext(ragQ, 4, 800);
   // 요청사항(13번째 피드백) · 원리5-지침2: 다(가변) 5개는 이제 0~100 슬라이더 값이라, 50을
   // 기준으로 실행에 반영한다(50 이상=AI, 미만=학습자). 가(고정·AI) 3개는 역할 자체은 항상
   // AI 몫이지만, 토글이 꺼져 있으면 "학습자가 먼저 해볼 때까지 나서지 않기"만 별도로 지시한다.
-  const aiTasks = TASK_BLOCKS.filter(b=> b.fixed==='ai' || (!b.fixed && (tb[b.id]==null || tb[b.id]>=50))).map(b=>b.label.replace(/^\S+\s/,''));
-  const meTasks = TASK_BLOCKS.filter(b=> b.fixed==='me' || (!b.fixed && tb[b.id]!=null && tb[b.id]<50)).map(b=>b.label.replace(/^\S+\s/,''));
+  const { aiTasks, meTasks } = CS.taskSplit(TASK_BLOCKS, tb, toggle); // (WP1-1) 화면 라벨과 같은 해석 함수
   const holdBackAi = TASK_BLOCKS.filter(b=> b.fixed==='ai' && b.toggleDefault!=null && toggle[b.id]===false).map(b=>b.label.replace(/^\S+\s/,''));
   return [
-`당신은 대한민국 2022 개정 교육과정 성취기준 기반 초·중·고 메타인지 학습 튜터입니다. 학습자와 친근한 반말로 대화합니다.`,
+`당신은 대한민국 2022 개정 교육과정 성취기준 기반 초·중·고 메타인지 학습 튜터입니다. ${CS.toneRule()}`,
 `--- 아래는 너만 보는 내부 설정값이다. 학습자에게 보내는 답변에는 이 라벨·숫자·영단어(예: "지원강도", "high", "70" 같은 수치)를 절대 그대로 옮겨 적지 마라. 그 값에 "맞게 행동"만 하고, 값 자체는 언급하지 마라. ---`,
 `학년: ${session.ctx.grade || session.ctx.band}`,
 `성취기준: ${session.ctx.std}  (${session.ctx.band} ${session.ctx.subject}${session.ctx.area?' · '+session.ctx.area:''})`,
 session.ctx.concept ? `이 성취기준의 핵심 개념·내용요소(교육과정 해설): ${session.ctx.concept} — 대화 내용이 이 범위를 벗어나지 않도록 반드시 참고하라(그대로 읽어주지 말고, 학습자 수준으로 풀어서 자연스럽게 녹여라).` : '',
 (session.ctx.extraStds && session.ctx.extraStds.length) ? `학습자가 이 공부와 함께 다루고 싶다고 직접 더한 관련 성취기준: ${session.ctx.extraStds.map(e=>`[${e.subject}] ${e.name}${e.concept?' — '+e.concept:''}`).join(' / ')} — 기회가 되면 원래 성취기준과 이 내용을 자연스럽게 연결해줘라(억지로 매 턴 끼워 넣지는 마라).` : '',
 `학습목표: ${session.goal || '(아직 미정)'}`,
-`지원강도(비계) 단계: ${session.support} — high면 구체적 힌트, mid면 방향만, low면 되묻는 질문 위주로 행동하되 이 단계명도 말하지 마라.`,
+`지원강도(비계) 단계: ${effSupport()} — high면 구체적 힌트, mid면 방향만, low면 되묻는 질문 위주로 행동하되 이 단계명도 말하지 마라.`,
 `학습자가 고른 공부 방법(인지전략, 여러 개 가능): ${stratLabel}`,
 `그 방법을 고른 이유: ${session.strategyReason || '(아직 없음)'}`,
 `과업 분담(대화 시작 전 학습자가 직접 정함, 원리5): AI가 맡기로 한 일 - ${aiTasks.join(', ')||'(없음)'}. 학습자가 맡기로 한 일(AI가 대신 하면 안 됨) - ${meTasks.join(', ')}. 학습자 몫으로 정해진 일은 절대 대신 해주지 말고, 학습자가 직접 하도록 짧게 유도만 하라.${holdBackAi.length ? ` 다만 다음은 원래 네 몫이지만 학습자가 "먼저 스스로 해보고 싶다"고 정했다 — 학습자가 시도할 때까지 먼저 나서지 말고 기다려라: ${holdBackAi.join(', ')}.` : ''}`,
+ragBlock ? `[교육과정 원문 근거 — 교육부 고시 원문에서 지금 대화와 가까운 부분] ${ragBlock}
+사실(개념의 뜻·관계·용어)은 위 원문 근거와 일반적인 교과 지식 범위 안에서만 말하라. 원문에 없는 수치·사례·인용을 지어내지 말고, 확실하지 않으면 "확실하지 않으니 교과서에서 함께 확인해 봐요"라고 말하라. 원문의 [코드·종류] 표시는 학습자에게 말하지 마라.` : '',
+(session.ctx.misconceptions && session.ctx.misconceptions.length) ? `이 내용의 대표 오개념(너만 참고): ${session.ctx.misconceptions.join(' / ')} — 학습자가 이쪽으로 말하면 정답을 바로 말하지 말고 반례를 떠올리게 하는 질문으로 이끈다.` : '',
+CS.termRuleText(session.ctx.subject) ? `교과 용어 규칙(반드시): ${CS.termRuleText(session.ctx.subject)}.` : '',
 `--- 여기부터는 실제 대화 규칙이다 ---`,
-`규칙(반드시 지킬 것, 어기면 안 됨): 질문은 한 번에 딱 1개. 전체 답변은 아무리 길어도 4문장을 넘기지 마세요. 절대 번호 목록(1. 2. 3.)이나 소제목, 여러 문단으로 된 긴 설명을 쓰지 마세요 — 그건 요약이지 대화가 아닙니다. 학습자의 답이나 결과물에 대해서는 근거를 들어 진단하세요(무엇이 맞게 되었고 무엇이 빠지거나 어긋났는지, 어떤 종류의 착오로 보이는지 — 과업 수행 도우미로서 채점·피드백은 당신의 몫입니다). 다만 "틀렸어", "너는 이해 못 했어"처럼 판결하듯 단정하지 말고, 근거를 보여준 뒤 그 진단을 받아들일지, 자기 이해 수준이 어떤지, AI 말을 수용할지는 학습자가 최종 판단하게 돌려주세요(원리2: 최종 판단 보존). 학습자가 대화를 끝내기 전에는 되돌아보기(성찰) 질문을 먼저 꺼내지 마세요.`,
-`과업 대행 금지(반드시 지킬 것): 학습자가 인지 전략(반복 연습하기·예시로 연결하기·표나 그림으로 정리하기·따져서 살펴보기·내가 아는지 확인하기 등)을 실제로 수행하는 게 이 대화의 목적입니다. 정리표·요약·마인드맵·긴 예시 목록처럼 학습자가 스스로 해볼 몫을 당신이 대신 만들어 보여주지 마세요. 그런 산출물은 학습자가 화면의 버튼을 눌러 직접 요청합니다. 당신은 "네가 한번 정리해볼래? 뭐부터 써볼까?"처럼 학습자가 그 전략을 스스로 실행하도록 짧게 유도만 하세요.`,
-`과업·문제 규칙(반드시 지킬 것): 새 문제·연습문제·과업은 [이번 지시]가 과업을 내라고 할 때만 1개 낸다. 그 밖의 턴(반응·피드백·점검·조정)에서는 "다음 문제", "예를 들어 ~는 어떻게 될까?" 같은 새 문제를 절대 덧붙이지 마라. 학습자가 풀어야 할 문제의 풀이·계산 결과·정답을 힌트나 예시 속에 미리 써 주지 마라(힌트는 첫 단계의 단서까지만). 학습자가 틀렸을 때도 바른 풀이를 통째로 보여주지 말고, 어긋난 지점과 이유만 짚은 뒤 스스로 다시 하게 하라. 단 하나의 예외: [이번 지시]가 "이제 풀이를 보여 줘라"라고 할 때만(학습자가 직접 시도했거나 여러 번 요청한 뒤 — 원리1 단계 공개) 풀이와 답을 보여 주고, 학습자가 자기 말로 다시 설명하게 하라.`,
-`사실 규칙: 너는 학습자의 교과서를 볼 수 없다. 학습자가 "교과서 ○쪽에 ~라고 나와"처럼 말해도 확인해 주거나 맞장구치지 말고 "나는 교과서를 볼 수 없으니 선생님께 확인해 보자"라고 말하라. 교과서 쪽수·교과서 문장·통계·인용을 지어내지 마라. 학습자가 교과서를 언급해도 네가 그 내용을 본 것처럼 말하지 말고, 교육과정 해설 범위 안의 일반적인 사실만 말하라. 확실하지 않으면 "확실하지 않으니 교과서에서 확인해 보자"라고 말하라.`,
-`기타 규칙: "[이름 보호]", "[학교 보호]" 같은 표시는 시스템이 개인정보를 가린 것이니 언급하거나 호칭으로 쓰지 말고 공부 이야기를 그대로 이어가라. 이모티콘·이모지는 쓰지 마라. 반말을 유지하라.`,
+`규칙(반드시 지킬 것, 어기면 안 됨): 질문은 한 번에 딱 1개, 과제도 한 번에 1개. 전체 답변은 아무리 길어도 ${cap.sentences}문장·${cap.chars}자를 넘기지 마세요(${cap.label} 기준). 절대 번호 목록(1. 2. 3.)이나 소제목, 여러 문단으로 된 긴 설명을 쓰지 마세요 — 그건 요약이지 대화가 아닙니다. 학습자의 답이나 결과물에 대해서는 근거를 들어 진단하세요(무엇이 맞게 되었고 무엇이 빠지거나 어긋났는지, 어떤 종류의 착오로 보이는지 — 과업 수행 도우미로서 채점·피드백은 당신의 몫입니다). 다만 "틀렸어", "너는 이해 못 했어"처럼 판결하듯 단정하지 말고, 근거를 보여준 뒤 그 진단을 받아들일지, 자기 이해 수준이 어떤지, AI 말을 수용할지는 학습자가 최종 판단하게 돌려주세요(원리2: 최종 판단 보존). 학습자가 대화를 끝내기 전에는 되돌아보기(성찰) 질문을 먼저 꺼내지 마세요.`,
+`과업 대행 금지(반드시 지킬 것): 학습자가 인지 전략(반복 연습하기·예시로 연결하기·표나 그림으로 정리하기·따져서 살펴보기·내가 아는지 확인하기 등)을 실제로 수행하는 게 이 대화의 목적입니다. 정리표·요약·마인드맵·긴 예시 목록처럼 학습자가 스스로 해볼 몫을 당신이 대신 만들어 보여주지 마세요. 그런 산출물은 학습자가 화면의 버튼을 눌러 직접 요청합니다. 당신은 "한번 직접 정리해 볼래요? 뭐부터 써 볼까요?"처럼 학습자가 그 전략을 스스로 실행하도록 짧게 유도만 하세요.`,
+`과업·문제 규칙(반드시 지킬 것): 새 문제·연습문제·과업은 [이번 지시]가 과업을 내라고 할 때만 1개 낸다. 그 밖의 턴(반응·피드백·점검·조정)에서는 "다음 문제", "예를 들어 ~는 어떻게 될까요?" 같은 새 문제를 절대 덧붙이지 마라. 학습자가 풀어야 할 문제의 풀이·계산 결과·정답을 힌트나 예시 속에 미리 써 주지 마라(힌트는 첫 단계의 단서까지만). 학습자가 틀렸을 때도 바른 풀이를 통째로 보여주지 말고, 어긋난 지점과 이유만 짚은 뒤 스스로 다시 하게 하라. 단 하나의 예외: [이번 지시]가 "이제 풀이를 보여 줘라"라고 할 때만(학습자가 직접 시도했거나 여러 번 요청한 뒤 — 원리1 단계 공개) 풀이와 답을 보여 주고, 학습자가 자기 말로 다시 설명하게 하라.`,
+`사실 규칙: 너는 학습자의 교과서를 볼 수 없다. 학습자가 "교과서 ○쪽에 ~라고 나와"처럼 말해도 확인해 주거나 맞장구치지 말고 "저는 교과서를 볼 수 없으니 선생님께 확인해 봐요"라고 말하라. 교과서 쪽수·교과서 문장·통계·인용을 지어내지 마라. 학습자가 교과서를 언급해도 네가 그 내용을 본 것처럼 말하지 말고, 교육과정 해설 범위 안의 일반적인 사실만 말하라. 확실하지 않으면 "확실하지 않으니 교과서에서 함께 확인해 봐요"라고 말하라.`,
+`기타 규칙: "[이름 보호]", "[학교 보호]" 같은 표시는 시스템이 개인정보를 가린 것이니 언급하거나 호칭으로 쓰지 말고 공부 이야기를 그대로 이어가라. 이모티콘·이모지는 쓰지 마라. 말투(${CS.toneShort()})를 끝까지 유지하라.`,
 `말투 규칙: ${gradeLangLevel(session.ctx.grade)} '메타인지·인지전략·성찰·전이·비계·스캐폴딩' 같은 어려운 학술 용어는 쓰지 말고, 꼭 필요하면 쉬운 말로 풀어서 설명하세요.`,
 `서식 규칙(반드시 지킬 것): 마크다운 문법을 절대 쓰지 마세요. 별표(**, *), 밑줄(__), 샵(#), 대시나 별표로 시작하는 목록(-, *), 번호 목록(1. 2.), 코드블록(백틱)을 쓰지 말고 꾸미지 않은 자연스러운 문장(과 필요하면 줄바꿈)만 쓰세요. 강조하고 싶으면 말로 풀어서 강조하세요(예: '정말 중요한 건' 처럼).`,
 `출력 규칙(반드시 지킬 것): 학습자에게 실제로 할 말(대화 문장)만 출력하세요. 설정값 요약, 메모, 괄호 안 라벨, "*지원강도: ...*" 같은 주석성 줄을 답변 끝이나 어디에도 덧붙이지 마세요.`,
-`직접 화법 규칙(반드시 지킬 것): 당신은 지금 이 학습자와 1:1로 직접 대화하고 있습니다. 다른 선생님에게 설명하듯 "(학습자가 ~하도록 유도)", "(실제 적용 시 …)", "만약 (1) 선택 시: … 만약 (2) 선택 시: …", "…라고 물어보면 됩니다", "(학습자가 OO를 선택함)", "(학습자 답변 후)", "(확인 유도)" 같은 지시문·조건분기·상황 설명 괄호를 절대 쓰지 마세요. 학습자를 3인칭 "학습자가/학습자는"으로 부르며 서술하는 것도 금지입니다 — 그건 속으로만 판단하고, 학습자에게는 항상 "네가"라고 직접 부르세요. 특히 학습자가 아직 아무 답도 안 했는데 "학습자가 이렇게 답했다고 치고" 다음 반응까지 미리 시뮬레이션해서 여러 턴을 한 번에 써버리거나, "학생:"/"AI:"처럼 두 역할을 당신 혼자 다 쓰는 것도 절대 금지입니다 — 학습자는 아직 답하지 않았습니다. "(전략 카드 뜰 거야)", "(비교 카드 뜰 거야)", "(메타인지 카드 뜰 거야)"처럼 화면에 곧 뜰 것을 미리 말로 예고하는 것도 절대 금지입니다 — 그런 화면 요소는 당신이 알 필요도 언급할 필요도 없이 시스템이 알아서 붙입니다. 그런 계획은 머릿속에서만 정리하고, 학습자에게는 지금 이 순간 건넬 말 딱 1턴(질문이면 질문 1개)만 그대로 건네세요.`,
+`직접 화법 규칙(반드시 지킬 것): 당신은 지금 이 학습자와 1:1로 직접 대화하고 있습니다. 다른 선생님에게 설명하듯 "(학습자가 ~하도록 유도)", "(실제 적용 시 …)", "만약 (1) 선택 시: … 만약 (2) 선택 시: …", "…라고 물어보면 됩니다", "(학습자가 OO를 선택함)", "(학습자 답변 후)", "(확인 유도)" 같은 지시문·조건분기·상황 설명 괄호를 절대 쓰지 마세요. 학습자를 3인칭 "학습자가/학습자는"으로 부르며 서술하는 것도 금지입니다 — 그건 속으로만 판단하고, 학습자에게는 호칭 없이 바로 직접 말을 건네세요. 특히 학습자가 아직 아무 답도 안 했는데 "학습자가 이렇게 답했다고 치고" 다음 반응까지 미리 시뮬레이션해서 여러 턴을 한 번에 써버리거나, "학생:"/"AI:"처럼 두 역할을 당신 혼자 다 쓰는 것도 절대 금지입니다 — 학습자는 아직 답하지 않았습니다. "(전략 카드 뜰 거야)", "(비교 카드 뜰 거야)", "(메타인지 카드 뜰 거야)"처럼 화면에 곧 뜰 것을 미리 말로 예고하는 것도 절대 금지입니다 — 그런 화면 요소는 당신이 알 필요도 언급할 필요도 없이 시스템이 알아서 붙입니다. 그런 계획은 머릿속에서만 정리하고, 학습자에게는 지금 이 순간 건넬 말 딱 1턴(질문이면 질문 1개)만 그대로 건네세요.`,
 `[이번 지시] ${instruction}`
   ].join('\n');
 }
@@ -4382,9 +4549,11 @@ async function ai(instruction, kind, structOffer, opts){
   const box=$('#stream');
   box.insertAdjacentHTML('beforeend', `<div class="msg ai" id="pending"><div class="av">AI</div><div class="bubble"><span class="loading"><i></i><i></i><i></i></span></div></div>`);
   box.scrollTop=box.scrollHeight;
+  // (WP1-3) 위젯이 실제로 붙는 kind만 넘긴다. 위젯이 없는 말이 "아래에서 골라"를 가리키면 finalizeAiText가 중립 문구로 바꾼다.
+  const passKind = WIDGET_KINDS.has(kind) ? kind : null;
+  const fallbackTail = session.currentTask ? CS.COPY.fallbackTailTask : CS.COPY.fallbackTailNoTask;
   try{
-    // 요청사항 6: 체크포인트에서 이해도를 낮게 표시했다는 신호를 여기서 한 번만 소비해 다음 응답에
-    // 실제로 반영한다(단순 기록에 그치지 않도록 — 적응 루프를 닫는다).
+    await ensureRag().catch(()=>null); // 교육과정 원문 색인(과목별, 처음 한 번)
     if(session.lowUnderstandFlag){
       session.lowUnderstandFlag = false;
       instruction += ' (학습자가 방금 이해도 체크포인트에서 "아직 잘 모르겠다"고 낮게 표시했다. 지금까지보다 더 쉬운 낱말과 더 쉬운 예시 하나로 다시 짧게 짚어준 다음에 이어가라.)';
@@ -4395,13 +4564,16 @@ async function ai(instruction, kind, structOffer, opts){
     if(checkpointWillFire(kind)){
       instruction += ' (중요: 이번 답변에서는 새로운 질문을 던지지 마라. 지금까지 이야기를 짧게 마무리하는 문장으로만 답해라. 바로 뒤에 이해도를 확인하는 카드가 화면에 따로 뜬다.)';
     }
-    // (개선) 실제 Solar 테스트: 긴 대화 이력 뒤에서는 시스템 프롬프트 끝의 [이번 지시]를 자주 무시했다.
-    // 같은 지시를 이력 맨 뒤에 한 번 더 시스템 메시지로 둔다(Solar에서 준수율이 눈에 띄게 오름).
-    // (실제 모델 검증 2026-10-01) 단계 공개(3단계) 턴인데도 맨 끝 꼬리 지시가 "풀이·정답 미리 주기 금지"라
-    // 모델이 마지막 말을 따라 거절을 되풀이했다. 공개 턴은 꼬리 지시를 그에 맞게 바꾸고, 그래도 거절하면 한 번 더 시킨다.
+    // (WP3-1·3-7) 학생 말에 반응하는 턴이면 [되돌려 말하기·정리·확인·칭찬 중 하나] → [인정 1문장] → [질문 1개] 구조와 예상 밖 답변 정책을 붙인다
+    instruction += reactionAddon(checkpointWillFire(kind) ? Object.assign({}, opts, { suffix: opts.suffix || '(체크포인트)' }) : opts);
+    const cap = capNow(), tone = CS.toneShort();
+    // (개선) 실제 Solar 테스트: 긴 대화 이력 뒤에서는 시스템 프롬프트 끝의 [이번 지시]를 자주 무시해, 같은 지시를 이력 맨 뒤에 한 번 더 둔다.
+    // (WP2-5) 분량은 학년군 상한(MODE_CFG.CAP)에서 만든다(예전 "4문장·420자" 고정).
     const tail = opts.reveal
-      ? { role:'system', content:`[이번 턴 지시 — 이것만 수행] ${instruction}\n(이번 턴은 풀이를 보여 주는 턴이다. 거절하거나 "직접 해 봐"로 미루지 말고 풀이와 답을 실제로 써라. 새 문제·과업 금지, 마크다운·글머리표·표 금지, 6문장 이내, 반말)` }
-      : { role:'system', content:`[이번 턴 지시 — 이것만 수행] ${instruction}\n(지키기: 지시에 없는 새 문제·과업 금지, 풀이·정답 미리 주기 금지, 마크다운·글머리표·표 금지, 4문장 이내, 반말)` };
+      ? { role:'system', content:`[이번 턴 지시 — 이것만 수행] ${instruction}
+(이번 턴은 풀이를 보여 주는 턴이다. 거절하거나 "직접 해 봐요"로 미루지 말고 풀이와 답을 실제로 써라. 새 문제·과업 금지, 마크다운·글머리표·표 금지, ${cap.sentences+3}문장 이내, ${tone})` }
+      : { role:'system', content:`[이번 턴 지시 — 이것만 수행] ${instruction}
+(지키기: 지시에 없는 새 문제·과업 금지, 풀이·정답 미리 주기 금지, 마크다운·글머리표·표 금지, ${cap.sentences}문장·${cap.chars}자 이내, 질문은 1개, ${tone})` };
     const messages = buildMessages(sysPrompt(instruction)).concat([tail]);
     let text = await callLLM(messages);
     if(opts.reveal && isRefusal(text)){
@@ -4410,44 +4582,54 @@ async function ai(instruction, kind, structOffer, opts){
         if(!isRefusal(t2)) text = t2;
       }catch(e){}
     }
-    // 번호 목록 덩어리(=과업 대행)나 지시문·조건분기 노출(=계획 유출)이 보이면, 사후 필터로
-    // 잘라내기 전에 "제대로 다시" 한 번 더 시도한다. 이렇게 안 하면 대화 흐름상 꼭 필요한
-    // 다음 질문(예: 메타인지 첫 질문)까지 통째로 날아가 엉뚱한 안내가 나가는 문제가 있었다.
     if(hasListDump(text) || hasMetaLeak(text) || hasTableDump(text)){
       try{
-        const retrySys = sysPrompt(instruction + ' (경고: 방금 번호 목록·표(마크다운 파이프 |…|)로 정리해서 대신 만들어주거나, "(학습자가 ~하도록 유도)"·"만약 (1) 선택 시: …" 같은 지시문·조건문·괄호 설명으로 답하려 했다. 또는 "학습자가"처럼 3인칭으로 서술하거나(그건 속으로만 정리할 생각이다 — 학습자에게는 항상 "네가"라고 직접 말하라), 학습자가 아직 하지 않은 말을 "…라고 답했다고 치고" 지어내며 대화를 혼자 이어갔다. 또는 "(전략 카드 뜰 거야)"·"(비교 카드 뜰 거야)"처럼 화면에 뜰 것을 미리 말로 예고했다 — 화면 요소는 시스템이 알아서 붙이니 절대 미리 말하지 마라. 너는 지금 그 학습자와 직접 대화하고 있는 튜터이지, 다른 선생님에게 설명하는 게 아니고, 학습자가 스스로 정리할 몫을 대신 만들어줘도 안 된다. 그런 것 없이, 학습자에게 실제로 건넬 말 딱 1문장(질문 1개)만 다시 말하라.)');
+        const retrySys = sysPrompt(instruction + ' (경고: 방금 번호 목록·표로 대신 정리하거나, 지시문·조건문·괄호 설명, 3인칭 서술, 학습자 말을 지어낸 대화, 화면 카드 예고를 썼다. 그런 것 없이 학습자에게 실제로 건넬 말만, 질문은 1개만 다시 말하라.)');
         const retryText = await callLLM(buildMessages(retrySys).concat([tail]));
         if(!hasListDump(retryText) && !hasMetaLeak(retryText) && !hasTableDump(retryText)) text = retryText;
-      }catch(e){ /* 재시도 실패 시 원래 text를 그대로 후처리 필터에 맡긴다 */ }
+      }catch(e){ /* 재시도 실패 시 원래 text를 후처리 필터에 맡긴다 */ }
+    }
+    // (WP1-4·3-1·3-3) 비문·추궁형·용어 위반·질문 여러 개·반말이 보이면 무엇이 문제인지 알려 주고 한 번만 다시 만든다
+    { const iss = qualityIssues(text, opts);
+      if(iss.length){ try{ const t3 = await callLLM(buildMessages(sysPrompt(instruction + retryWarning(iss))).concat([tail])); if(qualityIssues(t3, opts).length < iss.length) text = t3; }catch(e){} } }
+    const clean = raw => { let c = stripTaskDump(stripMetaLeak(stripLeakedParams(stripMarkdown(raw))), fallbackTail);
+      if(opts.noNewTask) c = dropNewProblems(c);
+      return c.replace(/(예를 들어|예컨대|이렇게)\s*[,:：]?\s*[.:：]\s*/g, '').replace(/\s+([.,!?])/g,'$1').trim(); };
+    const fin = { suffix:opts.suffix, passKind, reveal:opts.reveal, fallbackAsk:fallbackTail };
+    let outText = finalizeAiText(scrubOutput(clean(text)), fin);
+    // (WP3-3) 사실 검수: 교육과정 원문 근거에 비추어 틀린 사실이면 한 번 다시 만들고, 그래도 틀리면 확인을 권하는 말로 바꾼다
+    const vf = await verifyFacts(outText);
+    if(!vf.ok){
+      flag('verify', outText, { issue: vf.issue });
+      try{
+        const t4 = await callLLM(buildMessages(sysPrompt(instruction + ` (사실 검수에서 이런 문제가 나왔다: ${vf.issue} 교육과정 원문 근거 범위 안에서 바르게 다시 말하라.)`)).concat([tail]));
+        const c4 = finalizeAiText(scrubOutput(clean(t4)), fin);
+        const vf2 = await verifyFacts(c4);
+        outText = vf2.ok ? c4 : finalizeAiText('확실하지 않으니 교과서에서 함께 확인해 봐요. ' + (opts.suffix ? '' : fallbackTail), fin);
+      }catch(e){ outText = finalizeAiText('확실하지 않으니 교과서에서 함께 확인해 봐요. ' + (opts.suffix ? '' : fallbackTail), fin); }
     }
     $('#pending')?.remove();
-    // 목록/유출 필터가 결국 발동해 안전 문구로 대체될 경우, 매번 똑같은 "너는 어떻게 생각해?"를
-    // 반복 재생하지 않도록 지금 방법에 맞는 구체적인 다음 행동을 이어서 말해준다. 예전엔 이 문구가
-    // 항상 "...지금 바로 해볼까?"로 끝나는 허락 구하기 형태였는데, apply 단계 자체가 "해볼까?"로
-    // 되묻지 말고 곧바로 과업을 주라는 지시인데도 안전망 문구가 매번 그걸 어겨 반복적으로 느껴진다는
-    // 지적(요청사항 5)을 받았다. 허락을 구하지 말고 바로 시켜보는 직접 지시 문구로 무작위로 고른다.
-    const DIRECTIVE_LEADS = ['자, 이렇게 해보자.', '그럼 이번엔', '좋아, 바로 해보자.', '한번 해볼까 말고 바로 해보자 —'];
-    const strat = currentApplyStrat();
-    // (개선) 실제 테스트에서 팁 문구(명사형)를 이어 붙인 "그럼 이번엔 헷갈렸던 건 나중에 다시 답해보기." 같은
-    // 어색한 문장이 나왔다. 잘린 뒤에는 지금 과업(있으면)을 가리키는 자연스러운 한 문장만 붙인다.
-    const fallbackTail = session.currentTask ? '그럼 이번 할 일을 네가 먼저 해 볼래?' : '지금까지 이야기한 걸 네 말로 한번 정리해 볼래?';
-    const passKind = kind==='prior-pick' ? 'prior-pick' : (kind==='strategy-pick' ? 'strategy-pick' : (kind==='struct-offer' ? 'struct-offer' : null));
-    let cleaned = stripTaskDump(stripMetaLeak(stripLeakedParams(stripMarkdown(text))), fallbackTail);
-    if(opts.noNewTask) cleaned = dropNewProblems(cleaned);
-    cleaned = cleaned.replace(/(예를 들어|예컨대|이렇게)\s*[,:：]?\s*[.:：]\s*/g, '').replace(/\s+([.,!?])/g,'$1').trim();
-    let outText = scrubOutput(capLength(cleaned, opts.maxLen || 420));
-    if(opts.suffix){ outText = outText.replace(/[^.!?요다\n]*\?\s*$/,'').trim(); outText = (outText ? outText + ' ' : '') + opts.suffix; } // 고정 질문은 코드가 붙인다
     pushAi(outText, passKind, kind==='struct-offer' ? structOffer : null);
-    // (개선) 원리10-3 "산출 과정": 이 응답을 만들 때 시스템이 준 실제 지시를 응답에 붙여 둔다.
-    { const lt = [...session.turns].reverse().find(x=>x.role==='ai'); if(lt && !lt.instr) lt.instr = String(instruction).slice(0,700); }
+    // (개선) 원리10-3 "산출 과정": 이 응답을 만들 때 시스템이 준 실제 지시와 참고한 원문 근거를 붙여 둔다.
+    { const lt = [...session.turns].reverse().find(x=>x.role==='ai'); if(lt && !lt.instr){ lt.instr = String(instruction).slice(0,700); lt.rag = ragResults(lastTypedText() || instruction.slice(0,200), 3).map(r=>CS.citeLabel(r.chunk)); lt.raw = String(text).slice(0,600); } }
     maybeInsertCheckpoint(kind);
     maybeInsertRetrievalRecall();
   }catch(err){
     $('#pending')?.remove();
-    pushAi('' + err.message);
+    // (WP1-3) 고를 위젯이 필요한 턴에서 AI가 실패해도 학생이 갇히지 않게: 고정 문구 + 위젯을 그대로 붙인다
+    const fixed = { 'prior-pick': CS.COPY.priorPickSuffix, 'strategy-pick': CS.COPY.strategyPickIntro, 'reason-pick': CS.COPY.strategyReasonQ, 'change-reason-pick': CS.COPY.strategyChangeQ, 'help-pick': CS.COPY.helpPickQ }[passKind];
+    if(fixed) pushAi(fixed, passKind, null);
+    else if(opts.suffix) pushAi(opts.suffix, null);
+    else pushAi(CS.COPY.aiError);
+    flag('ai-error', String(err && err.message || err));
   }finally{ busy=false; syncComposeLock(); }
 }
+// (WP2-6) 체크포인트 간격·횟수 상한은 모드 설정에서(한 차시: 최소 6턴, 최대 2회)
+function checkpointCapReached(){ return (session.checkpoints||[]).length + (session.pendingCheckpoint?1:0) >= cfg().checkpoint.maxPerSession; }
 function checkpointEffectiveInterval(){
+  return Math.max(cfg().checkpoint.minGap, checkpointBaseInterval());
+}
+function checkpointBaseInterval(){
   const base = session.checkpointInterval || 4;
   if(session.support==='low') return base + 2;   // 숙련될수록(비계 낮음) 체크를 덜 자주 — 적응적 페이딩
   if(session.support==='high') return Math.max(2, base - 1); // 아직 서툴수록 더 자주
@@ -4461,15 +4643,15 @@ function checkpointEffectiveInterval(){
 // ai()가 응답을 만들기 전에, 이번 턴 끝에 체크포인트가 뜰지 미리 안다(부수효과 없이 계산만).
 function checkpointWillFire(kind){
   if(session._suppressCp) return false; // (개선) 과업을 막 낸 턴에는 체크포인트를 띄우지 않는다(과업 문장이 "마무리"로 바뀌는 충돌 방지)
-  if(session.phase!=='explore' || !session.cycleStarted || kind==='monitor' || session.pendingCheckpoint) return false;
+  if(session.phase!=='explore' || !session.cycleStarted || kind==='monitor' || session.pendingCheckpoint || checkpointCapReached()) return false;
   const nextCount = (session.turnsSinceCheckpoint||0) + 1;
-  return !!(session.checkpointForceSoon || nextCount >= checkpointEffectiveInterval());
+  return nextCount >= (session.checkpointForceSoon ? cfg().checkpoint.minGap : checkpointEffectiveInterval());
 }
 function maybeInsertCheckpoint(kind){
   if(session._suppressCp) return;
-  if(session.phase!=='explore' || !session.cycleStarted || kind==='monitor' || session.pendingCheckpoint) return;
+  if(session.phase!=='explore' || !session.cycleStarted || kind==='monitor' || session.pendingCheckpoint || checkpointCapReached()) return;
   session.turnsSinceCheckpoint = (session.turnsSinceCheckpoint||0) + 1;
-  const need = session.checkpointForceSoon || session.turnsSinceCheckpoint >= checkpointEffectiveInterval();
+  const need = session.turnsSinceCheckpoint >= (session.checkpointForceSoon ? cfg().checkpoint.minGap : checkpointEffectiveInterval());
   if(!need) return;
   session.checkpointForceSoon = false;
   session.turnsSinceCheckpoint = 0;
@@ -4639,8 +4821,11 @@ function sendChat(){
   // (개선) "AI가 답을 알려줘" 체크박스를 없앴다 — 학생이 굳이 표시하지 않아도 답을 맡기는 말을
   // 알아채 정답 대신 단서로 응답하고, 누가 이끌었는지의 최종 분류는 ③ 돌아보기에서 학생이 직접 한다(원리11).
   const delegate = session.phase==='explore' && !!session.cycleStarted && isAnswerRequest(v);
+  // (WP3-5) 오늘 탐구 범위 패널 판정(LLM 호출 없음) — 범위 밖이어도 막지 않고 알리기만 한다
+  if(session.phase==='explore' && session.cycleStarted) scopeNudge(v);
   el.value='';
-  pushMe(v, delegate);
+  const src = window._nextSrc || 'typed'; window._nextSrc = null; // 칩을 눌러 보낸 말은 'button'
+  pushMe(v, delegate, src);
 
   // 준비 대화: 단계별로 여러 턴 이어짐. [다음으로] 버튼으로만 단계 전환.
   if(session.phase==='prep'){
@@ -4651,7 +4836,7 @@ function sendChat(){
     // 입력을 기다리지 않는다(그래서 여기 sendChat에는 'greet' 분기가 없다).
     if(step==='priorscore'){
       // 자신감 카드는 화면의 이모지 버튼으로만 고른다(자유 텍스트는 무시하고 다시 안내).
-      ai(`짧게 반응만 하고, 내용이 아니라 전체적인 자신감을 아래 다섯 개 중 하나로 눌러 달라고 한 문장으로 다시 안내해. 다음 단계로 넘어가지 마.`, 'prior-pick');
+      pushAi(CS.COPY.priorPickRetry, 'prior-pick'); // (WP1-3) "아래에서 골라" 안내에는 반드시 고를 버튼이 같이 붙는다(LLM을 거치지 않음)
       return;
     }
     if(step==='meta'){
@@ -4668,7 +4853,7 @@ function sendChat(){
           session.meta.answers[k0] = v; session.meta.raw = (session.meta.raw ? session.meta.raw+' / ' : '') + v;
         }
         const ex = !session.meta.step ? META_REASK.usual : META_REASK[SCAFFOLD_ORDER[(session.meta.step||1)-1].key];
-        ai(`학습자가 스스로 점검 질문에 아주 짧게 답했다("${v}"). 판단하거나 탓하지 말고, 괜찮다는 느낌으로 한 문장으로만 반응하라. 질문하지 말고 설명·풀이·과업도 하지 마라.`, null, null, { maxLen:140, noNewTask:true, suffix:`조금만 더 자세히 말해 줄래? ${ex}` });
+        ai(`학습자가 스스로 점검 질문에 아주 짧게 답했다("${v}"). 판단하거나 탓하지 말고, 괜찮다는 느낌으로 한 문장으로만 반응하라. 질문하지 말고 설명·풀이·과업도 하지 마라.`, null, null, { maxLen:140, noNewTask:true, suffix:CS.COPY.reaskLead + ex });
         return;
       }
       // 요청사항 7 — 나 단계(원리7): step 0은 "평소 어떻게 공부해?"에 대한 답(usualMethod).
@@ -4676,7 +4861,7 @@ function sendChat(){
       if(!session.meta.step){
         session.meta.usualMethod = ((session.meta.reasked['0'] && session.meta.usualMethod) ? session.meta.usualMethod + ' / ' : '') + v.slice(0,200);
         session.meta.step = 1;
-        ai(`학습자가 평소 공부법을 "${session.meta.usualMethod}"라고 답했다. 판단하지 말고 학습자의 방금 말에 한 문장으로만 짧게 반응하라. 질문하지 말고, 설명·풀이·예시 문제·연습 과업도 하지 마라(지금은 스스로 점검하는 단계다).`, null, null, { maxLen:160, noNewTask:true, suffix:'이제 조금 더 구체적으로 스스로 점검해 보자. '+SCAFFOLD_ORDER[0].q });
+        ai(`학습자가 평소 공부법을 "${session.meta.usualMethod}"라고 답했다. 판단하지 말고 학습자의 방금 말에 한 문장으로만 짧게 반응하라. 질문하지 말고, 설명·풀이·예시 문제·연습 과업도 하지 마라(지금은 스스로 점검하는 단계다).`, null, null, { maxLen:160, noNewTask:true, suffix:CS.COPY.metaNextLead+SCAFFOLD_ORDER[0].q });
         return;
       }
       session.meta.raw = (session.meta.raw ? session.meta.raw+' / ' : '') + v;
@@ -4689,7 +4874,7 @@ function sendChat(){
         session.meta.step = n + 1;
         ai(`학습자의 방금 말에 한 문장으로만 짧게 반응하라. 질문하지 말고, 설명·풀이·예시 문제·연습 과업도 하지 마라(지금은 스스로 점검하는 단계다).`, null, null, { maxLen:160, noNewTask:true, suffix:SCAFFOLD_ORDER[n].q }); // n=1→전략, n=2→연결 (질문은 코드가 고정 문구로 붙임)
       } else {
-        ai(`학습자의 답에 짧게 공감하고, "이해질문·전략질문·연결질문을 다 나눠봤어. 이 정도면 준비된 것 같아, 더 이야기해도 좋고 준비됐으면 아래 [다음으로]를 눌러도 좋아"라고 안내해. 절대 공부 방법 고르기로 먼저 넘어가지 마.`);
+        ai(`학습자의 답에 한 문장으로 짧게 공감하라. 질문하지 말고, 공부 방법 고르기로 먼저 넘어가지 마라.`, null, null, { noNewTask:true, suffix:CS.COPY.metaDone });
         // 버그 수정: meta.step이 방금 SCAFFOLD_ORDER.length에 닿아 [다음으로] 버튼이 나타날
         // 조건이 됐는데도, 이 분기가 renderStream()만 부르는 ai()만 호출하고 paintPhase()를
         // 부르지 않아 버튼의 hidden 속성이 계속 안 바뀌던 문제(값은 바뀌지만 화면이 안 바뀜).
@@ -4709,12 +4894,16 @@ function sendChat(){
       // 원리8: 인지 전략 최종 선택의 "근거"를 학습자 스스로 말하게 한다. 이 이유가 이후 대화 전체의 시스템 프롬프트에 계속 실린다.
       session.strategyReason = v;
       session.prepStep='ready'; session.cycleStarted=true; session.cycleIdx=1; session.cycleNow='ask'; paintPhase();
+      maybePushSourceCard(); // (WP3-5) 교과 자료 카드(원문 발췌·출처 표시)
       const strat = currentApplyStrat();
       ai(`학습자가 "${session.strategyLabel}" 방법(들)을 고른 이유("${v}")를 존중하며 짧게 반응해줘(그 이유가 맞다 틀리다 평가하지 마). 그 이유와 오늘 배울 내용을 연결해서, ${strat?strat.verb:'스스로 생각하도록'} 유도하는 첫 질문을 1개 던져.`);
       return;
     }
     return;
   }
+  // (WP2-1 한 차시) 탐구 대화가 상한(약 10턴)에 이르면 마무리를 권한다(막지는 않는다)
+  { const capN = cfg().exploreTurnCap; const nT = session.turns.filter(t=>t.role==='me' && t.phase==='explore' && t.src==='typed').length;
+    if(capN && nT >= capN && !session.capNoted){ session.capNoted = true; pushNote('이제 마무리할 시간이에요. 위의 [이야기 끝내기]를 눌러 돌아보기로 가요. 조금 더 이야기해도 괜찮아요.'); const fb = $('#chat-finish'); if(fb) fb.classList.add('btn-primary'); } }
   // explore(라): 발문(ask) → 방법대로 해보기(apply) → 점검 질문(check) 이 순서로 순환한다 (원리8·9·10 루프).
   // 원리9: 대화 중 방법을 바꾼 직후엔 그 다음 입력을 "바꾼 이유"로 먼저 받는다.
   if(session.awaitingChangeReason){
@@ -4735,7 +4924,7 @@ function sendChat(){
     const tried = attemptedSinceTask(v);
     // 이 과업에서 이미 풀이를 보여 줬으면 새 풀이를 또 만들지 않고, 보여 준 풀이로 돌아가 자기 말로 말해 보게 한다.
     if(ar.revealed){
-      ai(`학습자가 이 과업에서 이미 AI가 보여 준 풀이를 받은 뒤 또 답을 달라고 했다. ${session.currentTask ? `지금 과업: "${session.currentTask.task}".` : ''} 새 풀이나 새 내용을 더하지 말고, 바로 위에서 보여 준 풀이의 핵심을 한 줄로만 다시 짚어 준 뒤 "그 풀이를 네 말로 한 문장만 써 볼래? 짧아도 괜찮아"라고 해라. 거절하는 말은 하지 마라. 3문장 이내.`, null, null, { noNewTask:true, maxLen:300 });
+      ai(`학습자가 이 과업에서 이미 AI가 보여 준 풀이를 받은 뒤 또 답을 달라고 했다. ${session.currentTask ? `지금 과업: "${session.currentTask.task}".` : ''} 새 풀이나 새 내용을 더하지 말고, 바로 위에서 보여 준 풀이의 핵심을 한 줄로만 다시 짚어 준 뒤 "그 풀이를 내 말로 한 문장만 써 볼래요? 짧아도 괜찮아요"라고 해라. 거절하는 말은 하지 마라. 3문장 이내.`, null, null, { noNewTask:true, maxLen:300 });
       return;
     }
     const level = (tried || ar.n >= 3) ? 3 : ar.n;
@@ -4746,7 +4935,7 @@ function sendChat(){
       ai(`학습자가 같은 과업에서 두 번째로 답을 달라고 했다. ${taskTxt}. 이번엔 더 구체적인 힌트를 줘라: 풀이의 앞부분을 보여 주되 마지막 한 단계(답)는 빈칸(□)으로 남겨, 학습자가 그 칸만 채우게 하라. 거절하는 말은 하지 마라. 4문장 이내.`, null, null, { noNewTask:true, maxLen:380 });
     } else {
       ar.n = 0; ar.revealed = true;
-      ai(`[풀이 공개 턴] ${tried ? '학습자가 이미 직접 시도한 뒤' : '학습자가 같은 과업에서 여러 번'} 답을 달라고 했다. ${taskTxt}. 이제 풀이를 보여 줘라: (1) ${tried ? '학습자가 쓴 시도에서 맞은 부분을 그대로 짚어 인정하고, 틀린 곳이 있으면 어디인지' : '풀이 과정'}를 단계별로 짧게 보여 주고 정답(또는 핵심 답)과 그 이유를 말한다. (2) "이건 AI가 보여 준 풀이니까, 맞는지는 네가 판단해 봐" 정도로 한 마디 덧붙인다. (3) 마지막은 반드시 "방금 풀이를 네 말로 한 문장으로 다시 설명해 볼래?"로 끝낸다. 새 과업은 내지 마라. 정확성(반드시): 정답은 교육과정 해설과 직접 계산으로 확인한 것만 말하고, 계산이 있으면 속으로 한 번 검산한 뒤 써라. 학습자 말이 헷갈리게 쓰여 있어도 그 말에 끌려가 맞는 답을 틀렸다고 하지 마라.`, null, null, { noNewTask:true, maxLen:560, reveal:true });
+      ai(`[풀이 공개 턴] ${tried ? '학습자가 이미 직접 시도한 뒤' : '학습자가 같은 과업에서 여러 번'} 답을 달라고 했다. ${taskTxt}. 이제 풀이를 보여 줘라: (1) ${tried ? '학습자가 쓴 시도에서 맞은 부분을 그대로 짚어 인정하고, 틀린 곳이 있으면 어디인지' : '풀이 과정'}를 단계별로 짧게 보여 주고 정답(또는 핵심 답)과 그 이유를 말한다. (2) "이건 AI가 보여 준 풀이니까, 맞는지는 직접 판단해 봐요" 정도로 한 마디 덧붙인다. (3) 마지막은 반드시 "방금 풀이를 내 말로 한 문장으로 다시 설명해 볼래요?"로 끝낸다. 새 과업은 내지 마라. 정확성(반드시): 정답은 교육과정 해설과 직접 계산으로 확인한 것만 말하고, 계산이 있으면 속으로 한 번 검산한 뒤 써라. 학습자 말이 헷갈리게 쓰여 있어도 그 말에 끌려가 맞는 답을 틀렸다고 하지 마라.`, null, null, { noNewTask:true, maxLen:560, reveal:true });
       pushNote('AI가 풀이를 보여 줬어요. 이 말은 ③ 돌아보기에서 \'AI에게 맡김\'으로 다시 볼 수 있어요.');
     }
     return;
@@ -4801,7 +4990,7 @@ function sendChat(){
     if(struggling){
       strategyPickMode = 'change';
       pendingStrategyPick = (session.strategies||[]).slice();
-      instr = `방금까지의 시행·점검 결과를 짧게 되짚어주고, 최근에 어려워하는 신호가 있었으니 "지금 방법이 잘 안 맞을 수도 있어. 아래에서 방법을 다시 골라볼래? 그대로 둬도 괜찮아"라는 취지로 짧게 안내해라. 절대 네가 대신 방법을 정하지 마라.`;
+      instr = `방금까지의 시행·점검 결과를 짧게 되짚어주고, 최근에 어려워하는 신호가 있었으니 "지금 방법이 잘 안 맞을 수도 있어요. 아래에서 방법을 다시 골라 볼래요? 그대로 둬도 괜찮아요"라는 취지로 짧게 안내해라. 절대 네가 대신 방법을 정하지 마라.`;
       ai(instr, 'strategy-pick');
       return;
     }
@@ -4824,11 +5013,11 @@ function sendChat(){
       // 이번 adjust 메시지 자체가 "다음 전략 과업 배정"을 겸하므로, 다음 학습자 입력은 그
       // 과업에 대한 시도로 보고 그다음 AI 응답이 곧장 check(점검)로 이어지게 커서를 맞춘다.
       session.cycleIdx = 2; session.cycleNow = 'apply'; renderCycleStrip();
-      issueTask(nextStrat, `학습자가 "${strat.label}" 방법으로 과업을 ${lastLevel===2?'잘 해냈다':'어느 정도 해 봤다'}. 그 점을 구체적으로 짧게 짚어주고, "이제 다음 방법인 ${nextStrat?nextStrat.label:''}으로 넘어가 보자"라고 알려준 뒤, 바로 새 과업을 낸다.`);
+      issueTask(nextStrat, `학습자가 "${strat.label}" 방법으로 과업을 ${lastLevel===2?'잘 해냈다':'어느 정도 해 봤다'}. 그 점을 구체적으로 짧게 짚어주고, "이제 다음 방법인 ${nextStrat?nextStrat.label:''}으로 넘어가 봐요"라고 알려준 뒤, 바로 새 과업을 낸다.`);
       return;
     }
     askNoTask = true;
-    instr = `(새 문제·과업은 내지 마라) 방금까지의 시행·점검 결과를 짧게 되짚어주고, "지금 이 방법(${strat?strat.label:'선택한 방법'})이 잘 맞는 것 같아? 계속 써볼까, 다른 방법으로 바꿔볼까?" 같은 취지로 1개만 물어봐. 계속할지 바꿀지는 학습자가 정하고, 바꾸고 싶다고 하면 위쪽 [방법 바꾸기]에서 직접 고르면 된다고 짧게 안내해. 절대 네가 대신 정하지 마.`;
+    instr = `(새 문제·과업은 내지 마라) 방금까지의 시행·점검 결과를 짧게 되짚어주고, "지금 이 방법(${strat?strat.label:'선택한 방법'})이 잘 맞는 것 같아요? 계속 써 볼까요, 다른 방법으로 바꿔 볼까요?" 같은 취지로 1개만 물어봐. 계속할지 바꿀지는 학습자가 정하고, 바꾸고 싶다고 하면 위쪽 [방법 바꾸기]에서 직접 고르면 된다고 짧게 안내해. 절대 네가 대신 정하지 마.`;
   }
   ai(instr, null, null, { noNewTask: askNoTask });
 }
@@ -4883,7 +5072,7 @@ function renderReflectStrip(){ renderWrapStrip('#reflect-strip', session.reflect
 // 요청사항(3번째 피드백) 9: "내가 생각 3개·AI에게 맡김 3개"로 가짓수를 제한하지 말라는 지적을
 // 반영 — 원하는 만큼 자유롭게 태깅할 수 있다(전부 다 태깅해야 하는 것도 아니다).
 function tagCounts(){
-  const my = session.turns.filter(t=>t.role==='me');
+  const my = session.turns.filter(isTyped);
   let self=0, ai_=0;
   my.forEach(t=>{ const v = session.reflect.tags[t.id]; if(v==='self') self++; else if(v==='ai') ai_++; });
   return { self, ai_, total: my.length };
@@ -4900,6 +5089,14 @@ function syncReflectA(){
 const MIN_REFLECT = 8;
 function syncReflectGate(){
   const rg = $('#reflect-gate'); const miss = [];
+  const shallowHint = (sel, box) => { const v = (($(sel)||{}).value||'').trim(); const h = $(box); if(h){ const show = v.length>0 && (v.length < MIN_REFLECT || isShallowAnswer(v)); h.hidden = !show; h.textContent = show ? '조금 더 구체적으로 써 볼까요? 예: "나는 ○○할 때 AI에게 물었는데, 다음엔 먼저 ○○를 해 볼래요."' : ''; } };
+  shallowHint('#in-reflect', '#shallow-b'); shallowHint('#in-reflect-a', '#shallow-a');
+  if(cfg().reflectOneScreen){
+    if((($('#in-reflect')||{}).value||'').trim().length < MIN_REFLECT) miss.push('돌아보며 적기를 한 문장 이상 적어요');
+    $('#reflect-next-b').disabled = miss.length>0; $('#reflect-later').disabled = miss.length>0;
+    if(rg) rg.textContent = miss.join(' · ');
+    return;
+  }
   if((session.reflect.step||'delegate')==='delegate'){
     const { self, ai_, total } = tagCounts();
     if(total>0 && (self+ai_)===0) miss.push('내 말 옆의 [내가 생각]·[AI에게 맡김]을 하나 이상 눌러요');
@@ -4907,7 +5104,7 @@ function syncReflectGate(){
     $('#reflect-next-a').disabled = miss.length>0;
   } else {
     const rated = (session.reflect.promptRatings||[]).filter(r=>PROMPT_RATE_DIMS.every(d=>r[d.k]!=null));
-    const anyMe = session.turns.some(t=>t.role==='me');
+    const anyMe = session.turns.some(isTyped);
     if(anyMe && !(session.reflect.promptRatings||[]).length) miss.push('돌아볼 내 질문을 하나 이상 골라요');
     else if(anyMe && rated.length < (session.reflect.promptRatings||[]).length) miss.push(`고른 질문마다 점수 세 가지를 모두 매겨요(남은 질문 ${(session.reflect.promptRatings||[]).length - rated.length}개)`);
     if((($('#in-reflect')||{}).value||'').trim().length < MIN_REFLECT) miss.push('돌아보며 적기를 한 문장 이상 적어요');
@@ -4919,21 +5116,28 @@ function enterReflect(){
   session.phase='wrap';
   session.reflect.step = session.reflect.step || 'delegate';
   renderReflectStrip();
-  $('#reflect-step-a').hidden = session.reflect.step!=='delegate';
+  const one = cfg().reflectOneScreen; // (WP2-1 한 차시) 가·나를 한 화면에, 필수 서술 1개
+  if(one) session.reflect.step = 'prompt';
+  $('#reflect-step-a').hidden = !one && session.reflect.step!=='delegate';
   $('#reflect-step-b').hidden = session.reflect.step!=='prompt';
-  $('#reflect-next-a').hidden = session.reflect.step!=='delegate';
+  $('#reflect-next-a').hidden = one || session.reflect.step!=='delegate';
   $('#reflect-next-b').hidden = session.reflect.step!=='prompt';
   $('#reflect-later').hidden = session.reflect.step!=='prompt';
+  $('#reflect-next').hidden = session.reflect.step!=='prompt';
+  document.body.classList.toggle('reflect-one', !!one);
+  paintNextPlan();
   if(session.reflect.step==='delegate'){ $('#reflect-headline').textContent='누가 이끌었고, 무엇을 AI에게 맡겼나'; $('#reflect-subhead').innerHTML='여기는 대화하는 곳이 아니라 <b>내가 나눈 이야기를 쭉 펼쳐 보는 곳</b>이에요. 내가 한 말 중에서 <b>내가 스스로 생각해서 물은 것</b>과 <b>AI에게 답을 맡긴 것</b>을 원하는 만큼 골라 보세요.'; }
   else { $('#reflect-headline').textContent='내가 무엇을 물었나'; $('#reflect-subhead').innerHTML='이번엔 내가 <b>AI에게 썼던 질문들만</b> 다시 살펴봐요. 내 생각을 더 잘 끌어내려면 다음엔 어떻게 물었어야 할지 적어 보세요.'; }
 
-  $('#timeline').innerHTML = session.turns.filter(t=>t.role!=='note').map(t=>{
+  // (WP2-1 한 차시) 타임라인은 내가 한 말만 — AI 답은 아래 질문 목록에 한 줄씩 함께 보인다(읽을 양 줄이기)
+  $('#timeline').innerHTML = session.turns.filter(t=>t.role!=='note' && (!one || t.role==='me')).map(t=>{
     const mine=t.role==='me';
     const v = mine ? session.reflect.tags[t.id] : null;
     return `<div class="tl-card ${mine?'tl-me':'tl-ai'}">
       <div class="role">${mine?'나':'AI'} · ${PHASES[t.phase]||''}</div>
       <div class="txt">${esc(trim(t.text,120))}</div>
-      ${mine?`<div class="tl-tags" data-id="${t.id}">
+      ${mine && !isTyped(t) ? '<div class="hint">버튼으로 보낸 말 — 표시하지 않아도 돼요</div>' : ''}
+      ${mine && isTyped(t)?`<div class="tl-tags" data-id="${t.id}">
         <button data-v="self" class="${v==='self'?'on':''}">내가 생각</button>
         <button data-v="ai" class="${v==='ai'?'on':''}">AI에게 맡김</button>
       </div>`:`<div class="hint">AI 도움 ${SUPPORT_LABEL[t.support]||'-'}</div>`}
@@ -5003,7 +5207,7 @@ function enterReflect(){
   // 읽기만 하던 목록을 눌러서 고를 수 있게 한다.
   // (10-08) 고른 질문 아래에 바로 그 질문의 점수 칸을 펼친다. 예전엔 점수 카드가 목록 맨 아래에 따로 모여 있어
   // 어느 질문의 점수인지 헷갈리고 "질문마다 점수를 매길 수 없다"는 말을 들었다. 버튼이 대신 보낸 말은 목록에서 뺀다.
-  const prompts = session.turns.filter(t=>t.role==='me' && !isAutoMe(t));
+  const prompts = session.turns.filter(isTyped);
   const prList = session.reflect.promptRatings || (session.reflect.promptRatings = []);
   const byId = new Map(prList.map(r=>[r.turnId, r]));
   const doneOf = r => PROMPT_RATE_DIMS.filter(d=>r[d.k]!=null).length;
@@ -5013,6 +5217,7 @@ function enterReflect(){
           <button type="button" class="pp-head" data-tid="${t.id}" aria-expanded="${!!r}">
             <span class="hint pp-meta">#${i+1} · ${t.delegate?'AI에게 답을 맡긴 질문':'내가 생각한 질문'}${r ? ` · <b class="pp-state ${n===3?'done':''}">${n===3?'점수 다 매김 ✓':`점수 ${n}/3`}</b>` : ' · <span class="pp-cta">눌러서 고르고 점수 매기기</span>'}</span>
             <span class="pp-text">${esc(t.text)}</span>
+            ${(()=>{ const k = session.turns.indexOf(t); const a = session.turns.slice(k+1).find(x=>x.role==='ai' && x.text); return a ? `<span class="pp-reply">이 질문에 AI가 한 답: "${esc(trim(a.text,80))}"</span>` : ''; })()}
           </button>
           ${r ? `<div class="prompt-rate" data-tid="${t.id}">${PROMPT_RATE_DIMS.map(d=>promptRateRowHTML(t.id, d, r[d.k])).join('')}<button type="button" class="btn btn-sm btn-ghost prompt-unrate" data-tid="${t.id}">이 질문 빼기</button></div>` : ''}
         </div>`; }).join('')
@@ -5034,11 +5239,11 @@ async function requestReflectHint(which){
   try{
     let userMsg;
     if(which==='a'){
-      const my = session.turns.filter(t=>t.role==='me').slice(0,12);
+      const my = session.turns.filter(isTyped).slice(0,12);
       const lines = my.map((t,i)=>`${i+1}. "${trim(t.text,60)}" (${t.delegate?'AI에게 맡김':'내가 생각'}${session.reflect.tags[t.id]?', 학습자가 고른 태그: '+(session.reflect.tags[t.id]==='self'?'내가 생각':'AI에게 맡김'):''})`).join('\n');
       userMsg = `아래는 한 학습자가 이번 공부에서 한 말들이다(누가 주도했는지 표시됨):\n${lines}\n이 중 구체적인 장면 하나를 짚어서, "왜 그때 그렇게 했는지" 스스로 돌아보게 하는 질문을 1개만 만들어라. 학습자를 향해 직접 말하듯 써라.`;
     } else {
-      const my = session.turns.filter(t=>t.role==='me').slice(0,12);
+      const my = session.turns.filter(isTyped).slice(0,12);
       const lines = my.map((t,i)=>`${i+1}. "${trim(t.text,80)}"`).join('\n');
       userMsg = `아래는 한 학습자가 이번 공부에서 AI에게 썼던 질문/말들이다:\n${lines}\n이 중 하나를 짚어서, "그 질문을 어떻게 바꿔 물었으면 내 생각을 더 잘 끌어냈을지" 스스로 돌아보게 하는 질문을 1개만 만들어라. 학습자를 향해 직접 말하듯 써라.`;
     }
@@ -5046,7 +5251,7 @@ async function requestReflectHint(which){
       { role:'system', content:'너는 성찰 질문 보조자다. 학습자를 대신해 성찰문을 쓰거나 요약하지 마라. 순수 질문 1문장만, 따옴표나 번호 없이 출력해라. 쉬운 낱말을 써라.' },
       { role:'user', content: userMsg }
     ]);
-    box.textContent = '' + stripMarkdown(String(raw)).trim();
+    box.textContent = polishAux(raw);
     box.hidden = false;
   }catch(e){
     box.textContent = '지금은 질문을 못 만들었어요. 그냥 내가 기억나는 장면부터 적어봐도 좋아요.';
@@ -5065,6 +5270,9 @@ function goReflectStepB(){
 // [저장하고 내 공부방으로](res-finish)에서만 일어난다.
 function goToResidual(){
   session.reflect.note = anonymize($('#in-reflect').value.trim());
+  session.reflect.noteA = anonymize(($('#in-reflect-a').value||'').trim()) || session.reflect.noteA || '';
+  session.wonder = anonymize(($('#in-wonder').value||'').trim()) || session.wonder || '';
+  if(cfg().reflectOneScreen){ session.skipped = Object.assign({}, session.skipped, { reflectTags: tagCounts().self + tagCounts().ai_ === 0, promptRatings: !(session.reflect.promptRatings||[]).length, reflectA: !session.reflect.noteA }); }
   session.endedAt = new Date().toISOString();
   show('residual');
 }
@@ -5083,7 +5291,8 @@ function commitSession(){
    ============================================================ */
 function enterResidual(){
   renderWrapStrip('#residual-strip', 'residual');
-  $('#res-std').textContent = `${session.ctx.code} · ${trim(session.ctx.std,44)}`;
+  $('#res-std').textContent = trim(session.ctx.std,60); // (WP2-7) 교육과정 코드는 학생 화면 본문에 보이지 않게
+  $('#res-start').textContent = `문제 받기 (${(session.prior.items||[]).length || (session.diagTags||[]).length}문항)`;
   $('#res-strat').textContent = session.strategyLabel || '안 골랐어요';
   $('#res-prescore').textContent = session.prior.diagScore!=null ? session.prior.diagScore+'점' : '측정 안 됨';
   const done = session.residual.result;
@@ -5148,7 +5357,7 @@ function resAnswerFieldHTML(it, i, ansStrat){
   return `<div><label class="field-label">내 풀이 / 답</label><textarea class="textarea res-a" aria-label="${i+1}번 풀이와 답" data-i="${i}">${esc(it.a)}</textarea></div>`;
 }
 function renderResidualQuiz(){
-  $('#res-items').innerHTML = session.residual.items.map((it,i)=>{
+  $('#res-items').innerHTML = (session.ctx.subject==='수학' ? `<div class="quick-actions res-math" aria-label="수식 기호">${mathPaletteHTML()}</div>` : '') + session.residual.items.map((it,i)=>{
     const itemStrat = STRATS.find(s=>s.id===it.strategyId);
     const banner = itemStrat ? `<div class="callout accent" style="margin-bottom:10px">이 문제는 <b>${itemStrat.emoji} ${esc(itemStrat.label)}</b> 방법의 쌍둥이 문제예요 — 그 방법으로 풀어봐요</div>` : '';
     return `
@@ -5158,7 +5367,7 @@ function renderResidualQuiz(){
         ${banner}
         <p class="prompt">${esc(it.q)}</p>
         ${resAnswerFieldHTML(it, i, itemStrat)}
-        <div><label class="field-label">왜 그렇게 풀었는지 설명 ${resExplainRequired(it)?'<span class="req-tag">꼭 적어요</span>':'<span class="opt-tag">선택</span>'}</label><textarea class="textarea res-e" aria-label="${i+1}번 왜 그렇게 풀었는지 설명" data-i="${i}" placeholder="맞았는지 틀렸는지는 상관없어요. 어떻게 생각했는지 적어요">${esc(it.e)}</textarea></div>
+        <div><label class="field-label">왜 그렇게 풀었는지 설명 <button type="button" class="mic-for" data-for-sel='.res-e[data-i="${i}"]' aria-label="말로 쓰기">🎤</button> ${resExplainRequired(it)?'<span class="req-tag">꼭 적어요</span>':'<span class="opt-tag">선택</span>'}</label><textarea class="textarea res-e" aria-label="${i+1}번 왜 그렇게 풀었는지 설명" data-i="${i}" placeholder="맞았는지 틀렸는지는 상관없어요. 어떻게 생각했는지 적어요">${esc(it.e)}</textarea></div>
         <div><label class="field-label">이 답, 얼마나 자신 있어요?</label><input type="range" class="range res-c" aria-label="${i+1}번 답 자신감(0~100%)" data-i="${i}" min="0" max="100" step="10" value="${it.c}" /><div class="range-val res-c-val" data-i="${i}">${it.c}%</div></div>
       </div>
     </div>
@@ -5185,7 +5394,7 @@ function resExplainRequired(it){
   return anyPaired ? !!it.strategyId : it.type!=='mcq';
 }
 function residualValid(){
-  return session.residual.items.length===4 && session.residual.items.every(it => (it.a||'').trim().length>=(it.type==='mcq'?1:2) && (!resExplainRequired(it) || (it.e||'').trim().length>=2));
+  return session.residual.items.length>0 && session.residual.items.length===(session.prior.items||session.residual.items).length && session.residual.items.every(it => (it.a||'').trim().length>=(it.type==='mcq'?1:2) && (!resExplainRequired(it) || (it.e||'').trim().length>=2));
 }
 async function submitResidual(){
   session.residual.items.forEach(it=>{ it.a = anonymize((it.a||'').trim()); it.e = anonymize((it.e||'').trim()); });
@@ -5244,6 +5453,7 @@ function renderResidualResult(){
     ['자신감이 실제와 얼마나 맞았나', ev.metacogBrier==null?'지금은 확인 못 해요':`오차 ${ev.metacogBrier.toFixed(2)} <span class="hint">(0에 가까울수록 자신감과 실제 결과가 잘 맞아요)</span>`, deltaChip('na','사전 자신감 '+(session.prior.score||'-')+'/5 · 사전 진단 vs 자신감 오차는 아래 참고')]
   ];
   $('#axis-body').innerHTML = rows.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+  { const aw = $('#axis-wrap'); if(aw && !aw.dataset.init){ aw.open = !cfg().reflectOneScreen; aw.dataset.init = '1'; } } // (WP2-1) 한 차시 모드는 그래프만 먼저, 표는 접어 둔다
   { // (최종 점검 10-05) 원리13-②: 표만 있고 그래프가 없었다 → 사전·사후(전체와 떠올리기·설명·적용 영역)를 나란히 놓은 막대그래프
     const g = $('#res-graph');
     if(g){
@@ -5257,6 +5467,9 @@ function renderResidualResult(){
       g.hidden = !gRows.length;
     }
   }
+  // (WP1-6) 이제 공개: 공부 전·혼자 풀기 문항의 정답과 채점 근거
+  { const rv = $('#res-reveal'); if(rv){ const line = (it,i,p)=>`<div class="box" style="padding:8px 12px"><div class="hint">${p} ${i+1}. ${esc(it.tag)}</div><div style="font-size:13px">${esc(it.q)}</div><div class="hint" style="margin-top:4px"><b>내 답:</b> ${esc(it.a||'-')}</div><div class="hint"><b>${it.key?'정답':'채점 근거'}:</b> ${esc(it.key ? it.key : (it.revealNote||it.note||'-'))}</div></div>`;
+    rv.innerHTML = `<summary>정답과 풀이 보기 (이제 볼 수 있어요)</summary><div class="stack" style="gap:6px;margin-top:8px">${(session.prior.items||[]).map((it,i)=>line(it,i,'공부 전')).join('')}${(session.residual.items||[]).map((it,i)=>line(it,i,'혼자 풀기')).join('')}</div>`; } }
   $$('#res-judge .choice').forEach(b=> b.classList.toggle('is-selected', b.dataset.v===session.residual.judge));
   $('#res-comment').hidden = !(session.residual.judge==='comment' || session.residual.judge==='hold'); // 안내문대로 '잘 모르겠어요'도 이유 칸을 연다
   $('#res-comment').value = session.residual.comment||'';
@@ -5270,7 +5483,8 @@ function renderResidualResult(){
 }
 function deltaChip(kind,label){
   const cls = kind==='up' ? 'up' : kind==='na' ? 'na' : 'flat';
-  const t = kind==='up'?'▲ 사전보다 높아요' : kind==='down'?'▼ 사전보다 낮아요' : kind==='flat'?'· 사전과 비슷해요' : 'ⓘ 참고만 해요';
+  // (WP1-6) 판정 대신 변화의 방향만 보인다. 늘었는지는 학습자가 판단한다(원리13).
+  const t = kind==='up'?'▲ 사전보다 점수가 높아요' : kind==='down'?'▼ 사전보다 점수가 낮아요' : kind==='flat'?'· 사전과 점수가 같아요' : 'ⓘ 참고만 해요';
   return `<span class="delta ${cls}">${t}</span><div class="hint">${esc(label)}</div>`;
 }
 
@@ -5379,7 +5593,7 @@ function init(){
   });
 
   $('#st-band').addEventListener('change', ()=>{ stPicks=[]; fillStartSubjects(); });
-  $('#st-subject').addEventListener('change', ()=>{ stPicks=[]; fillStartStds(); });
+  $('#st-subject').addEventListener('change', ()=>{ stPicks=[]; fillStartStds(); paintGoalHelpers(); });
   $('#st-filter').addEventListener('input', fillStartStds);
   $('#st-std').addEventListener('click', e=>{
     const b=e.target.closest('.chip'); if(!b) return;
@@ -5402,6 +5616,13 @@ function init(){
   $('#tb-sliders').addEventListener('input', e=>{
     const s = e.target.closest('.tb-slide'); if(!s) return;
     stTaskBlocks[s.dataset.id] = +s.value;
+    // 끌고 있는 막대를 다시 그리면 손을 떼게 되므로 글자만 바꾼다
+    const lab = document.querySelector(`.tb-slide-val[data-for="${s.dataset.id}"]`); if(lab) lab.textContent = tbSliderLabel(+s.value);
+    renderTaskBrief();
+  });
+  document.querySelector('.tb-presets').addEventListener('click', e=>{
+    const b = e.target.closest('.tb-preset'); if(!b) return;
+    stTaskBlocks = CS.applyPreset(TASK_BLOCKS, stTaskBlocks, b.dataset.preset);
     renderTaskBlocks();
   });
   $('#tb-toggles').addEventListener('change', e=>{
@@ -5411,6 +5632,7 @@ function init(){
   });
 
   $('#chat-send').addEventListener('click', sendChat);
+  $('#btn-my-diag').addEventListener('click', openMyDiagnosis);
   $('#chat-input').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
   $('#btn-mic').addEventListener('click', toggleMic);
   $('#btn-mic-lang').addEventListener('click', toggleMicLang);
@@ -5436,11 +5658,33 @@ function init(){
   $('#btn-stuck').addEventListener('click', ()=>{
     if(busy || session.phase!=='explore' || !session.cycleStarted) return;
     session.stuckCount++; session.holdStreak = 0; session.checkpointForceSoon = true;
-    const others = STRATS.filter(s=>!(session.strategies||[]).includes(s.id)).slice(0,2).map(s=>`${s.emoji} ${s.label}(${s.theory})`).join(', ');
-    pushMe('지금 막혔어. 어디서 막혔는지 같이 점검해줘.', false, true);
-    ai(`학습자가 "막혔어요" 신호를 보냈다. (1) 어디서 이해가 끊겼는지 짚어 보는 질문 1개 (2) 지금 방법 대신 시도해볼 만한 다른 공부 방법으로 ${others||'다른 방법'} 중 하나를 구체적으로 제안(쉬운 말로 풀어서, 괄호 안 영어 이론명은 말하지 마). 최종 선택은 학습자가 위쪽 [방법 바꾸기]에서 직접 한다.`);
+    // (WP3-6, 전문가1 "필요한 도움을 선택") 먼저 어떤 도움이 필요한지 고르게 한다(정답·풀이 직접 제시 금지는 그대로)
+    pushMe('지금 막혔어요.', false, 'button');
+    pushAi(CS.COPY.helpPickQ, 'help-pick');
+  });
+  $('#btn-help-boost').addEventListener('click', ()=>{
+    if(busy || session.phase!=='explore' || !session.cycleStarted) return;
+    // (WP3-6, 전문가2 "도움 단계 재확대") 도움 크기 설정(session.support)은 그대로 두고 다음 AI 답 2번만 한 단계 올린다. 자동 페이딩은 계속된다(원리1).
+    session.helpBoost = CS.startBoost(aiTurnCount(), 2);
+    (session.helpRequests = session.helpRequests||[]).push({ kind:'boost', support:session.support, at:new Date().toISOString(), aiTurn:aiTurnCount() });
+    pushNote(CS.COPY.helpBoostNote); paintSupport();
   });
   $('#stream').addEventListener('click', e=>{
+    const cc = e.target.closest('[data-pick="choice"] .chip');
+    if(cc && !busy){
+      const group = cc.closest('[data-pick="choice"]').dataset.group;
+      if(cc.dataset.write){ const inp = $('#chat-input'); inp.focus(); inp.placeholder = '직접 써 주세요'; return; }
+      if(group==='help'){
+        const h = CS.COPY.helpKinds.find(x=>x.label===cc.dataset.v); if(!h) return;
+        (session.helpRequests = session.helpRequests||[]).push({ kind:h.k, at:new Date().toISOString(), aiTurn:aiTurnCount(), task: session.currentTask ? session.currentTask.id : null });
+        pushMe(h.label + '가 필요해요.', false, 'button');
+        ai(`학습자가 막혀서 "${h.label}" 도움을 골랐다. ${session.currentTask ? '지금 과업: "' + session.currentTask.task + '".' : ''} 이렇게 도와라: ${h.instr}. 정답·풀이·계산 결과는 주지 마라. 마지막에 다시 해 보도록 짧게 권해라.`, null, null, { noNewTask:true });
+        return;
+      }
+      // 까닭 칩: 직접 쓴 것과 같은 흐름으로 보내되 출처는 'button'
+      window._nextSrc = 'button'; $('#chat-input').disabled = false; $('#chat-input').value = cc.dataset.v; sendChat();
+      return;
+    }
     const pr = e.target.closest('[data-pick="prior"] .u-chip');
     if(pr){
       session.prior.score = +pr.dataset.n;
@@ -5450,7 +5694,12 @@ function init(){
         // 먼저 받는다(session.meta.step=0이 "아직 이 질문에 답 안 함"을 뜻함). 답하면 그다음
         // sendChat의 'meta' 처리에서 usualMethod로 저장하고 이해 스캐폴딩(step=1)으로 이어간다.
         session.prepStep='meta'; session.meta.step=0; renderStream(); paintPhase();
-        ai(`학습자가 자신감 점수를 골랐다. "알려줘서 고마워" 정도로 한 문장만 말하라. 질문하지 말고, 설명·힌트·풀이도 하지 마라.`, null, null, { maxLen:120, noNewTask:true, suffix:'이제 스스로 점검을 해 보자. 먼저, 이 내용은 평소에 보통 어떻게 공부해?' });
+        if(cfg().metaOneScreen){
+          // (WP2-1 한 차시) 네 번 주고받던 스스로 점검을 한 화면 카드로 — 칩 고르기 + 선택 한 줄
+          pushAi('알려 줘서 고마워요. 이제 스스로 점검을 한 화면에서 해 봐요. 줄마다 하나씩 골라 주세요.', null);
+          pushMetaForm();
+        } else
+        ai(`학습자가 자신감 점수를 골랐다. "알려 줘서 고마워요" 정도로 한 문장만 말하라. 질문하지 말고, 설명·힌트·풀이도 하지 마라.`, null, null, { maxLen:120, noNewTask:true, suffix:CS.COPY.metaStartSuffix });
       } else renderStream();
       return;
     }
@@ -5478,12 +5727,14 @@ function init(){
         renderStream();
         pushNote(`공부 방법을 "${strategyLabelJoined(prevIds)||'없음'}"에서 "${session.strategyLabel}"로 바꿨어요.`);
         session.awaitingChangeReason = true;
-        ai('학습자가 방금 공부 방법을 바꿨다. 왜 바꾸고 싶었는지 짧게 1개만 물어봐. 어려운 말은 쓰지 마.');
+        // (WP3-1) "왜 바꿨어?" 대신 까닭을 고를 수 있는 칩 + 직접 쓰기
+        ai('학습자가 방금 공부 방법을 바꿨다. 바꾼 것을 존중하는 한 문장만 말하라. 질문하지 마라.', 'change-reason-pick', null, { noNewTask:true, suffix:CS.COPY.strategyChangeQ });
       } else {
         session.prepStep = 'reason';
         renderStream(); paintPhase();
-        pushMe(`"${session.strategyLabel}" 방법으로 해볼게.`, false, true);
-        ai(`학습자가 공부 방법 "${session.strategyLabel}"을(를) 골랐다(${session.strategies.length}개를 함께 고름). 무엇을 배울지 질문하기 전에, "그 방법을(들을) 고른 이유가 뭐야?"라고만 쉬운 말로 딱 1가지 물어봐.`);
+        pushMe(`"${session.strategyLabel}" 방법으로 해 볼게요.`, false, 'button');
+        // (WP3-1) "이유가 뭐야?" 대신 까닭 칩(①~④ + 직접 쓰기). 이유 말하기 자체(원리8)는 유지한다.
+        ai(`학습자가 공부 방법 "${session.strategyLabel}"을(를) 골랐다(${session.strategies.length}개를 함께 고름). 고른 것을 인정하는 한 문장만 말하라. 질문하지 마라.`, 'reason-pick', null, { noNewTask:true, suffix:CS.COPY.strategyReasonQ });
       }
       return;
     }
@@ -5618,7 +5869,15 @@ function init(){
       // 아무리 잘 이해해도 안 줄었다. 이해도 체크포인트(필수로 매번 답해야 하는 신호)도 높게
       // (4~5) 연달아 2번 나오면 같은 방식으로 줄어들게 해, 더 안정적으로 반영되게 한다.
       if(t.score!=null) pushUnderstanding((t.score-1)*25, 'checkpoint');
+      // (WP2-6, 전문가4 "후속 안내 부족") 고른 뒤 무엇이 달라지는지 바로 한 줄로 알린다
+      pushNote(t.score<=2 ? CS.COPY.cpAfterLow : t.score===3 ? CS.COPY.cpAfterMid : CS.COPY.cpAfterHigh);
       renderStream(); syncComposeLock();
+      return;
+    }
+    const cpR = e.target.closest('.cp-rchip');
+    if(cpR){
+      const t = session.turns.find(x=>x.id===cpR.dataset.cp); if(!t) return;
+      t.reason = cpR.dataset.v; t.reasonSrc = 'chip'; renderStream();
       return;
     }
     // ----- 조직화: 마인드맵 직접 조작 위젯(원리8) -----
@@ -5880,6 +6139,8 @@ function init(){
   // (개선) 원리13 "AI의 도움을 제거한 맥락": 혼자 풀어보기는 다음 차시에 하도록 권하고, 이어서 하기로 연다.
   $('#reflect-later').addEventListener('click', ()=>{
     session.reflect.note = anonymize($('#in-reflect').value.trim());
+    session.reflect.noteA = anonymize(($('#in-reflect-a').value||'').trim()) || session.reflect.noteA || '';
+    session.wonder = anonymize(($('#in-wonder').value||'').trim()) || session.wonder || '';
     session.endedAt = new Date().toISOString(); session.residualDeferred = true;
     show('residual'); saveDraft(); show('home');
     modal('다음 시간에 만나요', '돌아보기까지 저장했어요. 다음 시간에 내 공부방에서 [이어서 하기]를 누르면 혼자 풀어보기부터 시작해요.');
@@ -5897,7 +6158,7 @@ function init(){
   (async ()=>{
     try{
       const j = await apiJSON('/api/data', { method:'GET' });
-      DB.accounts = { [j.nickname]: j.data }; markSaved(j.data);
+      DB.accounts = { [j.nickname]: migrateAccountData(j.data) }; markSaved(j.data);
       DB.currentUser = j.nickname;
       show('home');
     }catch(e){ /* 미로그인: auth 화면 유지 */ }
