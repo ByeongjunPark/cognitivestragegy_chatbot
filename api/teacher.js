@@ -5,6 +5,39 @@
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
 import { ready, kvGet, kvSet, kvDel, kvKeys, kvClear, kvIncr, hashPin, verifyPin, makeToken, readToken, getCookie, setCookie, loadUserData, sendJSON } from './_store.js';
+// (WP1-2·5-4) 학생 화면과 같은 점수 정규화·소요시간 함수를 교사 화면·CSV에서도 쓴다(화면마다 다른 수치가 나오지 않게)
+import '../js/lib/scoring.js';
+const CS = globalThis.CS;
+const PHASE_KEYS = ['start', 'activate', 'meta', 'pick', 'explore', 'reflect', 'residual', 'journal'];
+const FLAG_TYPES = ['broken', 'tone', 'probe', 'term', 'widget', 'verify', 'answer-leak', 'ai-error'];
+function phaseCols(s) {
+  const ms = CS.phaseMs(s.phaseTimes || {}, null);
+  const o = {}; PHASE_KEYS.forEach(k => { o['phase_min_' + k] = ms[k] != null ? Math.round(ms[k] / 6000) / 10 : ''; });
+  o.phase_total_min = s.phaseTimes ? Math.round(CS.totalMs(s.phaseTimes, null) / 6000) / 10 : '';
+  return o;
+}
+// 2026-10 평가 반영으로 추가한 열(기존 열 순서는 그대로 두고 뒤에 붙인다 — 불변조건 6)
+function evalCols(s) {
+  const turns = s.turns || [], me = turns.filter(t => t.role === 'me');
+  const flags = s.flags || [];
+  const mv = CS.metaScoreView(s.meta || {});
+  const o = {
+    mode: s.mode || 'legacy', app_version: s.appVersion || '', practice: s.practice ? 1 : 0,
+    typed_msgs: me.filter(t => CS.srcOf(t) === 'typed').length, button_msgs: me.filter(t => CS.srcOf(t) === 'button').length,
+    meta_grade_failed: s.meta && s.meta.gradeFailed ? 1 : 0,
+    meta_level_understand: mv.ok ? mv.axes[0].level : '', meta_level_strategy: mv.ok ? mv.axes[1].level : '', meta_level_connect: mv.ok ? mv.axes[2].level : '',
+    meta_quote_understand: ((s.meta || {}).scoreEvidence || {}).understand || '', meta_quote_strategy: ((s.meta || {}).scoreEvidence || {}).strategy || '', meta_quote_connect: ((s.meta || {}).scoreEvidence || {}).connect || '',
+    help_requests: (s.helpRequests || []).map(h => h.kind).join('|'), help_boosts: (s.helpRequests || []).filter(h => h.kind === 'boost').length,
+    error_reports: (s.errorReports || []).length, error_report_texts: (s.errorReports || []).map(e => e.text.slice(0, 80) + (e.comment ? ' // ' + e.comment : '')).join(' | '),
+    score_reports: (s.scoreReports || []).length,
+    skipped: Object.entries(s.skipped || {}).filter(([, v]) => v).map(([k]) => k).join('|'),
+    next_plan: s.nextPlan || '', wonder: s.wonder || '',
+    offscript: (s.offScript || []).map(x => x.kind).join('|'), scope_out: (s.scopeLog || []).filter(x => x.v === 'out').length,
+    support_start: s.supportStart || ''
+  };
+  FLAG_TYPES.forEach(t => { o['flag_' + t.replace('-', '_')] = flags.filter(f => f.type === t).length; });
+  return Object.assign(o, phaseCols(s));
+}
 
 const NICK_RE = /^[\p{L}\p{N} _.\-]{1,16}$/u;
 function keyOk(k) {
@@ -96,7 +129,31 @@ function row(nick, s, status) {
     fade_accepted: turns.filter(t => t.kind === 'fade-propose' && t.accepted).length,
     // 원리 5: 과업 분담(유동 블록 0~100, 50 이상=AI 쪽) · AI 고정 과업의 '먼저 나서기' 토글
     ...['define_problem', 'explain_result', 'summarize_key', 'draft_first', 'structure_complex'].reduce((o, k) => (o['task_' + k] = (s.taskBlocks || {})[k] ?? '', o), {}),
-    ...['find_ref', 'scaffold_help', 'grade_feedback'].reduce((o, k) => (o['ai_' + k] = (s.fixedToggle || {})[k] == null ? '' : ((s.fixedToggle || {})[k] ? 1 : 0), o), {})
+    ...['find_ref', 'scaffold_help', 'grade_feedback'].reduce((o, k) => (o['ai_' + k] = (s.fixedToggle || {})[k] == null ? '' : ((s.fixedToggle || {})[k] ? 1 : 0), o), {}),
+    ...evalCols(s)
+  };
+}
+// (WP5-4, 전문가3·4) 교사용 수업 운영 점검: 학급 단계별 소요 중앙값·차시 배분 제안·오류 신고·의심 발화·건너뛴 항목·루브릭 근거
+function insights(all) {
+  const sessions = [];
+  for (const a of all) for (const s of a.sessions) if (!s.practice) sessions.push({ nick: a.nickname, s });
+  const done = sessions.filter(x => !x.s.incomplete && x.s.phaseTimes);
+  const med = {};
+  PHASE_KEYS.forEach(k => { med[k] = CS.median(done.map(x => (CS.phaseMs(x.s.phaseTimes, null)[k] || 0) / 60000).filter(v => v > 0)); });
+  const total = CS.median(done.map(x => CS.totalMs(x.s.phaseTimes, null) / 60000));
+  // 40분 안에 들어가도록 단계 비율대로 나눈 제안(측정값이 없으면 비움)
+  const sum = PHASE_KEYS.reduce((p, k) => p + (med[k] || 0), 0);
+  const plan40 = sum ? PHASE_KEYS.reduce((o, k) => (o[k] = Math.round((med[k] || 0) / sum * 40), o), {}) : null;
+  const pick = (x, list) => list.map(v => Object.assign({ nickname: x.nick, date: String(x.s.startedAt || '').slice(0, 10), subject: (x.s.ctx || {}).subject || '' }, v));
+  return {
+    sessions: done.length,
+    phaseMedianMin: Object.fromEntries(Object.entries(med).map(([k, v]) => [k, v == null ? null : Math.round(v * 10) / 10])),
+    totalMedianMin: total == null ? null : Math.round(total * 10) / 10,
+    plan40,
+    errorReports: sessions.flatMap(x => pick(x, (x.s.errorReports || []).map(e => ({ text: e.text, comment: e.comment, rag: e.rag || [] })))).slice(-100),
+    flags: sessions.flatMap(x => pick(x, (x.s.flags || []).filter(f => FLAG_TYPES.includes(f.type) || f.type === 'score-report').map(f => ({ type: f.type, text: f.text, issue: f.issue || '' })))).slice(-200),
+    skipped: sessions.reduce((o, x) => { Object.entries(x.s.skipped || {}).forEach(([k, v]) => { if (v) o[k] = (o[k] || 0) + 1; }); return o; }, {}),
+    rubric: sessions.filter(x => x.s.meta && x.s.meta.scoreDetail).slice(-60).map(x => ({ nickname: x.nick, date: String(x.s.startedAt || '').slice(0, 10), detail: x.s.meta.scoreDetail, indicators: x.s.meta.indicators || null, quotes: x.s.meta.scoreEvidence || {}, answers: x.s.meta.answers || {}, calib: x.s.meta.calib || null, reported: (x.s.scoreReports || []).length }))
   };
 }
 function toCSV(rows) {
@@ -169,6 +226,7 @@ export default async function handler(req, res) {
       sendJSON(req, res, 200, { students: all.map(a => ({ nickname: a.nickname, created: a.created, done: a.sessions.filter(s => !s.incomplete).length, incomplete: a.sessions.filter(s => s.incomplete).length + (a.draft ? 1 : 0), last: [...a.sessions.map(s => s.endedAt || s.startedAt), a.draft && a.draft.savedAt].filter(Boolean).sort().pop() || '' })) });
       return;
     }
+    if (body.action === 'insights') { sendJSON(req, res, 200, insights(await loadAll())); return; }
     // (10-08) 교사 화면 '학생 성장 보기': 고른 학생들의 끝낸 공부를 지표만 추린 짧은 형태로 보낸다(대화 원문 제외).
     if (body.action === 'growth') {
       const want = Array.isArray(body.nicknames) ? body.nicknames.map(String).filter(n => NICK_RE.test(n)).slice(0, 80) : [];

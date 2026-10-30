@@ -79,6 +79,13 @@
     </div>
   </div>
 
+  <!-- (2026-10 전문가 평가 WP2-1·5-4) 수업 운영: 학급 수업 방식 링크, 단계별 소요시간과 차시 배분 제안, 오류 신고·의심 발화, 건너뛴 항목, 스스로 점검 채점 근거 -->
+  <div class="card">
+    <h2>2-1. 수업 운영 점검 <button id="btn-ins" style="margin-left:8px">불러오기</button></h2>
+    <div class="hint" style="margin-bottom:6px">학생에게 줄 주소: 수업 방식을 정해 링크로 나눠 주면 학생 화면에서 그 방식으로 고정돼요.</div>
+    <div class="row"><button id="lk-40">한 차시(40분) 링크 복사</button><button id="lk-full">자세히(전체) 링크 복사</button><span class="msg" id="m-lk"></span></div>
+    <div id="ins-out" class="hint" style="margin-top:10px"></div>
+  </div>
   <div class="card">
     <h2>3. 데이터 내려받기</h2>
     <div class="row"><button id="btn-csv">세션 요약 CSV (엑셀용)</button><button id="btn-json">전체 원자료 JSON (대화 포함)</button></div>
@@ -117,6 +124,28 @@ async function call(body, raw) {
   if (!r.ok) { let e = {}; try { e = await r.json(); } catch (_) {} throw new Error(e.error || ('오류 ' + r.status)); }
   return raw ? r : r.json();
 }
+// ---- 수업 운영 점검 (WP5-4) ----
+const PHASE_LABEL = { start:'배울 것 정하기', activate:'아는 것 확인', meta:'스스로 점검', pick:'방법 고르기', explore:'방법대로 해 보기', reflect:'돌아보기', residual:'혼자 풀어보기', journal:'마지막 글' };
+const FLAG_LABEL = { broken:'비문 의심', tone:'말투 섞임', probe:'추궁형 질문', term:'교과 용어 위반', widget:'선택지 없는 안내', verify:'사실 검수에서 걸림', 'answer-leak':'문항 정답 단서', 'ai-error':'AI 응답 실패', 'score-report':'학생이 점수 이상 신고' };
+const SKIP_LABEL = { reflectTags:'내 말 표시', promptRatings:'질문 점수 매기기', reflectA:'역할 되돌아보기 글' };
+function renderInsights(j) {
+  const ph = Object.keys(PHASE_LABEL).map(k => `<tr><td>${PHASE_LABEL[k]}</td><td>${j.phaseMedianMin[k] ?? '-'}분</td><td>${j.plan40 ? j.plan40[k] + '분' : '-'}</td></tr>`).join('');
+  const fl = j.flags.slice(-40).reverse().map(f => `<li><b>${esc(FLAG_LABEL[f.type] || f.type)}</b> · ${esc(f.nickname)} ${esc(f.date)} ${esc(f.subject)} — ${esc(f.text)}${f.issue ? ' <i>(' + esc(f.issue) + ')</i>' : ''}</li>`).join('');
+  const er = j.errorReports.slice(-30).reverse().map(e => `<li>${esc(e.nickname)} ${esc(e.date)} ${esc(e.subject)} — "${esc(e.text)}"${e.comment ? ' · 학생 의견: ' + esc(e.comment) : ''}${e.rag && e.rag.length ? '<br><small>AI가 참고한 원문: ' + esc(e.rag.join(', ')) + '</small>' : ''}</li>`).join('');
+  const rb = j.rubric.slice(-20).reverse().map(r => `<tr><td>${esc(r.nickname)}<br><small>${esc(r.date)}${r.reported ? ' · ⚠ 학생 신고' : ''}</small></td>${['understand','strategy','connect'].map(k => `<td>${r.detail[k] ?? '-'}점 ${r.indicators && r.indicators[k] ? '(' + ['s','r','c'].map(x => r.indicators[k][x] ? '✓' : '·').join('') + ')' : ''}<br><small>근거 인용: "${esc(r.quotes[k] || '')}"</small><br><small>학생 답: ${esc((r.answers[k] || '').slice(0, 80))}</small></td>`).join('')}<td>${r.calib ? `자신감 ${r.calib.confPct} / 사전 확인 ${r.calib.diag}` : '-'}</td></tr>`).join('');
+  const sk = Object.entries(j.skipped).map(([k, v]) => `${SKIP_LABEL[k] || k} ${v}회`).join(' · ') || '없음';
+  $('#ins-out').innerHTML = `<p>끝낸 공부 ${j.sessions}회 기준 · 전체 소요 중앙값 <b>${j.totalMedianMin ?? '-'}분</b></p>
+    <table><thead><tr><th>단계</th><th>학급 중앙값</th><th>40분 차시 배분 제안</th></tr></thead><tbody>${ph}</tbody></table>
+    <p style="margin-top:10px"><b>건너뛴 선택 항목</b>: ${esc(sk)}</p>
+    <details open><summary><b>학생이 신고한 AI 오류 (${j.errorReports.length})</b></summary><ul>${er || '<li>없음</li>'}</ul></details>
+    <details><summary><b>자동 점검 표시 — 의심 발화·고쳐서 내보낸 응답 (${j.flags.length})</b></summary><ul>${fl || '<li>없음</li>'}</ul></details>
+    <details><summary><b>스스로 점검 채점 근거 (숫자는 교사 화면에서만)</b></summary><table><thead><tr><th>학생</th><th>이해</th><th>전략</th><th>연결</th><th>보정도</th></tr></thead><tbody>${rb || '<tr><td colspan="5">없음</td></tr>'}</tbody></table></details>`;
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const ib = $('#btn-ins'); if (ib) ib.onclick = async () => { $('#ins-out').textContent = '불러오는 중…'; try { renderInsights(await call({ action: 'insights' })); } catch (e) { $('#ins-out').textContent = e.message; } };
+  const copy = async m => { const u = location.origin + '/?mode=' + m; try { await navigator.clipboard.writeText(u); $('#m-lk').textContent = '복사했어요: ' + u; } catch (e) { $('#m-lk').textContent = u; } };
+  const a = $('#lk-40'), b = $('#lk-full'); if (a) a.onclick = () => copy('class40'); if (b) b.onclick = () => copy('full');
+});
 function showLogin() { $('#app').hidden = true; $('#who').hidden = true; $('#login-card').hidden = false; }
 function showApp(id) { $('#login-card').hidden = true; $('#app').hidden = false; $('#who').hidden = false; $('#who-name').textContent = `${id} 선생님`; loadList(); loadTeachers(); }
 async function boot() {
