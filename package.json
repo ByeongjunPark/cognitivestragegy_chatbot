@@ -3,5 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "메타인지·AI활용 성찰 지원 시스템 - Vercel 서버리스 API (Upstage 프록시 + Google Sheets 계정/데이터 저장)"
+  "description": "메타인지·AI활용 성찰 지원 시스템 - Vercel 서버리스 API (Upstage 프록시 + Google Sheets 계정/데이터 저장)",
+  "scripts": {
+    "test": "node --test \"tests/*.test.mjs\"",
+    "lint:tone": "node scripts/lint-tone.mjs",
+    "lint:terms": "node scripts/lint-terms.mjs",
+    "rag:build": "node tools/curriculum-rag/build-index.mjs"
+  }
 }

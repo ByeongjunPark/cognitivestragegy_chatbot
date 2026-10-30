@@ -45,3 +45,6 @@ Desktop.ini
 .DS_Store
 .vercel
 .env*
+
+# (2026-10) 브라우저 라이브러리는 추적한다(위의 파이썬 lib/ 무시 규칙 예외)
+!js/lib/
