@@ -1,0 +1,58 @@
+[
+ {
+  "width": 360,
+  "screen": "auth",
+  "horizontalScroll": false,
+  "overflowing": []
+ },
+ {
+  "width": 360,
+  "screen": "auth",
+  "keyboardToNickname": true
+ },
+ {
+  "width": 360,
+  "screen": "home",
+  "horizontalScroll": false,
+  "overflowing": []
+ },
+ {
+  "width": 360,
+  "screen": "start(설정 펼침)",
+  "horizontalScroll": false,
+  "overflowing": []
+ },
+ {
+  "width": 360,
+  "screen": "meta-card",
+  "levelHasTextLabel": true
+ },
+ {
+  "width": 768,
+  "screen": "auth",
+  "horizontalScroll": false,
+  "overflowing": []
+ },
+ {
+  "width": 768,
+  "screen": "auth",
+  "keyboardToNickname": true
+ },
+ {
+  "width": 768,
+  "screen": "home",
+  "horizontalScroll": false,
+  "overflowing": []
+ },
+ {
+  "width": 768,
+  "screen": "start(설정 펼침)",
+  "horizontalScroll": false,
+  "overflowing": []
+ },
+ {
+  "width": 768,
+  "screen": "meta-card",
+  "levelHasTextLabel": true
+ }
+]
