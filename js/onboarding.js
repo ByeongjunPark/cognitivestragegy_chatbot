@@ -17,8 +17,11 @@ function paintPinHelp(){
   const names = chosen.length ? `<div class="pin-names">고른 그림: <b>${esc(picNames(chosen))}</b></div>` : '';
   box.innerHTML = isSignup
     ? `<div class="callout warn pin-warn"><b>그림 4개는 나만의 비밀번호예요. 꼭 기억해요!</b><br>${_signupFirst ? '확인하려고 <b>같은 그림 4개를 같은 순서로 한 번 더</b> 골라 주세요.' : '다음에 들어올 때 같은 그림을 같은 순서로 골라야 해요.'}</div>${names}`
-    : `${names}<button type="button" class="head-link" id="btn-forgot">그림 비밀번호를 잊어버렸어요</button>`;
-  const f = document.getElementById('btn-forgot'); if(f) f.onclick = openForgot;
+    : names;
+  // "잊어버렸어요"는 그림 위가 아니라 [들어가기] 버튼 아래에 둔다(로그인 탭에서만)
+  let f = document.getElementById('btn-forgot');
+  if(!f){ const go = document.getElementById('auth-go'); if(go){ go.insertAdjacentHTML('afterend', '<button type="button" class="head-link forgot-link" id="btn-forgot">그림 비밀번호를 잊어버렸어요</button>'); f = document.getElementById('btn-forgot'); f.onclick = openForgot; } }
+  if(f) f.hidden = isSignup;
 }
 function openForgot(){
   const nick = (document.getElementById('au-nick').value || '').trim();

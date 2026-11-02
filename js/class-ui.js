@@ -368,8 +368,17 @@ function goalExampleSentences(){
   // 날마다 바뀌되 같은 날엔 같은 예시(새로고침마다 흔들리지 않게)
   const seed = new Date().toISOString().slice(0,10).split('-').reduce((a,b)=>a*31+(+b),7);
   const picks = [0,1,2].map(k=>pool[(seed*(k+3)+k*97) % pool.length]);
-  const core = it => String(it.name).replace(/(할 수 있다|한다|하다|이해한다|안다|설명한다|탐구한다)\.?$/,'').replace(/[을를]\s*$/,'').trim();
-  return [...new Set(picks.map(it=>`${trim(core(it),34)}에 대해 알고 싶어요`))];
+  // 성취기준 문장의 첫 마디만 쓰고(쉼표·"하여/하고" 앞), 길면 낱말 경계에서 자른다 — 말줄임표 없이 자연스러운 한 문장
+  const core = it => {
+    // 첫 목적어("…을/를 ") 앞의 명사구: "주위에서 열의 이동으로 나타나는 현상을 관찰하여…" → "주위에서 열의 이동으로 나타나는 현상"
+    const nm = String(it.name);
+    const m = nm.match(/^(.{4,}?)[을를]\s/);
+    let c = (m ? m[1] : nm.split(/[,，]/)[0]).replace(/(할 수 있다|한다|하다)\.?$/,'').trim();
+    if(c.length > 30){ const k = c.lastIndexOf('에서 '); if(k > 0 && c.length - k - 3 >= 6) c = c.slice(k + 3); } // 길면 앞의 "…에서" 수식어를 덜어 낸다
+    if(c.length > 30){ c = c.slice(0, 30); c = c.slice(0, Math.max(c.lastIndexOf(' '), 12)).replace(/\s*[을를이가은는의과와에]\s*$/,'').trim(); }
+    return c;
+  };
+  return [...new Set(picks.map(it=>`${core(it)}에 대해 알고 싶어요`))];
 }
 function paintGoalHelpers(){
   const box = $('#st-goal-help'); if(!box) return;

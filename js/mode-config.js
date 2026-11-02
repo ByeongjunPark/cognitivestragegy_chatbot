@@ -78,7 +78,7 @@
     if (i < 0) return null;
     let min = 0;
     for (let k = i; k < STEPS.length; k++) {
-      const b = STEPS[k].budget ? cfg.budgetMin[STEPS[k].budget] : 1;
+      const b = STEPS[k].budget ? cfg.budgetMin[STEPS[k].budget] : 0; // 마지막 글은 혼자 풀어보기 예산 안에 든다(한 차시 합계 40분)
       if (k === i) min += Math.max(0, b - (elapsedInStepMs || 0) / 60000);
       else min += b;
     }

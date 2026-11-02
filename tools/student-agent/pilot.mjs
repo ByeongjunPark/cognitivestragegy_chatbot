@@ -89,14 +89,26 @@ async function runOne(pid, sid, idx) {
 
   // ---- 들어가기 ----
   await page.goto(LIVE ? `${BASE}/?mode=${MODE}` : `${BASE}/?local&mode=${MODE}`);
-  await page.click('#auth-tabs button[data-t="signup"]');
-  const nick = (NICK_PREFIX + idx + '-' + pid.slice(0, 4) + '-' + sid.slice(0, 4)).slice(0, 16);
-  await page.fill('#au-nick', nick);
-  const pics = ['🍎', '🐶', '🚀', '⭐'];
-  for (const p of pics) await page.click(`#palette button[data-p="${p}"]`);
-  await page.click('#auth-go'); await page.waitForTimeout(300);
-  if (await ev(() => typeof reels !== 'undefined' && reels.every(v => !v))) { for (const p of pics) await page.click(`#palette button[data-p="${p}"]`); await page.click('#auth-go'); }
-  await page.waitForFunction(() => document.querySelector('.screen.is-active')?.dataset.screen === 'home', null, { timeout: WAIT }).catch(() => errors.push('home not reached'));
+  // --account <이름>: 모든 회차를 한 계정에 모은다(첫 회차는 가입, 이후는 로그인). 그림 비밀번호는 --pin "🍎,🐶,🚀,⭐"
+  const nick = args.account ? String(args.account) : (NICK_PREFIX + idx + '-' + pid.slice(0, 4) + '-' + sid.slice(0, 4)).slice(0, 16);
+  const pics = args.pin ? String(args.pin).split(',') : ['🍎', '🐶', '🚀', '⭐'];
+  // 로그인 결과(홈 도착 또는 오류 문구)가 나올 때까지 기다린다 — 기록이 쌓인 계정은 서버 응답이 느리다
+  const atHome = () => page.waitForFunction(() => document.querySelector('.screen.is-active')?.dataset.screen === 'home' || !(document.getElementById('auth-msg') || { hidden: true }).hidden, null, { timeout: WAIT })
+    .then(() => page.evaluate(() => document.querySelector('.screen.is-active')?.dataset.screen === 'home')).catch(() => false);
+  const tapPin = async () => { for (const p of pics) await page.click(`#palette button[data-p="${p}"]`); };
+  let inHome = false;
+  if (args.account) { // 먼저 로그인 시도
+    await page.click('#auth-tabs button[data-t="login"]'); await page.fill('#au-nick', nick); await tapPin(); await page.click('#auth-go');
+    inHome = await atHome();
+  }
+  if (!inHome) {
+    await page.click('#auth-tabs button[data-t="signup"]');
+    await page.fill('#au-nick', nick);
+    await tapPin();
+    await page.click('#auth-go'); await page.waitForTimeout(300);
+    if (await ev(() => typeof reels !== 'undefined' && reels.every(v => !v))) { await tapPin(); await page.click('#auth-go'); }
+    await page.waitForFunction(() => document.querySelector('.screen.is-active')?.dataset.screen === 'home', null, { timeout: WAIT }).catch(() => errors.push('home not reached'));
+  }
   await closeModals();
   // ---- 시작 ----
   await page.click('#btn-new-session'); await page.waitForTimeout(200); await closeModals();

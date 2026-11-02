@@ -907,6 +907,14 @@
   @media (max-width:480px){ .lv3-row{grid-template-columns:6em 1fr} .lv3-txt{grid-column:1/-1} .qa-help{display:none} }
   .mode-class40 .sc-when,.mode-class40 .kt-line{display:none} /* 한 차시: 방법 카드는 한 줄 설명만("이럴 때 좋아요"는 자세히 모드에서) */
   .reflect-split > *{min-width:0} .tl-card .txt,.pp-text{overflow-wrap:anywhere} /* (WP6-2) 360px에서 돌아보기 가로 스크롤 없애기 */
+  /* (2026-11 화면 점검) 로그인 화면: 내용이 짧으면 가운데, 길면 맨 위부터 보이고 스크롤된다(가운데 정렬 때 위가 잘리던 문제). 할 일 상자는 설명과 겹쳐 뺀다 */
+  .screen[data-screen="auth"].is-active{justify-content:flex-start;padding:28px 22px}
+  .screen[data-screen="auth"].is-active > :first-child{margin-top:auto}
+  .screen[data-screen="auth"].is-active > :last-child{margin-bottom:auto}
+  .screen[data-screen="auth"] .todo-line{display:none!important}
+  .forgot-link{display:block;margin:10px auto 0;font-size:12.5px}
+  .goal-help{display:flex!important;flex-direction:row!important;flex-wrap:wrap;gap:6px;border:0!important;padding:0!important;background:none!important;max-height:none!important}
+  .goal-help .chip{width:auto!important;flex:0 0 auto;border-radius:999px}
 </style>
 </head>
 <body>
@@ -931,10 +939,10 @@
   <section class="screen" data-screen="auth">
     <div class="auth-brand"><span class="dot"></span> AI와 공부하고 되돌아보기</div>
     <div class="rail">
-      <div class="eyebrow">시작하기  <p class="todo-line" hidden></p>
-    </div>
+      <div class="eyebrow">시작하기</div>
       <h1 class="headline">그림 비밀번호로 들어가는 나만의 공부방</h1>
       <p class="subhead">이름이나 전화번호는 필요 없어요. <b>부를 이름(별명)</b>과 <b>좋아하는 그림 4개</b>만 정하면 돼요. 다음에 다시 들어오면 지난 공부 기록이 그대로 이어져요.</p>
+      <p class="todo-line" hidden></p>
     </div>
     <div class="card stack" style="max-width:520px">
       <div class="tabs" id="auth-tabs">
@@ -966,10 +974,10 @@
   <!-- ============ 내 학습터 (누적 대시보드) ============ -->
   <section class="screen" data-screen="home">
     <div class="rail">
-      <div class="eyebrow">내 공부방  <p class="todo-line" hidden></p>
-    </div>
+      <div class="eyebrow">내 공부방</div>
       <h1 class="headline"><span id="home-name">친구</span>님, 지금까지 공부한 걸 모아 봤어요</h1>
       <p class="subhead" id="home-summary-line">공부할 때마다 대화·공부 방법·스스로 답한 내용이 여기에 쌓여요. 아래에서 그동안의 모습을 보고, 준비되면 새 공부를 시작해요.</p>
+      <p class="todo-line" hidden></p>
     </div>
 
     <!-- (개선) 내 공부방 재구성: 학생이 가장 자주 하는 일(새 공부 시작·지난 기록 보기)을 위로 올리고,
@@ -1053,10 +1061,10 @@
   <!-- ============ 세션 시작 (슬림 폼: 성취기준만) ============ -->
   <section class="screen" data-screen="start">
     <div class="rail">
-      <div class="eyebrow">새 공부  <p class="todo-line" hidden></p>
-    </div>
+      <div class="eyebrow">새 공부</div>
       <h1 class="headline">오늘 공부하고 싶은 것을 적어요</h1>
       <p class="subhead">단원 이름을 몰라도 괜찮아요. <b>내 말로</b> 적으면 맞는 내용을 찾아 줘요.</p>
+      <p class="todo-line" hidden></p>
     </div>
     <div class="card stack">
       <div class="callout info" id="practice-banner" hidden><b>연습 모드</b> — 연습한 기록은 성장 그래프에 들어가지 않아요. 마음 편히 눌러 봐요.</div>
@@ -1148,9 +1156,9 @@
   <!-- ============ 대화 ============ -->
   <section class="screen" data-screen="chat">
     <div class="rail">
-      <div class="eyebrow">AI와 이야기하기  <p class="todo-line" hidden></p>
-    </div>
+      <div class="eyebrow">AI와 이야기하기</div>
       <h1 class="headline">이야기하면서 같이 알아가요</h1>
+      <p class="todo-line" hidden></p>
     </div>
     <div class="chatwrap">
       <div class="chat-head">
@@ -1226,10 +1234,10 @@
   <!-- ============ 되짚기: 가(역할·위임 성찰) → 나(프롬프트 성찰) ============ -->
   <section class="screen" data-screen="reflect">
     <div class="rail">
-      <div class="eyebrow">돌아보기  <p class="todo-line" hidden></p>
-    </div>
+      <div class="eyebrow">돌아보기</div>
       <h1 class="headline" id="reflect-headline">누가 이끌었고, 내가 무엇을 물었나</h1>
       <p class="subhead" id="reflect-subhead">여기는 대화하는 곳이 아니라 <b>내가 나눈 이야기를 쭉 펼쳐 보는 곳</b>이에요. 내가 한 말 중에서 <b>내가 스스로 생각해서 물은 것</b>과 <b>AI에게 답을 맡긴 것</b>을 원하는 만큼 골라 보세요.</p>
+      <p class="todo-line" hidden></p>
     </div>
     <div class="cycle-wrap" style="border:1px solid var(--line);border-radius:14px;margin-bottom:16px">
       <div class="cycle-title" style="display:flex;justify-content:space-between;gap:8px"><span>3단계 · 돌아보기 순서</span><button type="button" class="head-link my-diag-btn">내 진단 보기</button></div>
@@ -1352,10 +1360,10 @@
   <!-- ============ 잔여물 확인 (AI 없음) ============ -->
   <section class="screen" data-screen="residual">
     <div class="rail">
-      <div class="eyebrow">혼자서 풀어보기  <p class="todo-line" hidden></p>
-    </div>
+      <div class="eyebrow">혼자서 풀어보기</div>
       <h1 class="headline">이번엔 AI 없이, 내 힘으로 풀어요</h1>
       <p class="subhead">여기서는 AI와 이야기할 수 없어요. 공부 전 "아는 것 확인"과 같은 종류의 "쌍둥이 문제"를 혼자 풀고, 왜 그렇게 풀었는지 적어요. 공부 전 점수와 나란히 비교해요. 정답과 풀이는 다 낸 뒤에 볼 수 있어요.</p>
+      <p class="todo-line" hidden></p>
     </div>
     <div class="cycle-wrap" style="border:1px solid var(--line);border-radius:14px;margin-bottom:16px">
       <div class="cycle-title" style="display:flex;justify-content:space-between;gap:8px"><span>3단계 · 돌아보기 순서</span><button type="button" class="head-link my-diag-btn">내 진단 보기</button></div>
