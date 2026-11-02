@@ -51,7 +51,8 @@
   }
 
   /* ---------- "아래에서 골라"와 위젯 일치 (WP1-3) ---------- */
-  const WIDGET_REF = /((아래|밑|위)(에서|의|에\s*있는|쪽|에\s*나온|\s*카드|\s*버튼)?[^.!?]{0,18}(골라|고르|선택|눌러|누르))|((카드|버튼|보기|선택지)[을를에서]*\s*[^.!?]{0,8}(골라|고르|선택해|눌러|누르))/;
+  // 화면 요소를 가리키는 말: "아래에서 골라" 류 + (실제 모델 시범 운용에서 관찰) "아래 정답 표에서 확인해 보세요"처럼 없는 표·카드를 보라는 말
+  const WIDGET_REF = /((아래|밑|위)(에서|의|에\s*있는|쪽|에\s*나온|\s*카드|\s*버튼)?[^.!?]{0,18}(골라|고르|선택|눌러|누르))|((카드|버튼|보기|선택지)[을를에서]*\s*[^.!?]{0,8}(골라|고르|선택해|눌러|누르))|(((정답|정리|결과)\s*(표|카드)|(아래|밑|위)(에|의)?\s*(있는\s*)?(표|카드|화면))[^.!?]{0,20}(확인|살펴))/;
   function needsWidget(text) { return WIDGET_REF.test(String(text || '')); }
   // 위젯이 붙지 않는 말에서 화면을 가리키는 문장을 빼고, 비면 중립 문구로 바꾼다.
   function neutralizeWidgetRef(text, fallback) {
@@ -253,7 +254,8 @@
   // 범위 판정은 "충분히 내용 있는 말"에만 한다(짧은 대답·감탄은 판정하지 않음).
   function scopeVerdict(text, scopeTokens) {
     const toks = contentTokens(text);
-    if (toks.length < 2 || !(scopeTokens || []).length) return 'skip';
+    // 숫자·식이 있는 말(계산 시도)이나 낱말이 3개 미만인 짧은 말은 판정하지 않는다(실제 모델 시범 운용에서 오판 관찰)
+    if (toks.length < 3 || /\d/.test(String(text)) || !(scopeTokens || []).length) return 'skip';
     return inScope(text, scopeTokens) ? 'in' : 'out';
   }
 

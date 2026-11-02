@@ -47,7 +47,13 @@ const server = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(res);
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
-const BASE = `http://127.0.0.1:${server.address().port}`;
+// --live <배포주소>: 로컬 서버·모의 LLM 없이 실제 배포(실제 서버 로그인·실제 Solar)에 붙는다. 대기 시간도 길게.
+const LIVE = args.live ? String(args.live).replace(/\/$/, '') : null;
+const BASE = LIVE || `http://127.0.0.1:${server.address().port}`;
+const WAIT = LIVE ? 150000 : 30000;
+const NICK_PREFIX = args.prefix || '';
+// --plan "average:math,struggling:social,..." 로 돌릴 조합을 정한다(없으면 페르소나×시나리오 전체)
+const PLAN = args.plan ? String(args.plan).split(',').map(x => x.split(':')) : null;
 const browser = await chromium.launch({ executablePath: args.chrome || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
 
 async function runOne(pid, sid, idx) {
@@ -56,17 +62,19 @@ async function runOne(pid, sid, idx) {
   const llmLog = [], state = {}, act = [], errors = [];
   const cfg = { faultRate: +(args.fault || 0.35), fixRate: +(args.fix || 0.6), metaFail: pid === 'disengaged' ? 0.5 : 0.05, verifyFail: 0.03 };
   const ctx = await browser.newContext({ viewport: { width: +(args.width || 1100), height: 900 } });
-  await ctx.addInitScript(() => { try { localStorage.setItem('UPSTAGE_API_KEY', 'mock'); localStorage.setItem('micNotice', '1'); } catch (e) {} });
+  await ctx.addInitScript(live => { try { if (!live) localStorage.setItem('UPSTAGE_API_KEY', 'mock'); localStorage.setItem('micNotice', '1'); } catch (e) {} }, !!LIVE);
   const page = await ctx.newPage();
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('dialog', d => d.accept());
-  await page.route('https://api.upstage.ai/**', async route => {
+  const apiLog = [];
+  if (LIVE) page.on('response', r => { if (/\/api\/chat$/.test(r.url())) apiLog.push({ status: r.status(), at: Date.now() }); });
+  if (!LIVE) await page.route('https://api.upstage.ai/**', async route => {
     let body = {}; try { body = JSON.parse(route.request().postData() || '{}'); } catch (e) {}
     const content = mockLLM(body.messages || [], rng, cfg, llmLog, state);
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ choices: [{ message: { content } }] }) });
   });
   const ev = (fn, a) => page.evaluate(fn, a);
-  const idle = async () => { try { await page.waitForFunction(() => typeof busy !== 'undefined' && !busy && !document.querySelector('#pending'), null, { timeout: 30000 }); } catch (e) { errors.push('idle timeout'); } await page.waitForTimeout(120); };
+  const idle = async () => { try { await page.waitForFunction(() => typeof busy !== 'undefined' && !busy && !document.querySelector('#pending'), null, { timeout: WAIT }); } catch (e) { errors.push('idle timeout'); } await page.waitForTimeout(LIVE ? 400 : 120); };
   let lastLen = 0;
   const stepNow = () => ev(() => { const scr = (document.querySelector('.screen.is-active') || {}).dataset?.screen; if (typeof session === 'undefined' || !session) return scr; if (scr === 'chat') return session.phase === 'prep' ? (session.prepStep === 'meta' ? 'meta' : 'activate') : (session.cycleStarted ? 'explore' : 'pick'); if (scr === 'residual') return session.residual && session.residual.result ? 'journal' : 'residual'; return scr; });
   const note = async (kind, typed) => {
@@ -80,14 +88,15 @@ async function runOne(pid, sid, idx) {
   const say = k => { const pool = S.talk; if (pid === 'disengaged' && k % 3 === 1) return ['그냥 답 알려줘', '배고파 급식 뭐야', 'ㅋㅋ 몰라'][k % 3]; if (pid === 'lowgrade') return ['몰라', '이거 맞아?', pool[k % pool.length].slice(0, 12)][k % 3]; if (pid === 'struggling' && k % 2) return ['잘 모르겠어요', pool[3]][k % 2]; return pool[k % pool.length]; };
 
   // ---- 들어가기 ----
-  await page.goto(`${BASE}/?local&mode=${MODE}`);
+  await page.goto(LIVE ? `${BASE}/?mode=${MODE}` : `${BASE}/?local&mode=${MODE}`);
   await page.click('#auth-tabs button[data-t="signup"]');
-  await page.fill('#au-nick', `${pid}-${sid}`.slice(0, 16));
+  const nick = (NICK_PREFIX + idx + '-' + pid.slice(0, 4) + '-' + sid.slice(0, 4)).slice(0, 16);
+  await page.fill('#au-nick', nick);
   const pics = ['🍎', '🐶', '🚀', '⭐'];
   for (const p of pics) await page.click(`#palette button[data-p="${p}"]`);
   await page.click('#auth-go'); await page.waitForTimeout(300);
   if (await ev(() => typeof reels !== 'undefined' && reels.every(v => !v))) { for (const p of pics) await page.click(`#palette button[data-p="${p}"]`); await page.click('#auth-go'); }
-  await page.waitForFunction(() => document.querySelector('.screen.is-active')?.dataset.screen === 'home', null, { timeout: 10000 }).catch(() => errors.push('home not reached'));
+  await page.waitForFunction(() => document.querySelector('.screen.is-active')?.dataset.screen === 'home', null, { timeout: WAIT }).catch(() => errors.push('home not reached'));
   await closeModals();
   // ---- 시작 ----
   await page.click('#btn-new-session'); await page.waitForTimeout(200); await closeModals();
@@ -97,7 +106,7 @@ async function runOne(pid, sid, idx) {
   await fill('#st-topic', S.goal);
   await click('#st-match-btn'); await idle();
   if (await page.locator('.narrow-pick').count()) await click('.narrow-pick');
-  await page.waitForFunction(() => typeof stPicks !== 'undefined' && stPicks.length > 0, null, { timeout: 10000 }).catch(() => errors.push('no std pick'));
+  await page.waitForFunction(() => typeof stPicks !== 'undefined' && stPicks.length > 0, null, { timeout: WAIT }).catch(() => errors.push('no std pick'));
   await click('#st-go'); await idle();
   // ---- 대화 ----
   let typedN = 0, guard = 0, resumed = false;
@@ -172,7 +181,7 @@ async function runOne(pid, sid, idx) {
   await click('#reflect-next-b'); await page.waitForTimeout(300);
   // ---- 혼자 풀어보기 ----
   await click('#res-start'); await idle();
-  await page.waitForFunction(() => session.residual.items && session.residual.items.length > 0 && document.querySelector('#res-submit'), null, { timeout: 15000 }).catch(() => errors.push('residual items'));
+  await page.waitForFunction(() => session.residual.items && session.residual.items.length > 0 && document.querySelector('#res-submit'), null, { timeout: WAIT }).catch(() => errors.push('residual items'));
   const resCount = await ev(() => session.residual.items.length);
   for (let i = 0; i < resCount; i++) {
     const mcq = page.locator(`.res-mcq .choice[data-i="${i}"]`);
@@ -182,7 +191,7 @@ async function runOne(pid, sid, idx) {
     if (await page.locator(`.res-e[data-i="${i}"]`).count()) await fill(`.res-e[data-i="${i}"]`, '크기를 같게 맞춰야 해서요');
   }
   await click('#res-submit'); await idle();
-  await page.waitForFunction(() => !!session.residual.result, null, { timeout: 15000 }).catch(() => errors.push('no residual result'));
+  await page.waitForFunction(() => !!session.residual.result, null, { timeout: WAIT }).catch(() => errors.push('no residual result'));
   await click('#res-judge .choice[data-v="accept"]');
   await fill('#res-journal', '처음엔 통분이 어려웠는데 이제 분모를 같게 하는 까닭을 알게 됐어요.');
   await measure('residual');
@@ -192,7 +201,7 @@ async function runOne(pid, sid, idx) {
   const out = await ev(() => { const acc = DB.accounts[DB.currentUser]; const s = acc.sessions[acc.sessions.length - 1] || (acc.draft && acc.draft.session); return { session: s, homeTurns: (document.querySelector('#agg-turns') || {}).textContent }; });
   // 학생 화면의 스스로 점검 카드 표시(개선 후: 3단계 이름, 개선 전: 숫자)
   await ctx.close();
-  return { pid, sid, label: LABEL, mode: MODE, errors, llmLog, act, chatTurns, reflectPrompts, reflectTaggable, metaCardText, oneScreen, hscroll, resCount, revealBeforeFinish, ...out };
+  return { pid, sid, nick, apiLog, label: LABEL, mode: MODE, errors, llmLog, act, chatTurns, reflectPrompts, reflectTaggable, metaCardText, oneScreen, hscroll, resCount, revealBeforeFinish, ...out };
 }
 
 // ---------- 지표 ----------
@@ -241,15 +250,39 @@ function metrics(r) {
   };
 }
 
+// 사람이 읽는 대화 내역(누가 무엇을 말했고, 어떤 카드가 떴는지)
+function transcript(r, m) {
+  const s = r.session || {};
+  const L = [`# ${r.nick || ''} · ${PERSONAS[r.pid].label} · ${SCEN[r.sid].grade} ${SCEN[r.sid].subject}`, '',
+    `- 주소: ${BASE} (${r.mode}) · 학습 내용: ${(s.ctx || {}).std || '-'}`,
+    `- 공부 방법: ${s.strategyLabel || '-'} · 사전 ${(s.prior || {}).diagScore ?? '-'}점 → 사후 ${(s.residual || {}).postScore ?? '-'}점 · 체크포인트 ${(s.checkpoints || []).map(c => c.score).join('→') || '-'}`,
+    `- AI 호출 응답: ${(r.apiLog || []).length}회(오류 ${(r.apiLog || []).filter(a => a.status >= 400).length}회) · 화면 오류 ${r.errors.length}건${r.errors.length ? ' — ' + r.errors.slice(0, 3).join(' / ') : ''}`,
+    `- 점검: 분량 초과 ${m.over_cap_rate}% · 반말 ${m.tone_mix} · 추궁형 ${m.banned_probe} · 선택지 없는 안내 ${m.widgetless_choose} · 비문 ${m.broken} · 질문 2개+ ${m.multi_question} · 용어 위반 ${m.term_violation} · 인정·공감 ${m.ack_rate}%`,
+    `- 방어선이 고친 횟수: ${JSON.stringify(m.flags)}`, '', '## 대화', ''];
+  (s.turns || []).forEach(t => {
+    const txt = String(t.text || '').replace(/\n+/g, ' ');
+    if (t.role === 'me') L.push(`- **학생**${t.src === 'button' ? '(버튼)' : ''}: ${txt}`);
+    else if (t.role === 'ai') L.push(t.structured ? `- *[정리 도구: ${t.structured.type}]*` : `- **AI**${t.kind ? ' [' + t.kind + ']' : ''}: ${txt}`);
+    else if (t.kind) L.push(`- *[${t.kind}]*${t.kind === 'checkpoint' ? ` ${t.score}점 · ${t.reason || ''}` : ''}${txt ? ' ' + txt : ''}`);
+    else if (txt) L.push(`- *(안내)* ${txt}`);
+  });
+  L.push('', '## 돌아보기·혼자 풀기', '', `- 돌아보며 적기: ${(s.reflect || {}).note || '-'}`, `- 다음엔 이렇게: ${s.nextPlan || '-'} · 더 궁금한 것: ${s.wonder || '-'}`);
+  (s.residual && s.residual.items || []).forEach((it, i) => L.push(`- 사후 ${i + 1}. [${it.tag}] ${it.q} → 답: ${it.a} · ${it.score ?? '-'}점`));
+  L.push(`- 마지막 글: ${(s.residual || {}).journal || '-'}`);
+  return L.join('\n') + '\n';
+}
+
 const rows = [];
 let idx = 0;
-for (const pid of persona) for (const sid of scenario) {
+const COMBOS = PLAN || persona.flatMap(p => scenario.map(x => [p, x]));
+for (const [pid, sid] of COMBOS) {
   const t0 = Date.now();
   let r;
   try { r = await runOne(pid, sid, idx++); } catch (e) { r = { pid, sid, label: LABEL, mode: MODE, errors: ['crash: ' + e.message], llmLog: [], act: [], chatTurns: [], reflectPrompts: [], resCount: 0 }; }
   const m = metrics(r);
   rows.push(m);
-  fs.writeFileSync(path.join(OUT, `${pid}-${sid}.json`), JSON.stringify({ metrics: m, run: r }, null, 1));
+  fs.writeFileSync(path.join(OUT, `${String(idx).padStart(2, '0')}-${pid}-${sid}.json`), JSON.stringify({ metrics: m, run: r }, null, 1));
+  fs.writeFileSync(path.join(OUT, `${String(idx).padStart(2, '0')}-${pid}-${sid}.transcript.md`), transcript(r, m));
   console.log(`[${LABEL}/${MODE}] ${pid}-${sid} ${Math.round((Date.now() - t0) / 1000)}s · AI ${m.ai_turns} · 상한초과 ${m.over_cap_rate}% · 말투 ${m.tone_mix} · 추궁 ${m.banned_probe} · 위젯없는안내 ${m.widgetless_choose} · 비문 ${m.broken} · 오류 ${m.errors}`);
 }
 fs.writeFileSync(path.join(OUT, 'summary.json'), JSON.stringify(rows, null, 1));

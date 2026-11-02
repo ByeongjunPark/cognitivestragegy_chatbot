@@ -47,7 +47,9 @@ test('WP2-5 질문은 1개만(마지막 질문을 남김)', () => {
 
 test('WP1-3 "아래에서 골라" 문구 → 위젯 필요 판정과 중립 문구 대체', () => {
   ['아래에서 하나 골라 줄래요?', '아래 카드에서 방법을 골라 봐요.', '위에 있는 버튼을 눌러 줘요.', '보기 중에서 하나 선택해 봐요.'].forEach(s => assert.equal(CS.needsWidget(s), true, s));
-  ['어떤 방법이 좋을까요?', '분모를 골고루 나눠요.', '아래로 내려가면 값이 작아져요.'].forEach(s => assert.equal(CS.needsWidget(s), false, s));
+  ['어떤 방법이 좋을까요?', '분모를 골고루 나눠요.', '아래로 내려가면 값이 작아져요.', '계산이 맞는지 스스로 확인해 봐요.'].forEach(s => assert.equal(CS.needsWidget(s), false, s));
+  // 실제 모델 시범 운용에서 나온 "없는 표·카드를 보라"는 말
+  ['이 결과는 아래 정답 표에서 스스로 확인해 보세요.', '아래 정리 카드에서 스스로 맞는지 확인해 주세요.', '위에 있는 표에서 살펴보세요.'].forEach(s => assert.equal(CS.needsWidget(s), true, s));
   const out = CS.neutralizeWidgetRef('좋아요. 아래에서 하나 골라 줄래요?', '어떻게 생각하는지 말해 줄래요?');
   assert.equal(CS.needsWidget(out), false);
   assert.ok(out.includes('좋아요.') && out.endsWith('말해 줄래요?'));

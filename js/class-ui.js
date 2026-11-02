@@ -292,6 +292,9 @@ function initSessionExtras(){
   session.scope = CS.scopeTokensFrom(session.ctx.std, session.ctx.concept, session.goal);
   // 대표 오개념 1~2개: 원문 근거 안에서만, temperature 0 (실패해도 대화는 그대로)
   ensureRag().then(()=>{
+    // (실제 모델 시범 운용) "통분·최소공배수"처럼 성취기준 문장에는 없지만 원문 해설·고려 사항에 있는 낱말을 범위 판정에 넣는다
+    const own = ragResults(session.ctx.std + ' ' + (session.goal||''), 8).filter(r=>(r.chunk.codes||[r.chunk.code]).some(c=>ragCodes().includes(c)));
+    session.scopeWide = [...new Set([...(session.scope||[]), ...own.flatMap(r=>CS.contentTokens(r.chunk.text))])].slice(0, 80);
     const ev = ragContext(session.ctx.std, 4, 700);
     return callLLM([
       { role:'system', content:'너는 초중등 교과 교육 전문가다. 반드시 순수 JSON만 출력한다.' },
@@ -307,7 +310,7 @@ function paintScope(){
   $('#scope-list').innerHTML = toks.map(t=>`<span class="chip">${esc(t)}</span>`).join('');
 }
 function scopeNudge(text){
-  const v = CS.scopeVerdict(text, session.scope||[]);
+  const v = CS.scopeVerdict(text, session.scopeWide || session.scope || []);
   (session.scopeLog = session.scopeLog||[]).push({ v, at:new Date().toISOString() });
   if(v!=='out') return;
   const typed = session.turns.filter(t=>t.role==='me' && t.src==='typed').length;

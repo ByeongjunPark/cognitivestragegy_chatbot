@@ -4219,7 +4219,7 @@ ${shape}`;
     const raw = await callLLM([
       { role:'system', content:'너는 교육과정 성취기준 기반 문항 출제자다. 반드시 순수 JSON만 출력한다.' },
       { role:'user', content: user + (leaks.length ? `
-(경고: 방금 만든 문항에서 정답 단서가 다른 문항에 드러났다 — ${leaks.map(l=>'"'+l.token+'"').join(', ')}. 겹치지 않게 다시 만들어라.)` : '') }
+(경고: 방금 만든 문항에 고칠 점이 있었다 — ${leaks.map(l=>l.kind==='form' ? l.token : '정답 단서 "'+l.token+'"가 다른 문항에 드러남').join(', ')}. 고쳐서 다시 만들어라.)` : '') }
     ], { temperature:0.4 });
     const j = parseJSON(raw);
     if(!j || !Array.isArray(j.items) || j.items.length<n) throw new Error('shape');
@@ -4235,6 +4235,8 @@ ${shape}`;
     });
     // (WP1-6, 전문가4 "문항 간 정답 단서 노출 방지") 생성된 세트 안에서 정답 핵심어가 다른 문항에 드러나는지 검사
     leaks = CS.leaksAnswer(items);
+    // (실제 모델 시범 운용) 서술형 문항이 "다음 중 …"처럼 선택지 없는 선다형 문장으로 나오는 일이 있었다 → 다시 만들게 한다
+    items.filter(it=>it.type==='text' && /다음\s*중|고르(세요|시오)?\b|골라/.test(it.q)).forEach(it=>leaks.push({ from:0, to:0, kind:'form', token:`서술형인데 선택지 없이 고르라고 한 문항("${trim(it.q,30)}") — 자기 말로 쓰는 문장으로 바꿀 것` }));
     if(!leaks.length) break;
   }
   if(leaks.length) flag('answer-leak', leaks.map(l=>`${l.from+1}→${l.to+1}:${l.token}`).join(', '));
@@ -4347,7 +4349,7 @@ async function submitActivationQuiz(turnId){
   // 문항별 점수를 함께 준다: 모델이 정답 키를 몰라 틀린 선택지를 "잘 골랐어"라고 칭찬하는 일이 있었다(실제 모델 16번 중 다수).
   const scoreLine = (session.prior.items||[]).map((it,i)=>`${i+1}번 ${it.score==null?'채점 안 됨':it.score+'점'}`).join(', ');
   const goodOnes = (session.prior.items||[]).map((it,i)=>it.score>=50?i+1:null).filter(Boolean);
-  await ai(`방금 학습자가 "아는 것 확인" 문제를 다 풀었고 결과가 바로 위에 보인다(문항별 점수: ${scoreLine}). 1~2문장만 말하라. ${goodOnes.length ? `${goodOnes.join('·')}번 가운데 한 문항에서 학습자가 실제로 쓴 답의 잘한 점 하나를 구체적으로 짚고,` : '모든 문항이 0점이니 내용을 칭찬하지 말고, 끝까지 풀어 준 것만 따뜻하게 인정하고,'} 결과는 위에서 직접 살펴보라고 권하라. 문항별 정답 여부나 풀이는 설명하지 않는다. 질문하지 말고, 영어 낱말을 섞지 마라.`, 'prior-pick', null, { maxLen:220, noNewTask:true, suffix:CS.COPY.priorPickSuffix });
+  await ai(`방금 학습자가 "아는 것 확인" 문제를 다 풀었고 결과가 바로 위에 보인다(문항별 점수: ${scoreLine}). 1~2문장만 말하라. ${goodOnes.length ? `${goodOnes.join('·')}번 가운데 한 문항에서 학습자가 실제로 쓴 답의 잘한 점 하나를 구체적으로 짚고,` : '모든 문항이 0점이니 내용을 칭찬하지 말고, 끝까지 풀어 준 것만 따뜻하게 인정하고,'} 화면을 가리키는 말("위에서 살펴보세요", "정답 표")은 하지 마라 — 정답은 아직 화면에 없고 혼자 풀어보기 뒤에 공개된다. 문항별 정답 여부나 풀이는 설명하지 않는다. 질문하지 말고, 영어 낱말을 섞지 마라.`, 'prior-pick', null, { maxLen:220, noNewTask:true, suffix:CS.COPY.priorPickSuffix });
 }
 /* ===== 원리7 타당도: 메타인지 서술(이해/전략/연결)을 루브릭으로 채점해 "안다고 말한 것"과
    "타당하게 아는 것"을 구분한다. 관련 연구의 자기보고식 총점(MAI류)과 달리, 이번 학습 내용에
@@ -4444,7 +4446,8 @@ function turnAsMessages(t){
     return t.text ? [{ role:'assistant', content:String(t.text) }] : [];
   }
   if(t.role==='note' && t.answered){
-    if(t.kind==='checkpoint') return [{ role:'user', content:`[이해도 스스로 체크] ${t.score}/5점 — 이유: ${t.reason||'(없음)'}` }];
+    // (실제 모델 시범 운용) "4/5점"을 학생이 "4/5"라고 말한 것처럼 인용해서, 분수와 헷갈리지 않는 꼴로 넘긴다
+    if(t.kind==='checkpoint') return [{ role:'user', content:`[화면 카드: 이해도 스스로 체크 — 학생이 직접 말한 것이 아님] ${t.score}점(5점 만점), 고른 까닭: ${t.reason||'(없음)'}` }];
     if(t.kind==='retrieval-recall') return [{ role:'user', content:`[다시 떠올리기] 질문: ${t.q} / 내가 떠올린 답: ${t.attempt||'(없음)'}` }];
     if(t.kind==='activate-quiz') return [{ role:'user', content:'[아는 것 확인 문항에 낸 답] ' + (session.prior.items||[]).map((it,i)=>`${i+1}.${it.tag}: ${it.q} → ${it.a||'(무응답)'}`).join(' / ') }];
   }
