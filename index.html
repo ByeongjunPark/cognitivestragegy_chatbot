@@ -915,6 +915,48 @@
   .forgot-link{display:block;margin:10px auto 0;font-size:12.5px}
   .goal-help{display:flex!important;flex-direction:row!important;flex-wrap:wrap;gap:6px;border:0!important;padding:0!important;background:none!important;max-height:none!important}
   .goal-help .chip{width:auto!important;flex:0 0 auto;border-radius:999px}
+
+  /* ===== (2026-11 재검증) 초등·휴대폰 가독성 보강 — 모양은 그대로, 크기·줄바꿈·누르는 영역만 손본다 ===== */
+  /* 낱말 한가운데서 줄이 끊기지 않게, 긴 예시 문장은 잘리지 않고 줄을 바꾼다 */
+  .btn,.chip,.u-chip,.choice,.msg-act,.head-link,.stuck,.tools-btn,.tl-tags button,.ck-btn,.qa-toggle,.sym-btn,.pb-s,.cycle-node,.req-tag,.opt-tag,.phase-pill{word-break:keep-all;overflow-wrap:break-word}
+  .chip,.goal-help .chip{white-space:normal;line-height:1.35;max-width:100%}
+  .goal-help .chip{flex:0 1 auto}
+  .choices{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+  @media(max-width:480px){ .choices{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))} }
+  /* 학생에게 보이는 작은 글자는 13px 이상으로 */
+  .brand small,.choice small,.phase-pill,.msc-title,.strat-card .sc-badge,.strat-card .sc-desc,.strat-card .sc-when,.strat-card .sc-tips li,.sess-item .d,.stat-tile .lab,.widget-head small,.tl-card .role,.tl-tags button,.axis-tbl th,.pb-label small,.cycle-title,.cycle-node,.gs-row b,.scaffold-title,.scaffold-hint,.sd-turn .r,#agg-strategy .eff,.ppg-legend,.ppg-lab small,.sess-item .note .inc-sub,.msi,.msi-said,.gp-note,.req-tag,.opt-tag,.task-card .tc-sub,.struct-box .struct-head,.struct-compare .col h5,.ck-btn,.tb-slide-ends,.tb-toggle-row .tb-toggle-state,.fixed-role-col h6,.pb-progress .pb-mode,.qa-help,.so-help,.msc-ind,.lv-block-t,.pp-reply,.step-n,.note-more summary,.mic-for,.todo-line .todo-est,.msg-act,.head-link,.todo-line,.pb-progress,.u-chip,.goal-help .chip,[data-pick="choice"] .chip,.cp-rchips .chip{font-size:13px}
+  .pb-count{display:none}               /* "계획하기 2/4" 같은 또 다른 숫자는 '지금 n/8단계'와 겹쳐 숨긴다 */
+  .topbar{background:var(--bg)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important} /* 반투명 때문에 뒤 글자가 비치던 것 */
+  /* 마이크·손글씨 버튼은 테두리를 둬서 버튼처럼 보이게 */
+  #btn-mic,#btn-mic-lang,#btn-handwrite{border:1px solid var(--line-strong);background:#fff;border-radius:999px;width:44px!important;height:44px;font-size:18px}
+  .compose .row{flex-wrap:wrap}
+  .compose .row .input{flex:1 1 140px;min-width:0}
+  /* 손가락으로 누르는 작은 버튼은 높이 40~44px */
+  @media(pointer:coarse),(max-width:700px){
+    .msg-act,.head-link,.starters button,.tl-tags button,.ck-btn,.subj-filter button,.mic-for{min-height:40px}
+    .tools-btn,.stuck,.qa-toggle,.chip,.icon-btn{min-height:44px}
+    .info-i,.st-pick-remove{min-width:40px;min-height:40px}
+  }
+  @media(max-width:700px){
+    .pb-main{display:none}              /* 동그라미 3개 단계 표시 — 위의 '지금 n/8단계'가 같은 말을 해서 숨긴다 */
+    .phase-pill{display:none}
+    .scaffold-hint{display:none}
+  }
+  .tools-btn,.stuck{display:inline-flex;align-items:center;justify-content:center}
+  #chat-finish{min-height:44px}
+  .hint,.msc-note,.msc-row small{font-size:13px}
+  /* 맞춤 표: 첫 칸 항목은 글자로, 보기 줄은 옅게 */
+  .struct-table td.tbl-label{background:var(--surface-2);font-weight:700;color:var(--ink);white-space:normal;word-break:keep-all;min-width:5em}
+  .struct-table tr.tbl-example td{background:#f4f8ff;color:var(--ink-2);font-size:13px}
+  .struct-table .ex-tag{display:inline-block;font-size:12px;font-weight:800;color:var(--accent-ink);background:var(--accent-wash);border-radius:999px;padding:0 7px;margin-right:4px}
+  .struct-table .tbl-cell{width:100%;min-height:40px;font-size:14px;padding:6px 8px;border:1px solid var(--line-strong);border-radius:8px}
+  /* 정리 도구: 버튼이 줄줄이 나오지 않고 드롭다운 목록으로 열린다 */
+  #quick-actions:not([hidden]){display:inline-block!important;position:relative}
+  #quick-actions .qa-toggle{white-space:nowrap}
+  #quick-actions .qa-menu{position:absolute;left:0;bottom:calc(100% + 6px);z-index:30;min-width:min(300px,86vw);max-width:86vw;background:#fff;border:1px solid var(--line-strong);border-radius:14px;box-shadow:0 12px 32px -12px rgba(0,0,0,.35);padding:6px}
+  #quick-actions .qa-menu button{display:block!important;width:100%;text-align:left;border:0!important;border-radius:10px!important;background:#fff;padding:10px 12px;font-size:14px;font-weight:700;color:var(--ink);min-height:44px}
+  #quick-actions .qa-menu button:hover,#quick-actions .qa-menu button:focus-visible{background:var(--accent-wash);color:var(--accent-ink)}
+  #quick-actions .qa-menu .qa-help{display:block;font-size:12.5px;font-weight:500;color:var(--ink-2);margin-top:2px;max-width:none;white-space:normal}
 </style>
 </head>
 <body>
@@ -1163,7 +1205,7 @@
     <div class="chatwrap">
       <div class="chat-head">
         <div class="meta">
-          <span class="phase-pill" id="phase-pill">1단계 · 계획하기</span>
+          <span class="phase-pill" id="phase-pill">계획하기</span>
           <span id="chat-std">오늘 배울 내용</span>
         </div>
         <div class="head-right">
@@ -1224,7 +1266,7 @@
           <button type="button" class="icon-btn" id="btn-mic" title="말해서 입력하기(영어)" aria-label="영어로 말해서 입력하기" aria-pressed="false" hidden style="width:40px">🎤</button>
           <button type="button" class="icon-btn" id="btn-mic-lang" title="마이크 언어 바꾸기(지금: 영어)" aria-label="마이크 언어: 영어. 누르면 한국어로 바꿔요" hidden style="width:40px;font-size:13px;font-weight:700">EN</button>
           <button type="button" class="icon-btn" id="btn-handwrite" title="손글씨로 풀기(수학)" hidden style="width:40px">✍️</button>
-          <input class="input" id="chat-input" placeholder="편하게 말해도 돼요. 내 생각이나 예상을 먼저 적어 보세요." autocomplete="off" />
+          <input class="input" id="chat-input" placeholder="편하게 말해도 돼요. 내 생각을 먼저 적어요." autocomplete="off" />
           <button class="btn btn-primary" id="chat-send">보내기</button>
         </div>
       </div>
@@ -1240,7 +1282,7 @@
       <p class="todo-line" hidden></p>
     </div>
     <div class="cycle-wrap" style="border:1px solid var(--line);border-radius:14px;margin-bottom:16px">
-      <div class="cycle-title" style="display:flex;justify-content:space-between;gap:8px"><span>3단계 · 돌아보기 순서</span><button type="button" class="head-link my-diag-btn">내 진단 보기</button></div>
+      <div class="cycle-title" style="display:flex;justify-content:space-between;gap:8px"><span>돌아보기 순서</span><button type="button" class="head-link my-diag-btn">내 진단 보기</button></div>
       <div class="cycle-strip" id="reflect-strip"></div>
     </div>
 
@@ -1366,7 +1408,7 @@
       <p class="todo-line" hidden></p>
     </div>
     <div class="cycle-wrap" style="border:1px solid var(--line);border-radius:14px;margin-bottom:16px">
-      <div class="cycle-title" style="display:flex;justify-content:space-between;gap:8px"><span>3단계 · 돌아보기 순서</span><button type="button" class="head-link my-diag-btn">내 진단 보기</button></div>
+      <div class="cycle-title" style="display:flex;justify-content:space-between;gap:8px"><span>돌아보기 순서</span><button type="button" class="head-link my-diag-btn">내 진단 보기</button></div>
       <div class="cycle-strip" id="residual-strip"></div>
     </div>
     <!-- 요청사항(11번째 피드백) 7: "전략을 또 고르지 말고, 대화 중에 썼던 전략을 그대로 불러와
@@ -1638,7 +1680,7 @@ function isShallowAnswer(v){
   return t.length < 14 && /^(몰라|모르겠|모름|없어|없음|없다|그냥|글쎄|네|응|ㅇㅇ|아니|잘모르)/.test(t);
 }
 const SUPPORT_LABEL = { high:'많이', mid:'보통', low:'조금' };
-const PHASES = { prep:'1단계 · 계획하기', explore:'2단계 · 해 보기', wrap:'3단계 · 돌아보기' };
+const PHASES = { prep:'계획하기', explore:'해 보기', wrap:'돌아보기' };
 
 /* 탐구 대화 중 순환하는 절차(원리8 전략적용 → 원리9 점검 → 원리10 학습자 판단).
    cycleNow 는 지금 이 루프에서 어디쯤 있는지를 나타내는 표시용 상태다.
@@ -1662,10 +1704,14 @@ const CYCLE_LABELS = [
 // 같은 원칙으로 다시 썼다. 렌더링도 학습자가 직접 입력·클릭으로 채우는 위젯으로 바꿨다
 // (renderStructHTML 참고).
 const STRUCT_SCHEMAS = {
-  table:   { shape:'{"type":"table","headers":["열1","열2","열3"],"bank":["재료1","재료2","재료3","재료4","재료5"]}',
+  // 표는 "빈 표"가 아니라 이 과업에 맞춘 틀로 준다: 열 이름·첫 칸 항목(rowLabels)·칸별 안내 질문(hints)을 AI가 내용에서 뽑고,
+  // 도움이 클 때(high)만 쉬운 다른 보기로 칸 채우는 방식을 한 줄 보여 준다(example). 정답·계산 결과·완성된 풀이는 여전히 학생 몫이다.
+  table:   { shape:'{"type":"table","headers":["이 과업에 맞는 열 이름","열 이름","열 이름"],"rowLabels":["정리할 대상1","정리할 대상2","정리할 대상3"],"hints":["첫째 열 칸에 쓸 것을 묻는 짧은 질문","둘째 열 안내 질문","셋째 열 안내 질문"],"bank":["낱말1","낱말2","낱말3","낱말4","낱말5"],"example":["보기 칸1","보기 칸2","보기 칸3"]}',
              ask:s=>{
                const n = s.support==='low' ? '4~5개' : s.support==='mid' ? '5~6개' : '6~7개';
-               return `"${s.ctx.std}"와 관련해 표로 정리하면 좋을 열 이름(headers) 2~3개와, 표 칸에 채울 재료가 될 낱말·사실 후보(bank) ${n}개만 뽑아줘. 계산 결과·정답·완성된 풀이는 재료에 넣지 마라(그건 학습자가 직접 구할 몫이다). 어느 후보를 어느 칸에 넣을지, 표를 어떻게 채울지는 절대 정하지 마 — 후보만 흩어서 준다. rows나 실제 배치는 만들지 마라.`;
+               const focus = s.currentTask ? ` 지금 과업은 "${s.currentTask.task}"이고 학습 목표는 "${s.goal||'-'}"이다. 표의 틀은 이 과업과 목표에 딱 맞게 지어라.` : '';
+               const ex = s.support==='high' ? ' example은 이 과업과 다른 아주 쉬운 보기 하나로 한 줄(칸 수 = headers 수)을 채워 칸 채우는 방식만 보여 줘라.' : ' example은 만들지 마라(빈 배열).';
+               return `"${s.ctx.std}"를 공부하는 학생이 바로 채울 수 있는 표의 틀을 만들어줘.${focus} 규칙: (1) headers 2~3개는 "열1" 같은 자리표시가 아니라 이 내용에 맞는 분류 기준으로, 학년 수준의 쉬운 한국어 낱말로 지어라(예: "상황 / 식 / 계산 방법", "원인 / 결과", "뜻 / 예시"). (2) rowLabels 3~4개는 첫째 열에 미리 적어 둘 정리 대상으로, 지금까지 이야기한 실제 낱말·상황에서 뽑아라(정답·계산 결과는 넣지 마라). (3) hints는 headers마다 그 칸에 무엇을 쓰면 되는지 묻는 10~20자 안팎 질문 하나씩(정답을 알려 주지 마라). (4) 표 칸에 채울 재료가 될 낱말·사실 후보(bank) ${n}개를 흩어서 줘라.${ex} 어느 후보를 어느 칸에 넣을지, 칸의 답은 절대 정하지 마라. 모든 글자는 한국어로만 쓰고 일본어·영어·한자를 섞지 마라.`;
              } },
   // 원리1 적응적 페이딩: AI 도움이 클수록(high) 후보 낱말을 더 많이, 학습자가 숙련될수록(low) 적게
   // 준다. 후보들 사이의 관계·순서·위계는 절대 제안하지 않는다 — 그건 학습자가 직접 판단할 몫이다.
@@ -1678,13 +1724,13 @@ const STRUCT_SCHEMAS = {
   // 반례/다른 관점이 뭔지 모르겠다" — 비판적 사고 전략을 모든 과목에 "반례 찾기"로 기계적으로
   // 대응시켜서 생긴 어색함이다. 역사·사회·국어처럼 딱 떨어지는 반례가 어색한 과목은 "다른
   // 해석·관점·평가"로, 수학·과학처럼 반례가 자연스러운 과목은 그대로 반례로 제목을 짓게 한다.
-  compare: { shape:'{"type":"compare","leftTitle":"내 생각","rightTitle":"따져볼 점"}',
+  compare: { shape:'{"type":"compare","leftTitle":"내 생각","rightTitle":"따져볼 점","leftHint":"왼쪽 칸에 쓸 것을 묻는 짧은 질문","rightHint":"오른쪽 칸에 쓸 것을 묻는 짧은 질문"}',
              ask:s=>{
                const humanities = ['국어','사회','도덕'].includes(s.ctx.subject);
                const guide = humanities
                  ? `이 과목(${s.ctx.subject})은 수학처럼 딱 떨어지는 반례를 찾기 어려우니, rightTitle을 "반박 근거"나 "다른 해석·관점"처럼 지어라(예: "이 영향이 과장됐다고 볼 근거"). "반례"라는 말은 쓰지 마라.`
                  : `이 과목(${s.ctx.subject})은 반례나 예외 상황을 찾기 자연스러우니, rightTitle을 "반례"나 "예외 상황"처럼 지어도 된다.`;
-               return `학습자가 방금 말한 생각("${s.ctx.std}"과 관련)을 스스로 되짚어볼 수 있게, 왼쪽 칸 제목(leftTitle, 예: "내 생각")과 오른쪽 칸 제목(rightTitle)만 지어줘. ${guide} 실제 비교 내용(leftText/rightText)은 절대 채우지 마 — 학습자가 직접 쓴다.`;
+               return `학습자가 방금 말한 생각("${s.ctx.std}"과 관련)을 스스로 되짚어볼 수 있게, 왼쪽 칸 제목(leftTitle, 예: "내 생각")과 오른쪽 칸 제목(rightTitle), 그리고 각 칸에 무엇을 쓰면 되는지 묻는 10~25자 안팎의 안내 질문(leftHint·rightHint)을 이 내용에 맞게 지어줘. ${guide} 실제 비교 내용(leftText/rightText)은 절대 채우지 마 — 학습자가 직접 쓴다. 모든 글자는 한국어로만 쓴다.`;
              } },
   chain:   { shape:'{"type":"chain","bank":["사건 후보1","사건 후보2","사건 후보3","사건 후보4"]}',
              ask:s=>`"${s.ctx.std}"에서 다룬 원인·결과(또는 순서가 있는 사건들)를 지금까지 나눈 이야기에 근거해 순서를 뒤섞은 후보(bank) 4~5개로만 뽑아줘. 어떤 순서인지는 절대 암시하지 마 — 순서를 정하는 건 학습자 몫이다.` },
@@ -1816,6 +1862,13 @@ async function issueTask(strat, leadInstr){
     const t = [...session.turns].reverse().find(x=>x.role==='ai' && !x.structured);
     if(t) t.taskId = spec.id;
     renderStream();
+  }
+  // 표·마인드맵·사슬처럼 정리 도구가 붙는 공부 방법은 과업을 건넨 바로 뒤에 도구를 자동으로 펼친다.
+  // (버튼을 따로 누르게 하면 학생이 못 찾는다 — 도구 머리글·재료는 지금 과업 내용에 맞춰 AI가 만든다)
+  if(offerStructs && offerStructs.length && !busy){
+    const first = offerStructs[0];
+    const dup = session.turns.some(x=>x.structured && x.structured.type===first.type && x.taskId===(session.currentTask||{}).id);
+    if(!dup) await requestStructured(first.type, first.label, { auto:true });
   }
 }
 function taskById(id){ return (session.tasks||[]).find(x=>x.id===id) || null; }
@@ -3350,7 +3403,10 @@ function renderQuickActions(){
   const box = $('#quick-actions');
   box.hidden = list.length===0;
   // (보완 G1) "정리판" → "정리 도구", 버튼마다 무엇을 어떻게 하는지 한 줄
-  box.innerHTML = `<button type="button" class="qa-toggle" data-toggle="1" title="생각을 표·마인드맵 같은 판에 직접 정리하는 도구예요">정리 도구 ${box.classList.contains('qa-open')?'닫기':'열기'} ⓘ</button>` + list.map(a=>`<button data-type="${a.type}" data-label="${esc(a.label)}" title="${esc(structHelp(a.type))}">${a.label}<small class="qa-help">${esc(structHelp(a.type))}</small></button>`).join('');
+  const open = box.classList.contains('qa-open');
+  // 드롭다운: [정리 도구 ▾]를 누르면 목록이 열리고, 하나를 고르면 닫히면서 그 도구가 바로 펼쳐진다
+  box.innerHTML = `<button type="button" class="qa-toggle" data-toggle="1" aria-haspopup="menu" aria-expanded="${open}" title="생각을 표·마인드맵 같은 판에 직접 정리하는 도구예요">정리 도구 ${open?'▴':'▾'}</button>`
+    + (open ? `<div class="qa-menu" role="menu">${list.map(a=>`<button type="button" role="menuitem" data-type="${a.type}" data-label="${esc(a.label)}">${a.label}<small class="qa-help">${esc(structHelp(a.type))}</small></button>`).join('')}</div>` : '');
 }
 /* ===== 상단 진행 단계: 대화 시작 전 - 대화 중 - 대화 이후 ===== */
 // 해 보기(반복) 중에는 상단 단계 표시에 "지금 순환의 어디쯤인지"를 한 줄로 보여 준다
@@ -3427,7 +3483,12 @@ function migrateAccountData(data){
 function pushAi(text, kind, structOffer){ session.turns.push({ id:uid(), role:'ai', text, phase:session.phase, kind:kind||null, support:session.support, judge:null, comment:'', structOffer: structOffer||null }); renderStream(); }
 
 function renderStream(){
-  const box = $('#stream'); box.innerHTML='';
+  const box = $('#stream');
+  // 스크롤 위치 기억: 칩 하나를 눌러 다시 그릴 때마다 맨 아래로 튀지 않게 한다(새 말이 생겼거나 이미 맨 아래일 때만 아래로)
+  const prevTop = box.scrollTop, wasNear = (box.scrollHeight - box.scrollTop - box.clientHeight) < 90;
+  const turnCount = session.turns.length, grew = turnCount !== renderStream.lastCount;
+  renderStream.lastCount = turnCount;
+  box.innerHTML='';
   session.turns.forEach(t=>{
     if(t.role==='note'){
       if(t.kind==='checkpoint'){
@@ -3572,7 +3633,14 @@ function renderStream(){
       const d = document.createElement('details'); d.className = 'done-card';
       d.innerHTML = `<summary>${esc(sum)}</summary>`; card.replaceWith(d); d.appendChild(card);
     }); }
-  box.scrollTop = box.scrollHeight;
+  if(grew){
+    // 새로 생긴 카드가 화면보다 길면 맨 아래가 아니라 카드의 첫머리가 보이게 한다(질문부터 읽을 수 있게)
+    const last = box.lastElementChild;
+    if(last && last.offsetHeight > box.clientHeight * 0.8){
+      box.scrollTop = Math.max(0, last.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 8);
+    } else box.scrollTop = box.scrollHeight;
+  } else if(wasNear) box.scrollTop = box.scrollHeight;
+  else box.scrollTop = prevTop;
   if(session.phase==='explore' && session.cycleStarted){ const fb = $('#chat-finish'); if(fb){ const done = (session.strategies||[]).length && session.strategies.every(id=>(session.stratDone||{})[id] || ((session.stratRounds||{})[id]||0) >= 2); fb.textContent = done ? '다 해 봤어요 · 돌아보기 →' : '이야기 끝내기'; fb.classList.toggle('btn-primary', !!done); } }
   saveDraft();
 }
@@ -3921,7 +3989,7 @@ function renderStructHTML(tid, s){
       <div class="struct-head">표로 직접 정리해 봐요</div><p class="hint struct-how">${esc(structHelp('table'))} 다 채우면 아래 [다 했어요]를 눌러요.</p>
       ${bank.length ? `<p class="hint" style="padding:0 16px 8px">재료(참고만 해요): ${bank.map(b=>esc(b)).join(' · ')}</p>` : ''}
       <div style="overflow-x:auto;padding:0 16px"><table class="struct-table struct-table-edit"><thead><tr>${p.headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead>
-      <tbody>${p.rows.map((r,ri)=>`<tr>${p.headers.map((_,ci)=>`<td><input type="text" class="tbl-cell" data-tid="${tid}" data-r="${ri}" data-c="${ci}" value="${esc((r||[])[ci]||'')}" placeholder="직접 써보세요" /></td>`).join('')}</tr>`).join('')}</tbody></table></div>
+      <tbody>${(Array.isArray(p.example) && p.example.length===p.headers.length) ? `<tr class="tbl-example">${p.example.map((v,ci)=>`<td>${ci===0?'<span class="ex-tag">보기</span> ':''}${esc(v)}</td>`).join('')}</tr>` : ''}${p.rows.map((r,ri)=>`<tr>${p.headers.map((_,ci)=> (ci===0 && ri<(p.labelRows||0) && (r||[])[0]) ? `<td class="tbl-label">${esc(r[0])}</td>` : `<td><input type="text" class="tbl-cell" data-tid="${tid}" data-r="${ri}" data-c="${ci}" value="${esc((r||[])[ci]||'')}" placeholder="${esc((p.hints&&p.hints[ci])||'직접 써보세요')}" /></td>`).join('')}</tr>`).join('')}</tbody></table></div>
       <div style="padding:8px 16px"><button type="button" class="btn btn-sm btn-ghost tbl-addrow" data-tid="${tid}">+ 행 추가</button></div>
       ${reviewBtnHTML(tid)}
     </div>`;
@@ -3932,8 +4000,8 @@ function renderStructHTML(tid, s){
   if(s.type==='compare'){
     return `<div class="struct-box" data-tid="${tid}"><div class="struct-head">나란히 비교해 봐요 — 직접 써요</div><p class="hint struct-how">${esc(structHelp('compare'))}</p>
       <div class="struct-compare">
-        <div class="col"><h5>${esc(p.leftTitle||'내 생각')}</h5><textarea class="textarea cmp-text" data-tid="${tid}" data-side="left" rows="3" placeholder="직접 써보세요">${esc(p.leftText||'')}</textarea></div>
-        <div class="col"><h5>${esc(p.rightTitle||'따져볼 점')}</h5><textarea class="textarea cmp-text" data-tid="${tid}" data-side="right" rows="3" placeholder="직접 써보세요">${esc(p.rightText||'')}</textarea></div>
+        <div class="col"><h5>${esc(p.leftTitle||'내 생각')}</h5><textarea class="textarea cmp-text" data-tid="${tid}" data-side="left" rows="3" placeholder="${esc(p.leftHint||'직접 써보세요')}">${esc(p.leftText||'')}</textarea></div>
+        <div class="col"><h5>${esc(p.rightTitle||'따져볼 점')}</h5><textarea class="textarea cmp-text" data-tid="${tid}" data-side="right" rows="3" placeholder="${esc(p.rightHint||'직접 써보세요')}">${esc(p.rightText||'')}</textarea></div>
       </div>
       ${reviewBtnHTML(tid)}
     </div>`;
@@ -4099,10 +4167,25 @@ function mmEditPopover(x, y, initial, onConfirm){
   pop.querySelector('[data-ok]').addEventListener('click', ()=>finish(true));
   setTimeout(()=> document.addEventListener('mousedown', onOutside, true), 0);
 }
-async function requestStructured(type, label){
+// AI가 준 표 틀을 다듬는다: 자리표시 머리글("열1")·일본어·한자가 섞인 낱말을 걸러 내고, 비면 내용 성격별 기본 머리글로 채운다
+const KO_ONLY = /[぀-ヿ一-鿿]/;
+const DEFAULT_TABLE_HEADERS = { fact:['낱말','뜻','예'], concept:['개념','특징','예시'], procedure:['단계','할 일','조심할 점'], causal:['원인','결과','까닭'], argument:['주장','근거','다른 생각'] };
+function cleanKo(list){ return (Array.isArray(list) ? list : []).map(x=>String(x==null?'':x).trim()).filter(x=>x && !KO_ONLY.test(x)); }
+function normalizeTablePayload(p){
+  let headers = cleanKo(p.headers).filter(h=>!/^열\s*\d+$/.test(h) && !/열 이름|이 과업/.test(h)).slice(0,3);
+  if(headers.length<2) headers = (DEFAULT_TABLE_HEADERS[kTypeOf()] || DEFAULT_TABLE_HEADERS.concept).slice();
+  const labels = cleanKo(p.rowLabels).filter(x=>!/정리할 대상/.test(x)).slice(0,4);
+  const hints = (Array.isArray(p.hints) ? p.hints : []).map(x=>String(x==null?'':x).trim()).filter(x=>!KO_ONLY.test(x) && !/안내 질문|묻는 짧은/.test(x));
+  const ex = Array.isArray(p.example) ? p.example.map(x=>String(x==null?'':x).trim()) : [];
+  const example = (ex.length===headers.length && ex.every(x=>x && !KO_ONLY.test(x) && !/보기 칸/.test(x))) ? ex : null;
+  const rows = Array.from({length:Math.max(labels.length,3)}, (_,i)=> headers.map((_,c)=> (c===0 && labels[i]) ? labels[i] : ''));
+  return { type:'table', headers, hints:headers.map((_,i)=>hints[i]||''), bank:cleanKo(p.bank), example, rows, labelRows:labels.length };
+}
+async function requestStructured(type, label, opts){
+  opts = opts || {};
   if(busy || session.phase!=='explore' || !session.cycleStarted) return;
   busy = true; syncComposeLock();
-  pushMe(`(${label})`, false, 'button');
+  if(!opts.auto) pushMe(`(${label})`, false, 'button'); // 자동으로 펼칠 때는 학생이 한 말처럼 보이는 줄을 만들지 않는다
   const box=$('#stream');
   box.insertAdjacentHTML('beforeend', `<div class="msg ai" id="pending"><div class="av">AI</div><div class="bubble"><span class="loading"><i></i><i></i><i></i></span></div></div>`);
   box.scrollTop = box.scrollHeight;
@@ -4119,13 +4202,15 @@ async function requestStructured(type, label){
     for(let attempt=0; attempt<2 && !payload; attempt++){ try{ payload = parseJSON(await callLLM(msgs, { json:true })); }catch(e){ if(attempt) throw e; } }
     // 마인드맵: AI가 준 것은 "중심 낱말 + 후보 낱말"뿐이다. 배치·관계·순서는 여기서부터
     // 전부 학습자 몫이라, 관계를 암시하지 않는 무작위 배치로 변환해 저장한다(원리2·8).
-    if(type==='mindmap') payload = mmInitPayload(String(payload.root||'중심 낱말'), Array.isArray(payload.children)?payload.children.map(String):[]);
+    if(type==='mindmap') payload = mmInitPayload(String(payload.root||'중심 낱말'), cleanKo(payload.children));
+    if(type==='table') payload = normalizeTablePayload(payload || {});
+    if(type==='compare' && payload){ ['leftHint','rightHint','leftTitle','rightTitle'].forEach(k=>{ if(payload[k] && KO_ONLY.test(String(payload[k]))) delete payload[k]; }); }
     $('#pending')?.remove();
-    session.turns.push({ id:uid(), role:'ai', text:'', structured:{ type, payload }, phase:session.phase, kind:null, support:session.support, judge:null, comment:'' });
+    session.turns.push({ id:uid(), role:'ai', text:'', structured:{ type, payload }, phase:session.phase, kind:null, support:session.support, judge:null, comment:'', taskId:(session.currentTask||{}).id||null });
     renderStream();
   }catch(e){
     $('#pending')?.remove();
-    pushNote('정리 도구를 만들지 못했어요. 버튼을 한 번 더 눌러 줄래요?');
+    pushNote('정리 도구를 만들지 못했어요. 위의 [' + label + '] 버튼을 눌러 다시 만들어 볼 수 있어요.');
   } finally { busy = false; syncComposeLock(); }
 }
 
@@ -6043,9 +6128,12 @@ function init(){
   $('#quick-actions').addEventListener('click', e=>{
     const b=e.target.closest('button'); if(!b) return;
     if(b.dataset.toggle){ $('#quick-actions').classList.toggle('qa-open'); renderQuickActions(); return; }
-    $('#quick-actions').classList.remove('qa-open');
+    $('#quick-actions').classList.remove('qa-open'); renderQuickActions();
     requestStructured(b.dataset.type, b.dataset.label);
   });
+  // 바깥을 누르거나 Esc를 누르면 정리 도구 목록이 닫힌다
+  document.addEventListener('click', e=>{ const q = $('#quick-actions'); if(q && q.classList.contains('qa-open') && !q.contains(e.target)){ q.classList.remove('qa-open'); renderQuickActions(); } });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ const q = $('#quick-actions'); if(q && q.classList.contains('qa-open')){ q.classList.remove('qa-open'); renderQuickActions(); } } });
   $('#btn-prep-next').addEventListener('click', prepNext);
   $('#chat-finish').addEventListener('click', ()=> show('reflect'));
 

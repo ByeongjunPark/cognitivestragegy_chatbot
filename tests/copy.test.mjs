@@ -63,6 +63,42 @@ test('전문가 평가 재검증: 학생 화면 버튼 이름에 추궁형 표�
   assert.ok(/explain-btn"[^>]*>이 말의 까닭 보기</.test(html));
 });
 
+test('맞춤 표 틀: 자리표시 머리글·일본어 낱말을 걸러 내고, 첫 칸 항목·칸별 안내·보기 줄을 담는다', () => {
+  const html = fs.readFileSync(ROOT + '/index.html', 'utf8');
+  const a = html.indexOf('const KO_ONLY'), b = html.indexOf('async function requestStructured');
+  assert.ok(a > 0 && b > a);
+  const mk = new Function('kTypeOf', html.slice(a, b) + '; return { normalizeTablePayload, cleanKo };');
+  const { normalizeTablePayload } = mk(() => 'causal');
+  // 자리표시 머리글 → 내용 성격별 기본 머리글
+  let p = normalizeTablePayload({ headers: ['열1', '열2', '열3'], bank: ['더하기', 'リットル', '덜어 내기'] });
+  assert.deepEqual(p.headers, ['원인', '결과', '까닭']);
+  assert.deepEqual(p.bank, ['더하기', '덜어 내기']);
+  // 맞춤 틀: 머리글·첫 칸 항목·안내 질문·보기 줄
+  p = normalizeTablePayload({ headers: ['상황', '식', '계산 방법'], rowLabels: ['물 3컵에 2컵 더 붓기', '물 5컵에서 1컵 덜기'], hints: ['어떤 상황인가요?', '식으로 나타내 볼까요?', '어떻게 계산했나요?'], example: ['사과 2개에 1개 더 받기', '2 + 1', '2에서 1만큼 이어 세기'] });
+  assert.deepEqual(p.headers, ['상황', '식', '계산 방법']);
+  assert.equal(p.labelRows, 2);
+  assert.equal(p.rows[0][0], '물 3컵에 2컵 더 붓기');
+  assert.equal(p.rows[0][1], '');
+  assert.equal(p.rows.length >= 3, true);
+  assert.equal(p.hints[1], '식으로 나타내 볼까요?');
+  assert.equal(p.example.length, 3);
+  // 칸 수가 안 맞는 보기는 버린다
+  assert.equal(normalizeTablePayload({ headers: ['가', '나'], example: ['하나'] }).example, null);
+});
+
+test('정리 도구는 드롭다운 목록으로 열리고(.qa-menu), 정리 도구가 붙는 방법은 과업 뒤에 자동으로 펼쳐진다', () => {
+  const html = fs.readFileSync(ROOT + '/index.html', 'utf8');
+  assert.ok(html.includes('class="qa-menu"'));
+  assert.ok(/requestStructured\(first\.type, first\.label, \{ auto:true \}\)/.test(html));
+});
+
+test('채팅 목록은 칩을 눌러 다시 그릴 때 스크롤을 맨 아래로 튕기지 않는다', () => {
+  const html = fs.readFileSync(ROOT + '/index.html', 'utf8');
+  const i = html.indexOf('function renderStream()');
+  const body = html.slice(i, i + 3000);
+  assert.ok(body.includes('wasNear') && body.includes('prevTop'));
+});
+
 test('WP3-4 수학 기호 팔레트에 사칙·각·원주율 기호가 있다(전문가 6 재검증)', () => {
   const src = fs.readFileSync(ROOT + '/js/math-input.js', 'utf8');
   for (const sym of ['×', '÷', '±', 'π', '∠', '△']) assert.ok(src.includes(`s:'${sym}'`), sym);
