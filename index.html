@@ -3540,7 +3540,7 @@ function renderStream(){
       // 원리10 [대화 중: 대화 전반 지침] 3: "학습자가 AI 챗봇과 대화하는 과정 전반의 맥락에서"
       // 산출 과정을 제공하라고 돼 있다 — "판단하기"(위 judge-trigger)가 phase 구분 없이 모든
       // AI 말풍선에 뜨는 것과 같은 범위여야 정합성이 맞다(이전엔 explore로만 좁혀 놨던 것을 넓힘).
-      if(!t.structured && !t.kind && t.text) extra += `<button type="button" class="msg-act explain-btn" data-id="${t.id}" title="이 말이 왜 나왔는지 설명 보기">왜 이렇게 말했어?</button>`;
+      if(!t.structured && !t.kind && t.text) extra += `<button type="button" class="msg-act explain-btn" data-id="${t.id}" title="AI가 이 말을 한 까닭을 풀어서 보여 줘요">이 말의 까닭 보기</button>`;
       extra += `</div>`;
       if(t.explain && t.explainOpen) extra += `<div class="explain-box">${esc(t.explain)}</div>`;
       if(j==='comment' && (t.comment||'').trim()) extra += `<div class="comment-pill"><b>내 다른 생각:</b> ${esc(t.comment)}</div>`;

@@ -54,3 +54,16 @@ test('RAG: 기본 말뭉치(데이터) 조각 만들기·검색', () => {
   assert.equal(ch.length, 3);
   assert.equal(CS.retrieve(CS.buildIndex(ch), '해설 문장', { k: 1 })[0].chunk.kind, '해설');
 });
+
+test('전문가 평가 재검증: 학생 화면 버튼 이름에 추궁형 표현("왜 이렇게 말했어?" 등)이 없다', () => {
+  const html = fs.readFileSync(ROOT + '/index.html', 'utf8');
+  const labels = [...html.matchAll(/<button[^>]*>([^<]{1,40})<\/button>/g)].map(m => m[1].trim());
+  const banned = ['왜 이렇게 말했어', '왜 그렇게 말했어', '왜 그랬어', '그 이유가 뭐야'];
+  labels.forEach(l => banned.forEach(b => assert.ok(!l.includes(b), `${l} ← ${b}`)));
+  assert.ok(/explain-btn"[^>]*>이 말의 까닭 보기</.test(html));
+});
+
+test('WP3-4 수학 기호 팔레트에 사칙·각·원주율 기호가 있다(전문가 6 재검증)', () => {
+  const src = fs.readFileSync(ROOT + '/js/math-input.js', 'utf8');
+  for (const sym of ['×', '÷', '±', 'π', '∠', '△']) assert.ok(src.includes(`s:'${sym}'`), sym);
+});
