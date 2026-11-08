@@ -12,6 +12,27 @@
   }
   const toneShort = () => (TONE === 'haeyo' ? '해요체' : '반말');
 
+  // 안내는 구체적으로: "이 내용"처럼 무엇인지 모르는 말만으로 시키지 않는다(초등학생이 뭘 하라는지 모르던 문제)
+  function directiveRule() {
+    return '안내: 학생이 바로 따라 할 수 있게 "무엇을 어떻게 하면 되는지"를 분명히 말합니다. 질문이나 과제에는 오늘 목표의 구체적인 낱말(예: "직육면체의 겉넓이")을 그대로 넣고, 하는 방법(예: "한 문장으로 써요", "예를 하나 들어요", "표의 빈칸을 채워요")을 함께 말하세요. "이 내용", "오늘 배울 내용", "이 부분", "그것"처럼 무엇을 가리키는지 모르는 말만으로 시키지 마세요.';
+  }
+  function hasBatchim(ch) {
+    const c = ch.charCodeAt(0);
+    if (c >= 0xAC00 && c <= 0xD7A3) return (c - 0xAC00) % 28 !== 0;
+    return '0136780'.includes(ch) && /[0-9]/.test(ch); // 숫자: 영·일·삼·육·칠·팔은 받침이 있다
+  }
+  function josa(word, p) {
+    const last = String(word).replace(/[\s"'“”‘’)\]]+$/, '').slice(-1) || '';
+    const b = last ? hasBatchim(last) : false;
+    return { '은': b ? '은' : '는', '는': b ? '은' : '는', '을': b ? '을' : '를', '를': b ? '을' : '를', '이': b ? '이' : '가', '가': b ? '이' : '가', '과': b ? '과' : '와', '와': b ? '과' : '와' }[p] || p;
+  }
+  // "오늘 배울 이 내용을" → "“직육면체의 겉넓이”를"(조사도 받침에 맞게)
+  function concretize(text, topic) {
+    if (!topic) return text;
+    const q = '“' + topic + '”';
+    return String(text).replace(/(오늘 배울 (?:이 )?내용|이 내용|이 부분)(은|는|을|를|이|가|과|와)?/g, (m, k, p) => q + (p ? josa(topic, p) : ''));
+  }
+
   const COPY = {
     // 스스로 점검(원리7): 이해·전략·연결 질문은 구별을 유지하고, "이유"는 '어떤 점 때문에'로 부드럽게 묻는다(WP3-1).
     scaffoldQ: {
@@ -36,6 +57,9 @@
     strategyPickIntro: '스스로 점검 결과를 위에 정리했어요. 내 생각과 맞는지 한번 살펴봐요. 이제 아래 카드에서 오늘 쓸 공부 방법을 하나 이상 골라 주세요(여러 개 함께 써도 돼요).',
     strategyReasonQ: '그 방법을 고른 까닭이 뭐예요? 아래에서 고르거나 직접 써 주세요.',
     strategyChangeQ: '방법을 바꾸고 싶었던 까닭을 아래에서 고르거나 직접 써 줄래요?',
+    // 어려워하는 신호가 보일 때: 갑자기 방법 카드가 뜨는 이유와 할 수 있는 일을 먼저 분명히 말해 준다
+    strategyChangeOffer: '조금 어려워 보여요. 지금 방법으로 계속해도 되고, 아래에서 다른 방법으로 바꿔 볼 수도 있어요. 어느 쪽이든 내가 정하면 돼요.',
+    strategyKeepNext: '좋아요, 지금 방법으로 이어서 해 봐요.',
     fallbackTailTask: '그럼 이번 할 일을 먼저 해 볼래요?',
     fallbackTailNoTask: '지금까지 이야기한 걸 내 말로 한번 정리해 볼래요?',
     taskDumpFallback: '그 부분은 먼저 생각을 들려줄래요?',
@@ -84,5 +108,5 @@
     return { i, v: list[i] };
   }
 
-  Object.assign(CS, { TONE, toneRule, toneShort, COPY, REACTION_STYLES, buildReactionInstr, pickVaried });
+  Object.assign(CS, { TONE, toneRule, toneShort, directiveRule, concretize, COPY, REACTION_STYLES, buildReactionInstr, pickVaried });
 })(typeof window !== 'undefined' ? window : globalThis);

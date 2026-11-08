@@ -99,6 +99,16 @@ test('채팅 목록은 칩을 눌러 다시 그릴 때 스크롤을 맨 아래�
   assert.ok(body.includes('wasNear') && body.includes('prevTop'));
 });
 
+test('안내 구체화: "오늘 배울 이 내용을" 같은 막연한 말을 오늘 목표 낱말로 바꾸고 조사를 맞춘다', () => {
+  const t = '직육면체와 정육면체의 겉넓이';
+  assert.equal(CS.concretize('그럼 오늘 배울 이 내용을 내 말로 먼저 설명해 볼래요?', t), '그럼 “직육면체와 정육면체의 겉넓이”를 내 말로 먼저 설명해 볼래요?');
+  assert.equal(CS.concretize('이 내용은 어떤 순서로 공부하면 좋을까요?', '분수의 덧셈'), '“분수의 덧셈”은 어떤 순서로 공부하면 좋을까요?');
+  assert.equal(CS.concretize('이 부분이 헷갈려요?', '일차방정식'), '“일차방정식”이 헷갈려요?');
+  assert.equal(CS.concretize('이 내용에 대해 말해 줘요', '들이'), '“들이”에 대해 말해 줘요');
+  assert.equal(CS.concretize('이 내용을 말해요', ''), '이 내용을 말해요');
+  assert.ok(/구체적인 낱말/.test(CS.directiveRule()));
+});
+
 test('WP3-4 수학 기호 팔레트에 사칙·각·원주율 기호가 있다(전문가 6 재검증)', () => {
   const src = fs.readFileSync(ROOT + '/js/math-input.js', 'utf8');
   for (const sym of ['×', '÷', '±', 'π', '∠', '△']) assert.ok(src.includes(`s:'${sym}'`), sym);

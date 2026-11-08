@@ -41,6 +41,16 @@ function ragResults(query, k){
 }
 function ragContext(query, k, maxChars){ return CS.contextBlock(ragResults(query, k), maxChars||800); }
 
+// 오늘 목표에서 뽑은 구체적인 주제 낱말(예: "직육면체와 정육면체의 겉넓이") — "이 내용"을 바꿔 넣는다
+function concreteTopic(){
+  if(!session) return '';
+  let tpc = String(session.goal||'').trim().replace(/(에 대해|에 대하여|을|를)?\s*(알고|배우고|공부하고|알아보고)\s*싶(어요|다|습니다)\.?$/, '').replace(/[.。]+$/, '').trim();
+  if(tpc.length < 2) tpc = String((session.ctx && session.ctx.std) || '').replace(/^\[[^\]]*\]\s*/, '').trim();
+  if(tpc.length > 34) tpc = tpc.slice(0, 34) + '…';
+  return tpc;
+}
+function concretizeText(text){ try{ return CS.concretize ? CS.concretize(text, concreteTopic()) : text; }catch(e){ return text; } }
+
 /* ---------- 응답 품질 파이프라인 (WP1-3·1-4·2-5·3-1·3-3) ---------- */
 // 위젯이 실제로 붙는 kind
 const WIDGET_KINDS = new Set(['prior-pick','strategy-pick','struct-offer','reason-pick','help-pick','change-reason-pick']);
@@ -167,7 +177,9 @@ function paintTodo(){
   const est = st && st.budget ? `약 ${c.budgetMin[st.budget]}분` : '';
   const req = TODO_REQUIRED[key];
   box.hidden = false;
-  box.innerHTML = `<b>여기서 할 일</b> <span class="todo-text">${esc(CS.uiCopy(band, key))}</span>${est?` <span class="todo-est">${est}</span>`:''}${req?` <span class="${/필수/.test(req)?'req-tag':'opt-tag'}">${esc(req)}</span>`:''}${band==='초저' && window.speechSynthesis ? ` <button type="button" class="head-link todo-speak" aria-label="안내 읽어 주기">🔊 읽어 주기</button>`:''}`;
+  // 탐구 중에 AI가 과업을 냈다면, 학생이 지금 무엇을 해야 하는지 그 과업을 그대로 한 줄로 보여 준다
+  const taskLine = (key==='todo.explore' && session && session.currentTask && session.currentTask.task) ? CS.concretize(String(session.currentTask.task), concreteTopic()).slice(0, 90) : '';
+  box.innerHTML = `<b>${taskLine ? '지금 할 일' : '여기서 할 일'}</b> <span class="todo-text">${esc(taskLine || CS.uiCopy(band, key))}</span>${est?` <span class="todo-est">${est}</span>`:''}${req?` <span class="${/필수/.test(req)?'req-tag':'opt-tag'}">${esc(req)}</span>`:''}${band==='초저' && window.speechSynthesis ? ` <button type="button" class="head-link todo-speak" aria-label="안내 읽어 주기">🔊 읽어 주기</button>`:''}`;
 }
 function progressLine(){
   if(!session && currentScreen()!=='start') return '';
