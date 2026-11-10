@@ -1091,6 +1091,34 @@
 
   .ck-row{flex-wrap:wrap}
   .ck-proof{flex-basis:100%;margin-top:6px}
+
+  /* ===== (개선) 네 가지로 자세히 보기: 카드 ===== */
+  .ax-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+  @media(max-width:900px){.ax-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.ax-grid{grid-template-columns:1fr}}
+  .ax-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 15px;display:flex;flex-direction:column;gap:10px;min-width:0}
+  .ax-h{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:900;color:var(--ink)}
+  .ax-ic{font-size:20px;line-height:1}
+  .ax-big{font-size:24px;font-weight:900;color:var(--ink)}
+  .ax-big span{color:var(--muted);font-weight:500;margin:0 4px}
+  .ax-big.sm{font-size:17px}
+  .ax-bar{display:block;height:10px;border-radius:999px;background:#e9edf2;overflow:hidden}
+  .ax-bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
+  .ax-bar.pre i{background:#b8c4d3}
+  .ax-pair{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center}
+  .ax-pair small{font-size:12px;color:var(--muted)}
+  .ax-area{display:grid;grid-template-columns:4.2em 1fr 1fr auto;gap:8px;align-items:center;font-size:13px}
+  .ax-area span{color:var(--ink-2);white-space:nowrap}
+  .ax-flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .ax-flow span{display:flex;flex-direction:column;background:var(--surface-2);border-radius:10px;padding:6px 10px}
+  .ax-flow small{font-size:11.5px;color:var(--muted)}.ax-flow b{font-size:15px}
+  .ax-flow i{font-style:normal;color:var(--muted)}
+  .ax-steps{display:inline-flex;border:1px solid var(--line-strong);border-radius:999px;overflow:hidden;align-self:flex-start}
+  .ax-steps b{padding:4px 14px;font-size:13px;color:var(--muted);font-weight:700}
+  .ax-steps b.on{background:var(--accent);color:#fff}
+  .ax-foot{font-size:12.5px;color:var(--ink-2);margin-top:auto}
+  .ax-why{margin-top:4px;font-size:12.5px;color:var(--ink-2);line-height:1.55}
+  .ax-why summary{cursor:pointer;color:var(--accent-ink);font-weight:700}
 </style>
 </head>
 <body>
@@ -1564,8 +1592,8 @@
       <!-- 원리13 [대화 이후 성찰 지침] 2: "제출을 하고 나면 사전 대비 사후의 인지적 능력 변화도를 가시화된 그래프로 보여준다" -->
       <div class="pp-graph" id="res-graph" role="img"></div>
       <details class="side-more" id="res-reveal"></details>
-      <details class="side-more" id="axis-wrap"><summary>네 가지로 자세히 보기</summary>
-      <table class="axis-tbl"><thead><tr><th>무엇을</th><th>이번 결과</th><th>공부할 때와 비교</th></tr></thead><tbody id="axis-body"></tbody></table></details>
+      <details class="side-more" id="axis-wrap"><summary>📊 자세히 보기</summary>
+      <div class="ax-grid" id="axis-body"></div></details>
       <div class="callout">정답 점수(공부 전 확인·혼자 풀 때 확인)만 시스템이 같은 기준으로 채점해요. 설명을 잘 했는지, 배운 방법을 잘 옮겨 썼는지, 실력이 늘었는지는 <b>내가 스스로 판단할 몫</b>이라 자료만 보여주고 정하지 않아요.</div>
       <div>
         <label class="field-label">이 결과를 보고 — 전보다 나아진 것 같나요?</label>
@@ -5716,17 +5744,27 @@ function renderResidualResult(){
   const cpScores = cps.map(c=>c.score).filter(s=>s!=null);
   const cpAvg = cpScores.length ? Math.round(cpScores.reduce((a,b)=>a+b,0)/cpScores.length * 20) : null;
   const cpTxt = cpAvg!=null ? cpAvg+'점' : '측정 안 됨';
-  const rows = [
-    ['정답을 얼마나 맞혔나 (사전 진단 → 사후 진단)', `${itemLine}<div class="hint">${esc(ev.items?.[0]?.note||'')}</div>`, deltaChip(deltaKind, `사전 진단 ${preTxt} → 사후 진단 ${postTxt}`)],
-    (()=>{ const a = session.prior.sub||{}, b = session.residual.sub||{}; const f = (x,y,l)=> (x!=null||y!=null) ? `${l} ${x??'-'}→${y??'-'}` : null;
-      const parts = [f(a.activate,b.activate,'떠올리기'), f(a.understand,b.understand,'설명'), f(a.apply,b.apply,'적용')].filter(Boolean);
-      return ['영역별 변화 (사전 → 사후)', parts.join(' · ') || '측정 안 됨', deltaChip('na','같은 종류의 문항끼리 비교해요')]; })(),
-    ['이해도 흐름 (사전 → 방법대로 하던 중 → 사후)', `체크포인트 ${cpScores.length}번 참여<div class="hint">2단계 해 보기 동안 스스로 매긴 이해도 평균이에요.</div>`, deltaChip('na', `사전 ${preTxt} → 수행 중 ${cpTxt} → 사후 ${postTxt}`)],
-    ['설명을 잘 했나', `${esc(ev.selfExplain.level)}<div class="hint">${esc(ev.selfExplain.note||'')}</div>`, deltaChip('na','잘잘못은 정하지 않고 참고만 해요')],
-    ['배운 방법을 썼나', `${ev.transfer.applied===true?'스스로 썼어요':ev.transfer.applied===false?'안 썼어요':'선생님이 봐요'}<div class="hint">${esc(ev.transfer.note||'')}</div>`, deltaChip('na','공부할 때 고른 방법: '+(session.strategyLabel||'안 골랐어요'))],
-    ['자신감이 실제와 얼마나 맞았나', ev.metacogBrier==null?'지금은 확인 못 해요':`오차 ${ev.metacogBrier.toFixed(2)} <span class="hint">(0에 가까울수록 자신감과 실제 결과가 잘 맞아요)</span>`, deltaChip('na','사전 자신감 '+(session.prior.score||'-')+'/5 · 사전 진단 vs 자신감 오차는 아래 참고')]
+  // 카드 6장: 큰 숫자·막대로 한눈에, AI가 쓴 긴 근거는 [까닭 보기]로 접는다(판정 없이 변화만 — 원리13)
+  const bar = (v, cls) => `<span class="ax-bar ${cls||''}"><i style="width:${v==null?0:Math.max(3, v)}%"></i></span>`;
+  const why = t => t ? `<details class="ax-why"><summary>까닭 보기</summary>${esc(t)}</details>` : '';
+  const card = (ic, title, body, foot) => `<div class="ax-card"><div class="ax-h"><span class="ax-ic" aria-hidden="true">${ic}</span>${title}</div>${body}${foot?`<div class="ax-foot">${foot}</div>`:''}</div>`;
+  const dTxt = { up:'▲ 공부 전보다 높아요', down:'▼ 공부 전보다 낮아요', flat:'· 공부 전과 같아요', na:'' }[deltaKind];
+  const sa = session.prior.sub||{}, sb = session.residual.sub||{};
+  const areas = [['떠올리기', sa.activate, sb.activate], ['설명', sa.understand, sb.understand], ['적용', sa.apply, sb.apply]].filter(x=>x[1]!=null || x[2]!=null);
+  const lv3 = { '낮음':0, '보통':1, '높음':2 }[ev.selfExplain.level];
+  const br = ev.metacogBrier;
+  const calibTxt = br==null ? '확인 못 했어요' : br < 0.1 ? '잘 맞았어요' : br < 0.25 ? '조금 달랐어요' : '많이 달랐어요';
+  const cards = [
+    card('📝', '정답 점수', `<div class="ax-big">${preTxt} <span>→</span> ${postTxt}</div>
+      <div class="ax-pair"><small>공부 전</small>${bar(pre,'pre')}<small>혼자 풀 때</small>${bar(post)}</div>`,
+      `${dTxt ? `<span class="delta ${deltaKind==='up'?'up':'flat'}">${dTxt}</span> ` : ''}${esc(itemLine)}`),
+    card('🧩', '영역별 변화', areas.length ? areas.map(x=>`<div class="ax-area"><b>${x[0]}</b>${bar(x[1],'pre')}${bar(x[2])}<span>${x[1]??'-'} → ${x[2]??'-'}</span></div>`).join('') : '<p class="hint">측정 안 됐어요</p>', '같은 종류 문항끼리 비교해요'),
+    card('📈', '이해도 흐름', `<div class="ax-flow"><span><small>공부 전</small><b>${preTxt}</b></span><i>→</i><span><small>해 보는 중</small><b>${cpTxt}</b></span><i>→</i><span><small>혼자 풀 때</small><b>${postTxt}</b></span></div>`, `이해도 체크 ${cpScores.length}번`),
+    card('💬', '설명을 잘 했나', `<div class="ax-steps">${['낮음','보통','높음'].map((x,i)=>`<b class="${i===lv3?'on':''}">${x}</b>`).join('')}</div>`, why(ev.selfExplain.note)),
+    card('🔁', '배운 방법을 썼나', `<div class="ax-big sm">${ev.transfer.applied===true?'✓ 스스로 썼어요':ev.transfer.applied===false?'· 아직 안 썼어요':'선생님이 봐요'}</div>`, `${esc(session.strategyLabel||'방법 안 고름')}${why(ev.transfer.note)}`),
+    card('🎯', '자신감과 실제 결과', `<div class="ax-big sm">${calibTxt}</div>${br==null?'':bar(Math.round((1-Math.min(1,br))*100))}`, br==null ? '' : `차이 ${br.toFixed(2)} (0에 가까울수록 잘 맞아요)`)
   ];
-  $('#axis-body').innerHTML = rows.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+  $('#axis-body').innerHTML = cards.join('');
   { const aw = $('#axis-wrap'); if(aw && !aw.dataset.init){ aw.open = !cfg().reflectOneScreen; aw.dataset.init = '1'; } } // (WP2-1) 한 차시 모드는 그래프만 먼저, 표는 접어 둔다
   { // (최종 점검 10-05) 원리13-②: 표만 있고 그래프가 없었다 → 사전·사후(전체와 떠올리기·설명·적용 영역)를 나란히 놓은 막대그래프
     const g = $('#res-graph');
