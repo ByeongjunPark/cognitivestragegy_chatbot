@@ -2061,6 +2061,8 @@ function pushUnderstanding(val, src){
   if(avg >= FADE_THRESHOLD && last.v > 0 && !pending){ session.uIdxSince = session.uIdx.length; proposeFade(); }
 }
 function onTaskEvaluated(ev){
+  // 과업을 해 보고 AI 의견을 받은 바로 그 자리에서 이해도를 묻는다(턴 수만 세면 한 차시에서는 거의 안 떴다 — 원리9)
+  session.cpAfterEval = true;
   pushUnderstanding(ev.level*50, 'task');
   if(ev.level===0) session.checkpointForceSoon = true;
 }
@@ -4947,14 +4949,15 @@ function checkpointWillFire(kind){
   if(session._suppressCp) return false; // (개선) 과업을 막 낸 턴에는 체크포인트를 띄우지 않는다(과업 문장이 "마무리"로 바뀌는 충돌 방지)
   if(session.phase!=='explore' || !session.cycleStarted || kind==='monitor' || session.pendingCheckpoint || checkpointCapReached()) return false;
   const nextCount = (session.turnsSinceCheckpoint||0) + 1;
-  return nextCount >= (session.checkpointForceSoon ? cfg().checkpoint.minGap : checkpointEffectiveInterval());
+  return !!session.cpAfterEval || nextCount >= (session.checkpointForceSoon ? cfg().checkpoint.minGap : checkpointEffectiveInterval());
 }
 function maybeInsertCheckpoint(kind){
   if(session._suppressCp) return;
   if(session.phase!=='explore' || !session.cycleStarted || kind==='monitor' || session.pendingCheckpoint || checkpointCapReached()) return;
   session.turnsSinceCheckpoint = (session.turnsSinceCheckpoint||0) + 1;
-  const need = session.turnsSinceCheckpoint >= (session.checkpointForceSoon ? cfg().checkpoint.minGap : checkpointEffectiveInterval());
+  const need = !!session.cpAfterEval || session.turnsSinceCheckpoint >= (session.checkpointForceSoon ? cfg().checkpoint.minGap : checkpointEffectiveInterval());
   if(!need) return;
+  session.cpAfterEval = false;
   session.checkpointForceSoon = false;
   session.turnsSinceCheckpoint = 0;
   session.pendingCheckpoint = true;
