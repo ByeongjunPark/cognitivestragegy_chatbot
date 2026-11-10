@@ -96,7 +96,7 @@ test('WP3-6 한 단계 더 도와줘: 2턴만 올리고 3턴째에 원래 단계
 
 test('WP2-1 모드: 한 차시는 선다 1 + 서술 1, 시간 예산 40분 이내', () => {
   const c = CS.modeCfg('class40');
-  assert.deepEqual(c.diagTags, ['예시', '설명']);
+  assert.deepEqual(c.diagTags, ['기억', '예시', '설명', '적용']);
   assert.equal(CS.resolveMode('?mode=full', null), 'full');
   assert.equal(CS.resolveMode('', 'full'), 'full');
   assert.equal(CS.resolveMode('', null), 'class40');

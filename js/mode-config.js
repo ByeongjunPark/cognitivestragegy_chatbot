@@ -10,14 +10,14 @@
   const MODE_CFG = Object.freeze({
     class40: Object.freeze({
       label: '한 차시(40분)',
-      // 사전·사후는 같은 유형·같은 개수(원리13 평행 문항). 선다 1 + 서술 1.
-      diagTags: Object.freeze(['예시', '설명']),
+      // 사전·사후는 같은 유형·같은 개수(원리13 평행 문항). 선다 2(기억·예시) + 서술 2(설명·적용).
+      diagTags: Object.freeze(['기억', '예시', '설명', '적용']), // 사전·사후 쌍둥이 4문항(선다 2 + 서술 2): 2문항이면 한 문항이 점수의 절반이라 변화·자신감 정확도를 재기 어렵다
       metaOneScreen: true,          // 스스로 점검: 한 화면에 평소 공부법 + 이해·전략·연결 3행(구별 유지, 원리7)
       checkpoint: Object.freeze({ minGap: 6, maxPerSession: 2 }),
       exploreTurnCap: 8,            // 탐구 대화 약 8턴 뒤 마무리를 권한다(막지는 않는다). 시범 운용 1차: 10턴이면 초등 타자 속도로 약 49분 → 8턴으로 보정
       reflectOneScreen: true,       // 되짚기 가·나를 한 화면에, 서술은 1개만 필수
       required: Object.freeze({ reflectTags: false, promptRatings: false, reflectNotes: 1, checkpointReasonText: false }),
-      budgetMin: Object.freeze({ start: 5, activate: 4, meta: 4, pick: 3, explore: 15, reflect: 5, residual: 4 }),
+      budgetMin: Object.freeze({ start: 5, activate: 6, meta: 4, pick: 3, explore: 12, reflect: 4, residual: 6 }),
       verify: Object.freeze({ 과학: true, 사회: false, 수학: false })
     }),
     full: Object.freeze({

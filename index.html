@@ -4463,7 +4463,7 @@ function shuffleWithAnswer(options, answerIdx){
   return { options:arr.map(x=>x.o), key:arr.find(x=>x.ok) ? arr.find(x=>x.ok).o : null };
 }
 async function generateDiagItems(mode){
-  // (WP2-1) 문항 유형·개수는 모드 설정에서: 한 차시=선다 1(예시)+서술 1(설명), 자세히=기억·예시·설명·적용.
+  // (WP2-1) 문항 유형·개수는 모드 설정에서: 한 차시·자세히 모두 기억·예시·설명·적용.
   // 사후는 언제나 사전과 같은 유형·같은 개수(원리13 평행 문항 — 불변조건 3).
   const tags = mode==='post' && (session.prior.items||[]).length ? session.prior.items.map(it=>it.tag) : (session.diagTags || DIAG_TAGS);
   const n = tags.length;
