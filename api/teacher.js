@@ -9,7 +9,7 @@ import { ready, kvGet, kvSet, kvDel, kvKeys, kvClear, kvIncr, hashPin, verifyPin
 import '../js/lib/scoring.js';
 const CS = globalThis.CS;
 const PHASE_KEYS = ['start', 'activate', 'meta', 'pick', 'explore', 'reflect', 'residual', 'journal'];
-const FLAG_TYPES = ['broken', 'tone', 'probe', 'term', 'widget', 'verify', 'answer-leak', 'ai-error'];
+const FLAG_TYPES = ['broken', 'tone', 'probe', 'term', 'widget', 'verify', 'answer-leak', 'ai-error', 'role-split'];
 function phaseCols(s) {
   const ms = CS.phaseMs(s.phaseTimes || {}, null);
   const o = {}; PHASE_KEYS.forEach(k => { o['phase_min_' + k] = ms[k] != null ? Math.round(ms[k] / 6000) / 10 : ''; });
@@ -36,6 +36,7 @@ function evalCols(s) {
     support_start: s.supportStart || ''
   };
   FLAG_TYPES.forEach(t => { o['flag_' + t.replace('-', '_')] = flags.filter(f => f.type === t).length; });
+  { const rs = s.roleStats || {}; o.role_checked = rs.checked || 0; o.role_violated = rs.violated || 0; o.role_fixed = rs.fixed || 0; } // 역할 분담 지킴 검사(원리5)
   return Object.assign(o, phaseCols(s));
 }
 

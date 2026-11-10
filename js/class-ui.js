@@ -113,6 +113,19 @@ function finalizeAiText(text, o){
   return t;
 }
 // 사실 검수(WP3-3): 원문 근거에 비추어 사실 오류가 있는지 temperature 0으로 따로 확인한다(과목별 켜기·끄기).
+// 학습자 몫(과업 분담에서 '내가 맡아요'로 정한 일)을 AI 답이 대신 했는지 판정한다. 질문·안내·힌트는 위반이 아니다.
+async function checkRoleSplit(text){
+  const { meTasks } = CS.taskSplit(TASK_BLOCKS, session.taskBlocks || {}, session.fixedToggle || {});
+  if(!meTasks || !meTasks.length || String(text||'').length < 40) return { checked:false, violated:false };
+  try{
+    const raw = await callLLM([
+      { role:'system', content:'너는 역할 분담 점검 보조자다. 반드시 순수 JSON만 출력한다.' },
+      { role:'user', content:`학습자가 직접 하기로 정한 일: ${meTasks.join(', ')}\nAI가 학습자에게 한 말: "${String(text).slice(0,700)}"\nAI가 이 일 가운데 하나를 학습자 대신 해 버렸는지 판단해라. 예: 학습자 몫인 요약을 AI가 직접 써 줌, 초안을 대신 씀, 문제를 대신 정의해 줌, 풀이 순서를 대신 짜 줌, 학습자가 설명할 것을 AI가 설명해 버림. 질문하기, 무엇을 하면 되는지 안내하기, 첫걸음 힌트 주기는 위반이 아니다.\n{"violated":false,"task":"위반했다면 그 일 이름"}` }
+    ], { temperature:0, json:true });
+    const j = parseJSON(raw) || {};
+    return { checked:true, violated: j.violated === true, task: String(j.task||'').slice(0,40) };
+  }catch(e){ return { checked:false, violated:false }; }
+}
 async function verifyFacts(text){
   const on = (cfg().verify||{})[session.ctx.subject];
   if(!on) return { ok:true, skipped:true };
