@@ -2046,8 +2046,8 @@ async function evaluateAttempt(spec, attemptText){
 // (개선) 원리1 지침 2 "이해도 지표가 일정 기준 이상 유지되면": 예전엔 '대부분 충족' 2회 연속 또는
 // 체크포인트 4점 이상 2회 연속이어야 해서 거의 제안되지 않았다(가상 학생 8세션 중 6세션이 끝까지 '많이').
 // 과업 진단(0/50/100)과 이해도 체크(1~5→0~100)를 하나의 이해도 지표로 모아, 최근 2개 평균이
-// 65 이상이면 줄이기를 '제안'한다(줄일지는 여전히 학습자가 고른다 — 원리1 지침 3).
-const FADE_WINDOW = 2, FADE_THRESHOLD = 65;
+// 60 이상이면 줄이기를 '제안'한다(줄일지는 여전히 학습자가 고른다 — 원리1 지침 3).
+const FADE_WINDOW = 2, FADE_THRESHOLD = 60; // 예: '일부 해냈어요'(50) + 이해도 4점(75) = 62.5 → 제안. '일부'만 두 번(50)은 아직
 function pushUnderstanding(val, src){
   session.uIdx = session.uIdx || [];
   session.uIdx.push({ v:val, src, at:new Date().toISOString() });
