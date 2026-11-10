@@ -1017,6 +1017,45 @@
   .pbx-seg em{font-style:normal;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pbx-seg.done em{color:var(--ink-2)}.pbx-seg.now em{color:var(--ink);font-weight:800}
   @media(max-width:700px){.pbx-seg em{display:none}.pbx-seg.now em{display:block;white-space:normal}.pbx-clock{width:100%;flex-direction:row;align-items:center;gap:10px}.pbx-time{flex:1}.pbx-clock small{display:none}}
+
+  /* ===== (개선) 홈·돌아보기 간소화 ===== */
+  #home-summary-line{display:none}
+  [data-screen="home"] .todo-line{display:none!important}
+  [data-screen="home"] .widget:not(.glance) .widget-head small{display:none}
+  .gl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:6px}
+  @media(max-width:700px){.gl-grid{grid-template-columns:1fr 1fr}}
+  .gl-tile{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:12px 13px;display:flex;flex-direction:column;gap:4px;min-width:0}
+  .gl-ic{font-size:22px;line-height:1}
+  .gl-t{font-size:12.5px;color:var(--muted);font-weight:700}
+  .gl-big{font-size:17px;font-weight:900;color:var(--ink);line-height:1.3;overflow-wrap:anywhere}
+  .gl-tile small{font-size:12px;color:var(--ink-2)}
+  .gl-split{display:block;height:12px;border-radius:999px;background:#fcd9a0;overflow:hidden;margin:4px 0}
+  .gl-split i{display:block;height:100%;background:var(--me,#2f6fed)}
+  [data-screen="reflect"] .cycle-wrap{border:0!important;padding:0!important;margin:0 0 8px!important;background:none!important}
+  [data-screen="reflect"] .cycle-wrap .cycle-title{justify-content:flex-end!important}
+  [data-screen="reflect"] .cycle-wrap .cycle-title > span,#reflect-strip{display:none}
+  .rf-h{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;font-size:16px!important;font-weight:900!important;color:var(--ink);margin:0 0 10px}
+  .rf-h small{flex-basis:100%;font-size:13px;font-weight:500;color:var(--muted);padding-left:34px}
+  .rf-num{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:900}
+  .rf-count{font-size:13px;font-weight:800;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px 11px}
+  #timeline .tl-card{padding:11px 13px}
+  #timeline .tl-card .txt{font-size:14px;color:var(--ink);margin:0 0 9px}
+  .tl-tags{display:flex;gap:8px}
+  .tl-tags button{flex:1;font-size:13.5px;font-weight:700;padding:8px 10px;border-radius:12px}
+  .tl-tags button[data-v="self"].on{background:var(--me,#2f6fed);border-color:var(--me,#2f6fed);color:#fff}
+  .tl-tags button[data-v="ai"].on{background:#f59e0b;border-color:#f59e0b;color:#fff}
+  .reflect-one #reflect-step-a > div:last-child{display:none}   /* 한 차시: 역할 글쓰기는 선택이라 숨기고, 표시(원리11)만 남긴다 */
+  .reflect-one #reflect-step-b .rf-h .req-tag{display:none}
+  .reflect-one #reflect-step-b .rf-h:not([for]) small::before{content:'(선택) '}
+  .reflect-one #reflect-step-b label.rf-h .req-tag{display:inline-block}
+  .pr-legend{font-size:12px;color:var(--muted);margin:2px 0 8px}
+  .pr-l{margin-bottom:6px!important}.pr-l span{font-weight:500;color:var(--muted);font-size:12.5px}
+  .rf-last{font-size:13px}
+  #reflect-step-a,#reflect-step-b,#reflect-next{border-radius:18px}
+  [data-screen="reflect"] .rail > .eyebrow,#reflect-subhead{display:none}
+  details.gp-read{font-size:12.5px;color:var(--muted);margin:0 0 8px}
+  details.gp-read summary{cursor:pointer;font-weight:700;color:var(--accent-ink);list-style:none;display:inline-block}
+  details.gp-read summary::-webkit-details-marker{display:none}
 </style>
 </head>
 <body>
@@ -1077,7 +1116,7 @@
   <section class="screen" data-screen="home">
     <div class="rail">
       <div class="eyebrow">내 공부방</div>
-      <h1 class="headline"><span id="home-name">친구</span>님, 지금까지 공부한 걸 모아 봤어요</h1>
+      <h1 class="headline"><span id="home-name">친구</span>님의 공부방</h1>
       <p class="subhead" id="home-summary-line">공부할 때마다 대화·공부 방법·스스로 답한 내용이 여기에 쌓여요. 아래에서 그동안의 모습을 보고, 준비되면 새 공부를 시작해요.</p>
       <p class="todo-line" hidden></p>
     </div>
@@ -1114,13 +1153,13 @@
         <button type="button" class="gt" role="tab" aria-selected="false" data-tab="meta">스스로 점검</button>
       </div>
       <div class="gp" data-panel="strategy">
-        <p class="gp-read">읽는 법: 막대가 길수록 그 방법을 자주 썼어요. 오른쪽 초록 표시는 그 방법을 쓴 공부에서 "공부 전 → 혼자 풀 때" 점수가 평균 얼마나 달라졌는지예요.</p>
+        <details class="gp-read"><summary>ⓘ 읽는 법</summary>막대가 길수록 그 방법을 자주 썼어요. 오른쪽 초록 표시는 그 방법을 쓴 공부에서 "공부 전 → 혼자 풀 때" 점수가 평균 얼마나 달라졌는지예요.</details>
         <p class="gp-sum" id="gs-sum-strategy"></p>
         <div id="agg-strategy"></div>
         <p class="gp-note" id="gs-note-strategy" hidden>한두 번뿐인 기록은 우연일 수 있어요. 여러 번 써 볼수록 어떤 방법이 나에게 맞는지 더 잘 보여요.</p>
       </div>
       <div class="gp" data-panel="prepost" hidden>
-        <p class="gp-read">읽는 법: 공부 전 "아는 것 확인" 점수와, AI 없이 "혼자 풀어보기" 점수를 비교해요. 같은 종류의 문제라서 차이가 곧 늘어난 만큼이에요.</p>
+        <details class="gp-read"><summary>ⓘ 읽는 법</summary>공부 전 "아는 것 확인" 점수와, AI 없이 "혼자 풀어보기" 점수를 비교해요. 같은 종류의 문제라서 차이가 곧 늘어난 만큼이에요.</details>
         <p class="gp-sum" id="gs-sum-prepost"></p>
         <div class="gp-empty" id="gp-empty-prepost" hidden>공부를 2번 이상 끝내면 흐름 그래프가 생겨요.</div>
         <div class="subj-filter" id="pp-subj" role="group" aria-label="과목 고르기" hidden></div>
@@ -1131,7 +1170,7 @@
         <div id="agg-subject" hidden></div>
       </div>
       <div class="gp" data-panel="prompt" hidden>
-        <p class="gp-read">읽는 법: 돌아보기에서 내가 고른 질문에 스스로 매긴 점수(1~5)예요. 자세함은 "알고 싶은 걸 자세히", 이어짐은 "앞뒤가 이어지게", 분명함은 "원하는 걸 분명하게"예요.</p>
+        <details class="gp-read"><summary>ⓘ 읽는 법</summary>돌아보기에서 내가 고른 질문에 스스로 매긴 점수(1~5)예요. 자세함은 "알고 싶은 걸 자세히", 이어짐은 "앞뒤가 이어지게", 분명함은 "원하는 걸 분명하게"예요.</details>
         <p class="gp-sum" id="gs-sum-prompt"></p>
         <div id="agg-prompt-wrap" class="prompt-charts-grid">
           <div class="prompt-chart-col"><canvas id="agg-prompt-bar-chart"></canvas></div>
@@ -1141,7 +1180,7 @@
         <div id="agg-prompt-empty" hidden></div>
       </div>
       <div class="gp" data-panel="meta" hidden>
-        <p class="gp-read">읽는 법: 공부를 시작할 때 "스스로 점검" 질문에 답한 내용을 세 가지로 살펴봤어요(아직 낯설어요 → 해 보는 중이에요 → 잘 짚었어요). 헷갈리는 곳을 잘 짚었는지(이해), 공부 방법과 이유를 말했는지(전략), 다른 것과 연결했는지(연결).</p>
+        <details class="gp-read"><summary>ⓘ 읽는 법</summary>공부를 시작할 때 "스스로 점검" 질문에 답한 내용을 세 가지로 살펴봤어요(아직 낯설어요 → 해 보는 중이에요 → 잘 짚었어요). 헷갈리는 곳을 잘 짚었는지(이해), 공부 방법과 이유를 말했는지(전략), 다른 것과 연결했는지(연결).</details>
         <p class="gp-sum" id="gs-sum-meta"></p>
         <div id="gp-meta-last" class="stack" style="gap:4px;margin-bottom:10px" hidden></div>
         <div class="gp-empty" id="gp-empty-meta" hidden>공부를 2번 이상 끝내면 흐름 그래프가 생겨요.</div>
@@ -1337,8 +1376,8 @@
   <section class="screen" data-screen="reflect">
     <div class="rail">
       <div class="eyebrow">돌아보기</div>
-      <h1 class="headline" id="reflect-headline">AI랑 이야기한 걸 돌아봐요 (1/2)</h1>
-      <p class="subhead" id="reflect-subhead">① 내가 쓴 말마다 <b>내가 먼저 생각했는지</b>, <b>AI에게 맡겼는지</b> 눌러 표시해요. ② 다음엔 어떻게 할지 <b>한 문장</b>만 써요.</p>
+      <h1 class="headline" id="reflect-headline">돌아보기</h1>
+      <p class="subhead" id="reflect-subhead"></p>
       <p class="todo-line" hidden></p>
     </div>
     <div class="cycle-wrap" style="border:1px solid var(--line);border-radius:14px;margin-bottom:16px">
@@ -1351,8 +1390,8 @@
       <div class="reflect-split">
         <div>
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-            <h4 style="font-size:14px;font-weight:800">① 내가 쓴 말을 눌러서 표시해요</h4>
-            <span class="hint" id="tag-counter" style="margin:0">내가 생각 0 · AI에게 맡김 0</span>
+            <h4 class="rf-h"><span class="rf-num">1</span>누가 이끌었나요? <small>내가 쓴 말마다 눌러요</small></h4>
+            <span class="rf-count" id="tag-counter">🧠 0 · 🤖 0</span>
           </div>
           <div class="timeline" id="timeline"></div>
         </div>
@@ -1362,7 +1401,7 @@
                3곳에 중복 표시되고, 박스마다 제목과 내용이 안 맞아 산발적으로 느껴졌다. -->
           <!-- 요청사항(3번째 피드백) 8: 대화 중 개별로 했던 "판단하기"를 한번에 묶어 다시 볼 수 있게 -->
           <details class="side-more">
-          <summary>더 보기 — 이번 대화 한눈에·내 판단·만든 자료</summary>
+          <summary>📊 이번 대화 기록 더 보기</summary>
           <div class="stack" style="margin-top:12px">
           <div class="box">
             <h4>이번 대화 한눈에 보기</h4>
@@ -1396,8 +1435,8 @@
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-          <label class="field-label" for="in-reflect-a" style="margin:0">② 다음엔 어떻게 할래요? 한 문장으로 써요 <span class="req-tag">꼭 적어요</span><br><small style="font-weight:500">예: 어려울 땐 AI에게 물었어요. 다음엔 먼저 내 생각을 써 볼래요.</small></label>
-          <button type="button" class="btn btn-sm btn-ghost" id="hint-reflect-a">막막하면 — 질문 하나 받기</button>
+          <label class="field-label" for="in-reflect-a" style="margin:0">다음엔 어떻게 할래요? <span class="req-tag">꼭 적어요</span></label>
+          <button type="button" class="btn btn-sm btn-ghost" id="hint-reflect-a">💡 질문 받기</button>
         </div>
         <p class="callout info" id="hint-reflect-a-box" style="margin:8px 0" hidden></p>
         <div class="starters" data-for="in-reflect-a"><button type="button" class="mic-for" data-for="in-reflect-a" aria-label="말로 쓰기">🎤 말로 쓰기</button><button type="button">나는 ___할 때 AI에게 맡겼어요.</button><button type="button">다음엔 ___해서 내가 먼저 생각해 볼래요.</button></div>
@@ -1409,21 +1448,20 @@
     <!-- 나: 프롬프트(질문) 궤적 성찰 -->
     <div id="reflect-step-b" class="card stack" hidden>
       <div>
-        <h4 style="font-size:14px;font-weight:800;margin-bottom:4px">① 내가 AI에게 한 질문 중 기억에 남는 걸 <b>1개 이상</b> 눌러요 <span class="req-tag">꼭 해요</span></h4>
-        <p class="hint" style="margin:0 0 10px">누르면 그 아래에 "얼마나 좋은 질문이었나요?" 칸(자세함·이어짐·분명함)이 열려요. 여러 개 골라도 돼요.</p>
+        <h4 class="rf-h"><span class="rf-num">2</span>내 질문은 어땠나요? <span class="req-tag">꼭 해요</span> <small>기억에 남는 질문을 눌러 점수를 매겨요</small></h4>
         <div class="stack" id="prompt-list" style="gap:8px"></div>
       </div>
       <!-- 요청사항(11번째 피드백) 6: "질문 하나가 아니라, 유의미하다고 내가 직접 고른 복수개의
            프롬프트에 각각 구체성·논리성·명시성을 점수화하게 해달라" — session.reflect.promptRating
            (단일 객체)를 promptRatings(배열)로 바꿔, 고른 질문마다 각자 리커트(1~5) 패널을 둔다. -->
       <div id="prompt-rate-wrap" hidden>
-        <h4 style="font-size:14px;font-weight:800;margin-bottom:4px">② 고른 질문이 얼마나 좋았는지 1~5로 골라요</h4>
+        <h4 class="rf-h">고른 질문 점수</h4>
         <div class="stack" id="prompt-rate-cards" style="gap:16px"></div>
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-          <label class="field-label" for="in-reflect" style="margin:0">③ 다음엔 어떻게 물어볼래요? 한 문장으로 써요 <span class="req-tag">꼭 적어요</span><br><small style="font-weight:500">예: 헷갈리는 곳을 먼저 말하고 물어볼래요.</small></label>
-          <button type="button" class="btn btn-sm btn-ghost" id="hint-reflect-b">막막하면 — 질문 하나 받기</button>
+          <label class="field-label rf-h" for="in-reflect" style="margin:0"><span class="rf-num">3</span>다음엔 어떻게 물어볼래요? <span class="req-tag">꼭 적어요</span></label>
+          <button type="button" class="btn btn-sm btn-ghost" id="hint-reflect-b">💡 질문 받기</button>
         </div>
         <p class="callout info" id="hint-reflect-b-box" style="margin:8px 0" hidden></p>
         <div class="starters" data-for="in-reflect"><button type="button" class="mic-for" data-for="in-reflect" aria-label="말로 쓰기">🎤 말로 쓰기</button><button type="button">"___"라고 물었을 때 도움이 됐어요.</button><button type="button">다음엔 ___처럼 더 자세히 물어볼래요.</button></div>
@@ -1433,9 +1471,7 @@
       <!-- 요청사항(9번째 피드백) 2: "잔여물 확인은 다 해야 하는 필수 단계다" — 예전엔
            "지금 안 해도 돼요"라는 선택적 안내 카드였다. 되짚기의 세 번째 단계(다)로 명시하고,
            건너뛰는 경로(저장하고 바로 끝내기)를 없애 반드시 거쳐가게 한다. -->
-      <div class="callout info">
-        <b>마지막: 혼자서 풀어보기</b> — 배운 게 나에게 얼마나 남았는지, AI 도움 없이 공부 전 "아는 것 확인"과 같은 수의 비슷한 문제를 풀어 공부 전과 후를 비교해요. <b>다음 시간에 푸는 걸 권해요</b> — 시간이 조금 지난 뒤에 풀어야 정말 남은 것을 알 수 있어요. 내 공부방의 [이어서 하기]로 바로 시작할 수 있어요.
-      </div>
+      <div class="callout info rf-last"><b>마지막</b> AI 없이 비슷한 문제를 풀어 공부 전과 비교해요. 다음 시간에 풀면 더 정확해요.</div>
     </div>
 
     <!-- (WP5-3, 전문가5 "점검 결과 → 전략 조정·재시도") 이번 결과에서 약했던 쪽에 맞춘 방법 후보 2개 중 하나를 고르면 다음 공부 시작 때 미리 골라져 있다(선택은 여전히 학습자 몫).
@@ -3708,7 +3744,7 @@ const PROMPT_RATE_DIMS = [
 ];
 function promptRateRowHTML(tid, dim, val){
   return `<div>
-    <div class="field-label" style="margin-bottom:6px">${dim.label} <span style="color:var(--muted);font-weight:500">— ${esc(dim.desc)} (1 전혀 아니에요 ~ 5 아주 그래요)</span></div>
+    <div class="field-label pr-l"><b>${dim.label}</b> <span>${esc(dim.desc)}</span></div>
     <div class="understand-pick" data-rate-tid="${tid}" data-rate-dim="${dim.k}">${[1,2,3,4,5].map(n=>`<button type="button" class="u-chip ${val===n?'is-selected':''}" data-tid="${tid}" data-dim="${dim.k}" data-n="${n}"><span class="u-emoji">${n}</span></button>`).join('')}</div>
   </div>`;
 }
@@ -5230,7 +5266,7 @@ function tagCounts(){
 }
 function syncReflectA(){
   const { self, ai_, total } = tagCounts();
-  $('#tag-counter').textContent = `내가 생각 ${self} · AI에게 맡김 ${ai_}`;
+  $('#tag-counter').textContent = `🧠 내가 ${self} · 🤖 AI ${ai_}`;
   // 가짓수 제한은 없앴다. 최소한 하나는 골라야 다음으로 갈 수 있게만 해서, 아무것도 안 고르고
   // 그냥 넘어가는 것만 막는다.
   syncReflectGate();
@@ -5277,20 +5313,20 @@ function enterReflect(){
   $('#reflect-next').hidden = session.reflect.step!=='prompt';
   document.body.classList.toggle('reflect-one', !!one);
   paintNextPlan();
-  if(session.reflect.step==='delegate'){ $('#reflect-headline').textContent='AI랑 이야기한 걸 돌아봐요 (1/2)'; $('#reflect-subhead').innerHTML='① 내가 쓴 말마다 <b>내가 먼저 생각했는지</b>, <b>AI에게 맡겼는지</b> 눌러 표시해요. ② 다음엔 어떻게 할지 <b>한 문장</b>만 써요.'; }
-  else { $('#reflect-headline').textContent='내가 AI에게 한 질문을 돌아봐요 (2/2)'; $('#reflect-subhead').innerHTML='① 기억에 남는 질문을 <b>1개 이상</b> 눌러요. ② 그 질문이 <b>얼마나 좋았는지</b> 1~5로 골라요. ③ 다음엔 어떻게 물어볼지 <b>한 문장</b>만 써요.'; }
+  if(one){ $('#reflect-headline').textContent='돌아보기'; $('#reflect-subhead').innerHTML='세 가지를 보고, <b>③ 한 문장</b>만 꼭 써요.'; }
+  else if(session.reflect.step==='delegate'){ $('#reflect-headline').textContent='돌아보기 (1/2)'; $('#reflect-subhead').innerHTML='누가 이끌었는지 표시하고, <b>한 문장</b>만 써요.'; }
+  else { $('#reflect-headline').textContent='내 질문 돌아보기 (2/2)'; $('#reflect-subhead').innerHTML='질문을 골라 점수를 매기고, <b>한 문장</b>만 써요.'; }
 
   // (WP2-1 한 차시) 타임라인은 내가 한 말만 — AI 답은 아래 질문 목록에 한 줄씩 함께 보인다(읽을 양 줄이기)
   $('#timeline').innerHTML = session.turns.filter(t=>t.role==='me' && isTyped(t)).map(t=>{
     const mine=t.role==='me';
     const v = mine ? session.reflect.tags[t.id] : null;
     return `<div class="tl-card ${mine?'tl-me':'tl-ai'}">
-      <div class="role">${PHASES[t.phase]||'이야기'} 중에 내가 쓴 말</div>
       <div class="txt">${esc(trim(t.text,120))}</div>
       ${mine && !isTyped(t) ? '<div class="hint">버튼으로 보낸 말 — 표시하지 않아도 돼요</div>' : ''}
       ${mine && isTyped(t)?`<div class="tl-tags" data-id="${t.id}">
-        <button data-v="self" class="${v==='self'?'on':''}">내가 생각했어요</button>
-        <button data-v="ai" class="${v==='ai'?'on':''}">AI에게 맡겼어요</button>
+        <button data-v="self" class="${v==='self'?'on':''}">🧠 내가 생각</button>
+        <button data-v="ai" class="${v==='ai'?'on':''}">🤖 AI에게 맡김</button>
       </div>`:`<div class="hint">AI 도움 ${SUPPORT_LABEL[t.support]||'-'}</div>`}
     </div>`;
   }).join('') || '<div class="hint">내가 직접 쓴 말이 아직 없어요. 바로 아래에 한 문장만 써 주세요.</div>';
@@ -5366,11 +5402,11 @@ function enterReflect(){
     ? prompts.map((t,i)=>{ const r = byId.get(t.id), n = r ? doneOf(r) : 0;
         return `<div class="box prompt-pick ${r ? 'is-selected' : ''}" data-tid="${t.id}">
           <button type="button" class="pp-head" data-tid="${t.id}" aria-expanded="${!!r}">
-            <span class="hint pp-meta">#${i+1} · ${t.delegate?'AI에게 답을 맡긴 질문':'내가 생각한 질문'}${r ? ` · <b class="pp-state ${n===3?'done':''}">${n===3?'점수 다 매김 ✓':`점수 ${n}/3`}</b>` : ' · <span class="pp-cta">눌러서 고르고 점수 매기기</span>'}</span>
+            <span class="hint pp-meta">${t.delegate?'🤖':'🙋'} #${i+1}${r ? ` · <b class="pp-state ${n===3?'done':''}">${n===3?'점수 ✓':`점수 ${n}/3`}</b>` : ' · <span class="pp-cta">눌러서 점수 매기기</span>'}</span>
             <span class="pp-text">${esc(t.text)}</span>
-            ${(()=>{ const k = session.turns.indexOf(t); const a = session.turns.slice(k+1).find(x=>x.role==='ai' && x.text); return a ? `<span class="pp-reply">이 질문에 AI가 한 답: "${esc(trim(a.text,80))}"</span>` : ''; })()}
+            ${r && (()=>{ const k = session.turns.indexOf(t); const a = session.turns.slice(k+1).find(x=>x.role==='ai' && x.text); return a ? `<span class="pp-reply">AI 답: "${esc(trim(a.text,80))}"</span>` : ''; })() || ''}
           </button>
-          ${r ? `<div class="prompt-rate" data-tid="${t.id}">${PROMPT_RATE_DIMS.map(d=>promptRateRowHTML(t.id, d, r[d.k])).join('')}<button type="button" class="btn btn-sm btn-ghost prompt-unrate" data-tid="${t.id}">이 질문 빼기</button></div>` : ''}
+          ${r ? `<div class="prompt-rate" data-tid="${t.id}"><div class="pr-legend">1 전혀 아니에요 ··· 5 아주 그래요</div>${PROMPT_RATE_DIMS.map(d=>promptRateRowHTML(t.id, d, r[d.k])).join('')}<button type="button" class="btn btn-sm btn-ghost prompt-unrate" data-tid="${t.id}">이 질문 빼기</button></div>` : ''}
         </div>`; }).join('')
     : '<p class="hint">아직 내가 직접 쓴 질문이 없어요.</p>';
   $('#prompt-rate-wrap').hidden = true;
@@ -5408,7 +5444,7 @@ async function requestReflectHint(which){
     box.textContent = '지금은 질문을 못 만들었어요. 그냥 내가 기억나는 장면부터 적어봐도 좋아요.';
     box.hidden = false;
   }finally{
-    btn.disabled = false; btn.textContent = '막막하면 — 질문 하나 받기';
+    btn.disabled = false; btn.textContent = '💡 질문 받기';
   }
 }
 function goReflectStepB(){

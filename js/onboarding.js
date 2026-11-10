@@ -67,7 +67,7 @@ function showPinCard(list, nick){
 
 /* ---------- 첫 사용 둘러보기 6장 + 연습해 보기 (WP4-2) ---------- */
 const GUIDE_CARDS = [
-  { t:'내 공부방에 온 걸 환영해요', b:'여기서 AI와 함께 공부하고, 내가 어떻게 공부했는지 돌아봐요. 화면 위의 [?]를 누르면 이 안내를 언제든 다시 볼 수 있어요.' },
+  { t:'내 공부방에 온 걸 환영해요', b:'여기서 AI와 함께 공부하고, 내가 어떻게 공부했는지 돌아봐요. 로그인할 때마다 이 안내를 다시 볼지 물어봐요.' },
   { t:'1. 배울 것 정하기', b:'오늘 공부하고 싶은 것을 내 말로 적어요. 예시 문장을 눌러도 돼요. [AI와 할 일 나누기]에서 내가 먼저 할 일과 AI가 도와줄 일을 정해요.' },
   { t:'2. 아는 것 확인 · 스스로 점검', b:'시험이 아니에요. 지금 아는 만큼 풀고, 헷갈리는 곳을 골라요. 모르면 "모르겠어요"라고 써도 괜찮아요.' },
   { t:'3. 방법 고르고 해 보기', b:'공부 방법을 고르면 AI가 할 일을 줘요. 내가 먼저 해 보고, 막히면 [막혔어요]를 눌러 필요한 도움을 골라요. AI 말은 [이 말 판단하기]로 내가 판단해요.' },
@@ -89,13 +89,18 @@ function openGuide(i){
   on('gd-practice', ()=>{ close(); startPractice(); });
 }
 function guideKey(){ return 'guideSeen:' + (DB && DB.currentUser || ''); }
+function guideNeverKey(){ return 'guideNever:' + (DB && DB.currentUser || ''); }
+// 로그인할 때마다 짧게 묻는다. '다음부터 묻지 않기'를 고르면 그 계정에서는 다시 묻지 않는다.
 function maybeAutoGuide(){
   if(!DB || !DB.currentUser) return;
-  let seen = null; try{ seen = localStorage.getItem(guideKey()); }catch(e){}
-  const acc = account();
-  if(seen || (acc && (acc.sessions||[]).length)) return; // 첫 로그인에만 1회
-  try{ localStorage.setItem(guideKey(), '1'); }catch(e){}
-  openGuide(0);
+  let never = null; try{ never = localStorage.getItem(guideNeverKey()); }catch(e){}
+  if(never) return;
+  modalHTML('사용 방법을 볼까요?', `<div class="stack" style="gap:12px"><p style="margin:0">처음이거나 헷갈리면 짧은 안내를 봐요.</p>
+    <label style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)"><input type="checkbox" id="gd-never"> 다음부터 묻지 않기</label>
+    <div class="row" style="justify-content:flex-end;gap:8px"><button type="button" class="btn btn-sm btn-ghost" id="gd-no">바로 시작할게요</button><button type="button" class="btn btn-sm btn-primary" id="gd-yes">안내 보기</button></div></div>`);
+  const remember = ()=>{ const c = document.getElementById('gd-never'); if(c && c.checked){ try{ localStorage.setItem(guideNeverKey(), '1'); }catch(e){} } };
+  document.getElementById('gd-no').onclick = ()=>{ remember(); document.getElementById('scrim').classList.remove('open'); };
+  document.getElementById('gd-yes').onclick = ()=>{ remember(); openGuide(0); };
 }
 function startPractice(){
   window._practiceMode = true;
@@ -105,12 +110,6 @@ function startPractice(){
 function stopPractice(){ window._practiceMode = false; const b = document.getElementById('practice-banner'); if(b) b.hidden = true; }
 
 document.addEventListener('DOMContentLoaded', ()=>{
-  // 머리말의 [?] 안내 다시 보기
-  const right = document.querySelector('.top-right');
-  if(right && !document.getElementById('btn-guide')){
-    right.insertAdjacentHTML('afterbegin', '<button class="icon-btn" id="btn-guide" title="사용 안내 다시 보기" aria-label="사용 안내 다시 보기">?</button>');
-    document.getElementById('btn-guide').onclick = ()=>openGuide(0);
-  }
   const slots = document.getElementById('slots');
   if(slots && !document.getElementById('pin-help')) slots.insertAdjacentHTML('beforebegin', '<div id="pin-help"></div>');
   const tabs = document.getElementById('auth-tabs'); if(tabs) tabs.addEventListener('click', ()=>{ _signupFirst = null; setTimeout(paintPinHelp, 0); });

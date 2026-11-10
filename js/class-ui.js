@@ -362,7 +362,7 @@ function paintNextPlan(){
   const ids = CS.nextPlanCandidates(session.prior, session.meta);
   const weak = CS.weakAxis(session.prior, session.meta);
   const why = { activate:'공부 전 확인 문제에서 아직 낯선 곳이 있었어요.', understand:'헷갈리는 곳을 짚는 게 아직 어려웠어요.', strategy:'이 내용에 맞는 방법을 정하는 게 아직 어려웠어요.', connect:'다른 것과 이어 보는 게 아직 어려웠어요.', none:'이번 공부를 바탕으로 해 볼 만한 방법이에요.' }[weak];
-  $('#np-why').textContent = why + ' 이 중 하나를 고르면 다음 공부를 시작할 때 미리 골라 둘게요(바꿔도 돼요).';
+  $('#np-why').textContent = why + ' 고르면 다음 공부 때 미리 골라 둘게요.';
   box.innerHTML = ids.map(id=>{ const s = STRATS.find(x=>x.id===id); if(!s) return ''; return `<button type="button" class="chip np-chip ${session.nextPlan===id?'is-selected':''}" data-id="${id}">${s.emoji} ${esc(s.label)}</button>`; }).join('');
   const w = $('#in-wonder'); if(w && !w.value) w.value = session.wonder || '';
 }
@@ -473,13 +473,22 @@ function structHelp(type){ return STRUCT_HELP[type] || ''; }
 /* ---------- 이번 공부 한눈에 (WP5-1, 전문가1 "방법·어려움 해결 과정·AI 도움 정도를 함께") ---------- */
 function glanceCardHTML(s){
   if(!s || !s.ctx) return '';
-  const band = CS.uiBand(s.ctx.grade);
-  const g = CS.growthCard(s, band, id => (STRATS.find(x=>x.id===id)||{}).label, AUTO_ME_RE);
-  const info = k => `<button type="button" class="info-i" data-info="${esc(k)}" aria-label="${esc(k)} 설명">ⓘ</button>`;
-  return `<div class="widget glance"><div class="widget-head"><span class="badge-ic c-green"></span><div><h4>이번 공부 한눈에</h4><small>${esc(s.ctx.subject)} · ${esc(trim(s.ctx.std,36))} · ${esc((s.startedAt||'').slice(0,10))}</small></div></div>
-    <div class="glance-row"><b>쓴 공부 방법 ${info('공부 방법')}</b><p>${esc(g.method)}</p></div>
-    <div class="glance-row"><b>어려움을 풀어 간 과정</b><p>${esc(g.struggle)}</p></div>
-    <div class="glance-row"><b>AI 도움을 받은 정도 ${info('AI 도움 크기')}</b><p>${esc(g.aiHelp)}</p></div>
+  const strats = (s.strategies||[]).map(id=>STRATS.find(x=>x.id===id)).filter(Boolean);
+  const cps = (s.checkpoints||[]).map(c=>c.score).filter(x=>x!=null);
+  const mine = (s.turns||[]).filter(t=>t.role==='me' && CS.srcOf(t, AUTO_ME_RE)==='typed');
+  const tags = (s.reflect && s.reflect.tags) || {};
+  const selfN = mine.filter(t=> tags[t.id] ? tags[t.id]==='self' : !t.delegate).length, aiN = mine.length - selfN;
+  const pct = mine.length ? Math.round(selfN / mine.length * 100) : 0;
+  const sup = { high:'많이', mid:'보통', low:'조금' }; const a0 = s.supportStart || 'high', a1 = s.support || a0;
+  const changes = (s.strategyChangeLog||[]).length, stuck = s.stuckCount || 0;
+  const tile = (ic, t, big, sub) => `<div class="gl-tile"><span class="gl-ic" aria-hidden="true">${ic}</span><span class="gl-t">${t}</span><b class="gl-big">${big}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
+  return `<div class="widget glance"><div class="widget-head"><span class="badge-ic c-green"></span><div><h4>지난 공부 한눈에</h4><small>${esc(s.ctx.subject)} · ${esc(trim(s.ctx.std,30))} · ${esc((s.startedAt||'').slice(5,10).replace('-','/'))}</small></div></div>
+    <div class="gl-grid">
+      ${tile('📚', '공부 방법', strats.length ? strats.map(x=>esc(x.label)).join('<br>') : '–', changes ? `중간에 ${changes}번 바꿈` : '')}
+      ${tile('📈', '이해했다는 느낌', cps.length>=2 ? `${cps[0]} → ${cps[cps.length-1]}` : cps.length ? `${cps[0]}점` : '–', stuck ? `막혔어요 ${stuck}번` : cps.length ? '5점 만점' : '체크 안 함')}
+      ${tile('🤝', '누가 이끌었나', mine.length ? `<span class="gl-split" title="파랑=나, 주황=AI"><i style="width:${pct}%"></i></span>` : '–', mine.length ? `🙋 나 ${selfN} · 🤖 AI ${aiN}` : '')}
+      ${tile('🪜', 'AI 도움', a0!==a1 ? `${sup[a0]} → ${sup[a1]}` : sup[a1], a0!==a1 ? '줄었어요' : '')}
+    </div>
     ${s.wonder ? `<div class="glance-row"><b>더 궁금해진 것</b><p>${esc(s.wonder)}</p></div>` : ''}
   </div>`;
 }
