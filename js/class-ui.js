@@ -545,18 +545,17 @@ function structHelp(type){ return STRUCT_HELP[type] || ''; }
 function glanceCardHTML(s){
   if(!s || !s.ctx) return '';
   const strats = (s.strategies||[]).map(id=>STRATS.find(x=>x.id===id)).filter(Boolean);
-  const cps = (s.checkpoints||[]).map(c=>c.score).filter(x=>x!=null);
   const mine = (s.turns||[]).filter(t=>t.role==='me' && CS.srcOf(t, AUTO_ME_RE)==='typed');
   const tags = (s.reflect && s.reflect.tags) || {};
   const selfN = mine.filter(t=> tags[t.id] ? tags[t.id]==='self' : !t.delegate).length, aiN = mine.length - selfN;
   const pct = mine.length ? Math.round(selfN / mine.length * 100) : 0;
   const sup = { high:'많이', mid:'보통', low:'조금' }; const a0 = s.supportStart || 'high', a1 = s.support || a0;
-  const changes = (s.strategyChangeLog||[]).length, stuck = s.stuckCount || 0;
+  const changes = (s.strategyChangeLog||[]).length;
   const tile = (ic, t, big, sub) => `<div class="gl-tile"><span class="gl-ic" aria-hidden="true">${ic}</span><span class="gl-t">${t}</span><b class="gl-big">${big}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
   return `<div class="widget glance"><div class="widget-head"><span class="badge-ic c-green"></span><div><h4>지난 공부 한눈에</h4><small>${esc(s.ctx.subject)} · ${esc(trim(s.ctx.std,30))} · ${esc((s.startedAt||'').slice(5,10).replace('-','/'))}</small></div></div>
     <div class="gl-grid">
       ${tile('📚', '공부 방법', strats.length ? strats.map(x=>esc(x.label)).join('<br>') : '–', changes ? `중간에 ${changes}번 바꿈` : '')}
-      ${tile('📈', '이해했다는 느낌', cps.length>=2 ? `${cps[0]} → ${cps[cps.length-1]}` : cps.length ? `${cps[0]}점` : '–', stuck ? `막혔어요 ${stuck}번` : cps.length ? '5점 만점' : '체크 안 함')}
+      ${(()=>{ const pre = s.prior && s.prior.diagScore, post = s.residual && s.residual.postScore; return tile('📈', '공부 전 → 혼자 풀기', `${pre!=null?pre+'점':'–'} → ${post!=null?post+'점':'–'}`, post==null ? '혼자 풀기 전이에요' : pre!=null && post>pre ? '점수가 올랐어요' : pre!=null && post<pre ? '점수가 내려갔어요' : '같은 수준이에요'); })()}
       ${tile('🤝', '누가 이끌었나', mine.length ? `<span class="gl-split" title="파랑=나, 주황=AI"><i style="width:${pct}%"></i></span>` : '–', mine.length ? `🙋 나 ${selfN} · 🤖 AI ${aiN}` : '')}
       ${tile('🪜', 'AI 도움', a0!==a1 ? `${sup[a0]} → ${sup[a1]}` : sup[a1], a0!==a1 ? '줄었어요' : '')}
     </div>
