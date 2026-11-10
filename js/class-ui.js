@@ -430,22 +430,39 @@ function sourceCardHTML(t){
 /* ---------- 다음엔 이렇게 (WP5-3) ---------- */
 function paintNextPlan(){
   const box = $('#np-list'); if(!box || !session) return;
-  const ids = CS.nextPlanCandidates(session.prior, session.meta);
-  const weak = CS.weakAxis(session.prior, session.meta);
-  const why = { activate:'공부 전 확인 문제에서 아직 낯선 곳이 있었어요.', understand:'헷갈리는 곳을 짚는 게 아직 어려웠어요.', strategy:'이 내용에 맞는 방법을 정하는 게 아직 어려웠어요.', connect:'다른 것과 이어 보는 게 아직 어려웠어요.', none:'이번 공부를 바탕으로 해 볼 만한 방법이에요.' }[weak];
-  $('#np-why').textContent = why + ' 고르면 다음 공부 때 미리 골라 둘게요.';
-  box.innerHTML = ids.map(id=>{ const s = STRATS.find(x=>x.id===id); if(!s) return ''; return `<button type="button" class="chip np-chip ${session.nextPlan===id?'is-selected':''}" data-id="${id}">${s.emoji} ${esc(s.label)}</button>`; }).join('');
+  const rv = CS.strategyReview(session);
+  const S = id => STRATS.find(x=>x.id===id);
+  // ① 근거: 이번에 쓴 방법마다 과업 결과 흐름과 마지막 고칠 점
+  const ev = rv.per.length ? rv.per.map(p=>{ const st = S(p.id); return `<div class="np-ev"><b>${st?st.emoji+' '+esc(st.label):'-'}</b><span>${p.n ? `과업 ${p.n}번: ${esc(p.flow)}` : '과업 결과 없음'}</span>${p.fix?`<small>마지막 고칠 점: ${esc(p.fix)}</small>`:''}</div>`; }).join('') : '<p class="hint">이번엔 고른 방법이 없어요.</p>';
+  // ② 추천과 까닭
+  const r = S(rv.rec);
+  const rec = r ? `<div class="np-rec"><span class="np-tag">${rv.keep?'계속 추천':'바꾸기 추천'}</span><b>${r.emoji} ${esc(r.label)}</b><small>${esc(rv.reason)}</small></div>` : '';
+  $('#np-why').innerHTML = `<div class="np-box">${ev}</div>${rec}`;
+  // ③ 내가 정하기: 쓴 방법 계속 / 추천 방법 / 다른 방법
+  const ids = [...new Set([...(session.strategies||[]), rv.rec].filter(Boolean))];
+  const others = STRATS.map(x=>x.id).filter(id=>!ids.includes(id));
+  const chip = (id, tag) => { const st = S(id); return st ? `<button type="button" class="chip np-chip ${session.nextPlan===id?'is-selected':''}" data-id="${id}">${tag?`<em>${tag}</em> `:''}${st.emoji} ${esc(st.label)}</button>` : ''; };
+  box.innerHTML = ids.map(id=> chip(id, (session.strategies||[]).includes(id) ? '계속' : '추천')).join('')
+    + `<details class="np-more"${others.includes(session.nextPlan)?' open':''}><summary>다른 방법 고르기</summary><div class="chip-list">${others.map(id=>chip(id,'')).join('')}</div></details>`;
   const w = $('#in-wonder'); if(w && !w.value) w.value = session.wonder || '';
 }
 document.addEventListener('click', e=>{
   const b = e.target.closest && e.target.closest('.np-chip'); if(!b || !session) return;
-  session.nextPlan = session.nextPlan===b.dataset.id ? null : b.dataset.id; paintNextPlan();
+  session.nextPlan = session.nextPlan===b.dataset.id ? null : b.dataset.id;
+  const rv = CS.strategyReview(session);
+  session.nextPlanWhy = session.nextPlan ? (session.nextPlan===rv.rec ? rv.reason : '내가 직접 골랐어요.') : null;
+  paintNextPlan();
 });
 // 지난 공부에서 고른 "다음엔 이 방법" — 새 공부의 방법 고르기 카드에 미리 선택해 둔다
 function lastNextPlan(){
   const acc = account(); if(!acc) return [];
   const prev = (acc.sessions||[]).filter(s=>!s.isSample && s.nextPlan).slice(-1)[0];
   return prev && STRATS.some(x=>x.id===prev.nextPlan) ? [prev.nextPlan] : [];
+}
+function lastNextPlanWhy(){
+  const acc = account(); if(!acc) return '';
+  const prev = (acc.sessions||[]).filter(s=>!s.isSample && s.nextPlan).slice(-1)[0];
+  return prev && prev.nextPlanWhy ? prev.nextPlanWhy : '';
 }
 function lastWonder(){
   const acc = account(); if(!acc) return '';

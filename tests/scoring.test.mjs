@@ -132,3 +132,13 @@ test('스스로 점검 v3: 자신감-결과 일치, 상황별 방법, 연결 고
   const none = CS.metaTaskScore({ items: [{ conf: null, score: 50 }], scenarios: [], connect: {} });
   assert.deepEqual(none.detail, { understand: null, strategy: null, connect: null });
 });
+
+test('점검 결과 → 전략 조정: 착오 유형에 맞는 방법을 까닭과 함께 추천하고, 잘했으면 계속을 권한다', () => {
+  const bad = CS.strategyReview({ strategies: ['elaboration'], tasks: [{ stratId: 'elaboration', evals: [{ level: 1, errorType: '근거가 부족함', missing: ['까닭이 없음'] }, { level: 0, errorType: '근거가 부족함', missing: [] }] }] });
+  assert.equal(bad.rec, 'critical'); assert.equal(bad.keep, false); assert.ok(/근거/.test(bad.reason));
+  assert.equal(bad.per[0].flow, '일부 해냄 → 아직 많이 남음');
+  const good = CS.strategyReview({ strategies: ['organization'], tasks: [{ stratId: 'organization', evals: [{ level: 2, errorType: '특별한 착오 없음', missing: [] }] }] });
+  assert.equal(good.rec, 'organization'); assert.equal(good.keep, true);
+  const none = CS.strategyReview({ strategies: ['rehearsal'], tasks: [] });
+  assert.equal(none.rec, 'rehearsal'); assert.equal(none.keep, true);
+});

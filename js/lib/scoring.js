@@ -180,6 +180,67 @@
   }
   const nextPlanCandidates = (prior, meta) => NEXT_PLAN[weakAxis(prior, meta)].slice();
 
+  /* ---------- 점검 결과 → 전략 조정 (WP5-3 재설계, 전문가5 "점검 결과를 전략 조정과 재시도로") ----------
+     해 보기 동안 방법별 과업 진단(성공 기준 충족 수준·착오 유형)을 근거로, 계속할지·바꿀지 추천과 까닭을 낸다.
+     고르는 것은 학습자(원리2). 착오 유형 → 그 착오를 다루는 방법(Weinstein & Mayer 분류). */
+  const ERR_TO_STRAT = {
+    '개념을 잘못 이해함': ['elaboration', 'critical'],
+    '비슷한 낱말·개념을 헷갈림': ['organization', 'elaboration'],
+    '순서·단계를 헷갈림': ['organization', 'rehearsal'],
+    '근거가 부족함': ['critical', 'elaboration'],
+    '일부를 빠뜨림': ['monitoring', 'organization'],
+    '계산·표기 실수': ['monitoring', 'rehearsal']
+  };
+  const ERR_KID = {
+    '개념을 잘못 이해함': '뜻을 다르게 이해한 곳이 있었어요',
+    '비슷한 낱말·개념을 헷갈림': '비슷한 것끼리 헷갈린 곳이 있었어요',
+    '순서·단계를 헷갈림': '순서를 헷갈린 곳이 있었어요',
+    '근거가 부족함': '까닭(근거)이 부족한 곳이 있었어요',
+    '일부를 빠뜨림': '빠뜨린 곳이 있었어요',
+    '계산·표기 실수': '작은 실수가 있었어요',
+    '전략을 쓰지 않고 답만 씀': '방법을 쓰지 않고 답만 쓴 적이 있었어요'
+  };
+  const STRAT_PURPOSE = {
+    rehearsal: '안 보고 떠올리며 기억을 다지는 방법이에요',
+    elaboration: '아는 것·예와 이어서 뜻을 잡는 방법이에요',
+    organization: '표나 그림으로 나누어 짜임새를 보는 방법이에요',
+    critical: '근거를 따져 보는 방법이에요',
+    monitoring: '빠뜨린 곳이 없는지 스스로 확인하는 방법이에요'
+  };
+  const LV_KID = ['아직 많이 남음', '일부 해냄', '대부분 해냄'];
+  function strategyReview(sess) {
+    const S = sess || {};
+    const used = (S.strategies || []).slice();
+    const per = used.map(id => {
+      const evs = (S.tasks || []).filter(t => t.stratId === id).flatMap(t => t.evals || []);
+      const last = evs[evs.length - 1] || null;
+      return { id, n: evs.length, levels: evs.map(e => e.level), flow: evs.map(e => LV_KID[e.level] || '-').join(' → '), fix: last && last.missing && last.missing[0] || '' };
+    });
+    const evAll = (S.tasks || []).flatMap(t => (t.evals || []).map(e => Object.assign({ stratId: t.stratId }, e)));
+    const avg = evAll.length ? evAll.reduce((a, e) => a + e.level, 0) / evAll.length / 2 * 100 : null;
+    const cnt = {};
+    evAll.forEach(e => { if (e.errorType && e.errorType !== '특별한 착오 없음') cnt[e.errorType] = (cnt[e.errorType] || 0) + 1; });
+    const err = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0] || null;
+    const bestUsed = per.slice().sort((a, b) => (b.levels.reduce((x, y) => x + y, 0) / (b.n || 1)) - (a.levels.reduce((x, y) => x + y, 0) / (a.n || 1)))[0];
+    let rec = null, reason = '', keep = false;
+    if (!evAll.length) {
+      rec = used[0] || null; keep = !!rec;
+      reason = '이번엔 과업을 끝까지 해 본 결과가 없어요. 같은 방법으로 한 번 더 해 보면 맞는지 알 수 있어요.';
+    } else if (avg >= 75 || !err) {
+      rec = bestUsed ? bestUsed.id : null; keep = true;
+      reason = '과업을 대부분 해냈어요. 나에게 잘 맞는 방법이에요.';
+    } else if (err === '전략을 쓰지 않고 답만 씀') {
+      rec = bestUsed ? bestUsed.id : null; keep = true;
+      reason = `${ERR_KID[err]}. 같은 방법을 끝까지 써 보면 효과를 알 수 있어요.`;
+    } else {
+      const cands = ERR_TO_STRAT[err] || [];
+      rec = cands.find(id => !used.includes(id)) || cands[0] || null;
+      keep = used.includes(rec);
+      reason = `${ERR_KID[err] || '헷갈린 곳이 있었어요'}. ${rec && STRAT_PURPOSE[rec] ? STRAT_PURPOSE[rec].replace(/이에요$/, '이라 도움이 돼요') : ''}`.trim();
+    }
+    return { per, avg: avg == null ? null : Math.round(avg), err, rec, keep, reason };
+  }
+
   /* ---------- 이번 공부 한눈에 (WP5-1) — 템플릿 문장, LLM 호출 없음 ---------- */
   function growthCard(s, band, stratLabel, autoRe) {
     const S = s || {};
@@ -217,7 +278,7 @@
 
   Object.assign(CS, {
     META_AXES, LEVEL_LABELS, level3, metaScoreView, calibView,
-    sliderLabel, isAiSide, taskSplit, PRESETS, applyPreset, presetOf, metaTaskScore,
+    sliderLabel, isAiSide, taskSplit, PRESETS, applyPreset, presetOf, metaTaskScore, strategyReview,
     srcOf, isTypedTurn, migrateTurnsSrc,
     phaseEnter, phaseLeave, phaseSwitch, phaseMs, totalMs, median,
     effectiveSupport, startBoost, weakAxis, nextPlanCandidates, growthCard

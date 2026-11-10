@@ -1119,6 +1119,18 @@
   .ax-foot{font-size:12.5px;color:var(--ink-2);margin-top:auto}
   .ax-why{margin-top:4px;font-size:12.5px;color:var(--ink-2);line-height:1.55}
   .ax-why summary{cursor:pointer;color:var(--accent-ink);font-weight:700}
+
+  /* ===== 점검 결과 → 전략 조정 ===== */
+  .np-box{display:flex;flex-direction:column;gap:6px;margin:4px 0 10px}
+  .np-ev{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;background:var(--surface-2);border-radius:12px;padding:9px 12px;font-size:13px}
+  .np-ev b{font-weight:800}.np-ev small{flex-basis:100%;color:var(--ink-2);font-size:12.5px}
+  .np-rec{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;border:1px solid #bcd1fb;background:var(--me-wash,#e8f0ff);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+  .np-rec b{font-size:14.5px}.np-rec small{flex-basis:100%;font-size:12.5px;color:var(--ink-2)}
+  .np-tag{font-size:11.5px;font-weight:800;color:#fff;background:var(--accent);border-radius:999px;padding:2px 9px}
+  .np-chip em{font-style:normal;font-size:11.5px;font-weight:800;color:var(--accent-ink)}
+  details.np-more{margin-top:8px;font-size:13px}
+  details.np-more summary{cursor:pointer;color:var(--accent-ink);font-weight:700}
+  details.np-more .chip-list{margin-top:8px}
 </style>
 </head>
 <body>
@@ -1541,8 +1553,8 @@
          (보완 G3, 전문가7 "사고의 확산"·EN3 호기심) 더 궁금해진 것 한 가지를 남겨 다음 공부로 잇는다. 둘 다 선택. -->
     <div id="reflect-next" class="card stack" hidden>
       <div>
-        <label class="field-label">다음엔 이렇게 해 볼래요? <span class="opt-tag">선택</span></label>
-        <p class="hint" id="np-why" style="margin:0 0 6px"></p>
+        <label class="field-label">🔁 이번 결과를 보고, 다음엔 어떤 방법으로 할까요? <span class="opt-tag">선택</span></label>
+        <div id="np-why"></div>
         <div class="chip-list" id="np-list"></div>
       </div>
       <div>
@@ -4423,7 +4435,7 @@ async function prepNext(){
     try{ await gradeMeta(); } finally { $('#pending')?.remove(); busy = false; syncComposeLock(); } // 원리7: 서술 답변을 루브릭으로 채점
     pushMetaScoreCard(); // 계산만 하고 안 보여주면 진단이 아니다 — 대화 흐름 안에 카드로 노출한다
     strategyPickMode = 'initial'; const _np = lastNextPlan(); pendingStrategyPick = []; // (WP5-3) 지난번 계획은 알려 주기만 한다(미리 체크해 두면 고르지 않은 방법이 섞인다)
-    if(_np.length){ const sp = STRATS.find(x=>x.id===_np[0]); if(sp) pushNote(`지난 공부에서 "다음엔 ${sp.label}" 방법을 해 보기로 했어요. 고를지는 내가 정해요.`); }
+    if(_np.length){ const sp = STRATS.find(x=>x.id===_np[0]); const why = lastNextPlanWhy(); if(sp) pushNote(`지난 공부 결과를 보고 다음엔 "${sp.label}" 방법을 해 보기로 했어요.${why ? ' (까닭: ' + why + ')' : ''} 오늘 고를지는 내가 정해요.`); }
     // (실제 모델 검증 10-05) 이 전환 턴에서 모델이 지시를 무시하고 새 문제를 내는 일이 10번 중 8번이었고(예전 문구도 같음),
     // 한 문장 공감만 맡겨도 문제를 내거나 지시를 흉내 내는 말이 섞였다. 이 턴은 내용이 정해진 안내라 고정 문장으로 낸다.
     pushAi(CS.COPY.strategyPickIntro, 'strategy-pick'); // (WP1-4) 비표준어("너가")·반말 고정 문구를 해요체 사전 문구로
