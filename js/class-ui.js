@@ -54,6 +54,11 @@ function concretizeText(text){ try{ return CS.concretize ? CS.concretize(text, c
 /* ---------- 응답 품질 파이프라인 (WP1-3·1-4·2-5·3-1·3-3) ---------- */
 // 위젯이 실제로 붙는 kind
 const WIDGET_KINDS = new Set(['prior-pick','strategy-pick','struct-offer','reason-pick','help-pick','change-reason-pick']);
+// 학생에게 무엇을 하라는 문장(질문·'~보세요' 같은 요청) 개수
+const ASK_RE = /(\?|？|보세요|봐요|써요|적어요|골라요|말해 줘요|들어 줘요|해 줄래요|줄 수 있어요)\s*[.!]?\s*$/;
+function askSentences(text){ return CS.splitSentences(String(text||'')).filter(x=>ASK_RE.test(x.trim())); }
+function askCount(text){ return askSentences(text).length; }
+function keepFirstAsk(text){ const ss = CS.splitSentences(String(text||'')); const i = ss.findIndex(x=>ASK_RE.test(x.trim())); if(i<0) return text; const rest = ss.slice(i+1).filter(x=>!ASK_RE.test(x.trim())); return ss.slice(0, i+1).concat(rest).join(' ').trim(); }
 function qualityIssues(text, opts){
   const o = opts||{}; const issues = [];
   const subj = session && session.ctx && session.ctx.subject;
@@ -61,6 +66,7 @@ function qualityIssues(text, opts){
   if(CS.hasBannedProbe(text)) issues.push('probe');
   if(CS.termViolations(text, subj).length) issues.push('term');
   if(!o.suffix && CS.countQuestions(text) > 1) issues.push('multi-q');
+  if(!o.suffix && askCount(text) > 1 && !issues.includes('multi-q')) issues.push('multi-ask');
   if(CS.toneProfile(text).banmal > 0) issues.push('tone');
   return issues;
 }
@@ -70,6 +76,7 @@ function retryWarning(issues){
   if(issues.includes('probe')) w.push('"왜 그렇게 말했어?"처럼 따지는 질문을 썼다. "어떤 점 때문에 그렇게 생각했어요?"처럼 부드럽게 물어라');
   if(issues.includes('term')) w.push('교과 용어 규칙을 어겼다: ' + CS.termRuleText(session.ctx.subject));
   if(issues.includes('multi-q')) w.push('질문을 2개 이상 했다. 질문은 딱 1개만');
+  if(issues.includes('multi-ask')) w.push('과제를 낸 뒤 다른 질문이나 요청을 덧붙였다. 요청은 딱 1개만 하고, 뒤에 "~해 볼까요?"를 붙이지 마라');
   if(issues.includes('tone')) w.push('반말이 섞였다. 처음부터 끝까지 해요체로만');
   return w.length ? ' (고쳐야 할 점: ' + w.join(' / ') + '.)' : '';
 }
@@ -247,7 +254,7 @@ function levelBarHTML(a){
 }
 function metaCardInner(meta){
   const v = CS.metaScoreView(meta);
-  const head = `<div class="msc-title">스스로 점검 결과 <span class="hint" style="font-weight:500">(내가 말한 내용을 살펴본 거예요 · 맞다·틀리다가 아니에요)</span></div>`;
+  const head = `<div class="msc-title">스스로 점검 결과 <span class="hint" style="font-weight:500">(${meta.scoreVersion==='v3-task' ? '점검 활동에서 해 본 결과예요' : '내가 말한 내용을 살펴본 거예요 · 맞다·틀리다가 아니에요'})</span></div>`;
   const usual = session && session.meta.usualMethod ? `<div class="msc-note"><b>평소 공부법:</b> ${esc(session.meta.usualMethod)}</div>` : '';
   const body = v.ok ? v.axes.map(levelBarHTML).join('') : `<p class="msc-note">이번엔 채점하지 못했어요. 내가 쓴 답은 그대로 남아 있고, 선생님이 볼 수 있어요.</p>`;
   const fb = meta.feedback ? `<div class="msc-note">${esc(meta.feedback)}</div>` : '';
@@ -264,39 +271,98 @@ document.addEventListener('click', e=>{
 });
 
 /* ---------- 한 차시 모드: 스스로 점검 한 화면 (WP2-1·2-4, 원리7 세 질문 구별 유지) ---------- */
-const META_FORM_ROWS = [
-  { k:'usual', title:'평소에 이런 내용은 어떻게 공부해요?', chips:['교과서를 여러 번 읽어요','문제를 많이 풀어요','중요한 걸 정리해요','외울 때까지 반복해요','설명을 들으며 이해해요'], ph:'다른 방법이면 직접 써요(선택)' },
-  { k:'understand', title:'이해 — 아직 확신이 안 서는 곳은 어디예요?', chips:['낱말 뜻이 헷갈려요','푸는 순서가 헷갈려요','왜 그렇게 되는지가 헷갈려요','어디가 헷갈리는지 잘 모르겠어요','지금은 다 알 것 같아요'], ph:'어느 부분인지, 어떤 점 때문인지 한 줄(선택)' },
-  { k:'strategy', title:'방법 — 이 내용은 어떤 순서로 공부하면 좋을까요?', chips:['먼저 뜻을 읽고 예를 찾아요','문제를 풀며 확인해요','그림·표로 정리해요','반복해서 외워요','친구에게 설명하듯 말해 봐요'], ph:'그 방법이 좋겠다고 느낀 까닭 한 줄(선택)' },
-  { k:'connect', title:'연결 — 전에 배운 것이나 생활과 이어지는 게 있나요?', chips:['전에 배운 것과 비슷해요','생활 속 예가 떠올라요','다른 과목과 이어져요','아직 잘 모르겠어요'], ph:'무엇과 어떤 점이 같은지 한 줄(선택)' }
+// (v3) 예전 칩(“왜 그렇게 되는지가 헷갈려요” 같은 일반 문장)을 고르게 하면 내용과 상관없이 같은 답이 나와
+// 이해·방법·연결을 재지 못했다. 이제 셋 다 '해 보는 것'으로 잰다(원리7 세 질문 구별은 유지).
+//  ① 이해 점검: 아는 것 확인 때 문항마다 고른 자신감이 실제 결과와 맞았는지(채점 전에 고름)
+//  ② 방법 알기: 상황 2개에 알맞은 공부 방법 고르기(조건적 지식 — 언제 어떤 방법을 쓰는가)
+//  ③ 연결 짓기: 오늘 내용의 바탕이 되는 개념 고르기 + 같은 점 한 줄
+const META_USUAL = { title:'평소에 이런 내용은 어떻게 공부해요?', chips:['교과서를 여러 번 읽어요','문제를 많이 풀어요','중요한 걸 정리해요','외울 때까지 반복해요','설명을 들으며 이해해요'], ph:'다른 방법이면 직접 써요(선택)' };
+const STRAT_SCENARIOS = [
+  { id:'s1', text:'배운 낱말이나 공식을 시험 때까지 잊지 않고 싶어요', key:'rehearsal', short:'잊지 않고 싶을 때' },
+  { id:'s2', text:'새로 배운 내용이 잘 와닿지 않아요', key:'elaboration', short:'잘 와닿지 않을 때' },
+  { id:'s3', text:'배운 내용이 많아서 머릿속이 뒤죽박죽이에요', key:'organization', short:'뒤죽박죽일 때' },
+  { id:'s4', text:'책이나 AI가 한 말이 정말 맞는지 궁금해요', key:'critical', short:'맞는지 궁금할 때' },
+  { id:'s5', text:'내가 제대로 이해했는지 잘 모르겠어요', key:'monitoring', short:'이해했는지 모를 때' }
 ];
-function metaFormValid(f){ return META_FORM_ROWS.every(r=>{ const v = (f||{})[r.k]||{}; return !!(v.chip || (v.text||'').trim().length>=2); }); }
+function pickScenarios(){ const a = STRAT_SCENARIOS.map(x=>x.id); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a.slice(0,2); }
+function stratChip(id){ const x = STRATS.find(y=>y.id===id); return x ? `${x.emoji} ${x.label}` : '-'; }
+function metaFormValid(t){
+  const f = (t && t.form) || {}, u = f.usual || {};
+  if(!(u.chip || (u.text||'').trim().length>=2)) return false;
+  if((t.scen||[]).some(id=>!(f.scen||{})[id])) return false;
+  const c = t.conn || {};
+  if(c.loading) return false;
+  return c.options ? f.connPick!=null : (f.connText||'').trim().length>=2;
+}
 function metaFormHTML(t){
-  const f = t.form || {};
-  if(t.answered) return `<div class="meta-score-card"><div class="msc-title">스스로 점검 (한 화면) — 냈어요</div>${META_FORM_ROWS.map(r=>{ const v=f[r.k]||{}; return `<div class="msc-note"><b>${esc(r.title.split(' — ')[0])}:</b> ${esc([v.chip,v.text].filter(Boolean).join(' · ')||'-')}</div>`; }).join('')}</div>`;
-  return `<div class="paper meta-form" data-tid="${t.id}"><div class="tab">스스로 점검 — 줄마다 하나씩 고르고, 하고 싶으면 한 줄 더 써요</div><div class="body stack">` +
-    META_FORM_ROWS.map(r=>{ const v = f[r.k]||{};
-      return `<div class="mf-row"><label class="field-label">${esc(r.title)} <span class="req-tag">하나 고르기</span></label>
-        <div class="chip-list">${r.chips.map(c=>`<button type="button" class="chip mf-chip ${v.chip===c?'is-selected':''}" data-k="${r.k}" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>
-        <input class="input mf-text" data-k="${r.k}" placeholder="${esc(r.ph)}" value="${esc(v.text||'')}" maxlength="120" /></div>`; }).join('') +
-    `</div><div style="text-align:right;padding:0 16px 16px"><button type="button" class="btn btn-sm btn-primary mf-submit" ${metaFormValid(f)?'':'disabled'}>다 골랐어요</button></div></div>`;
+  const f = t.form || {}, uv = f.usual || {}, c = t.conn || {};
+  const items = (session && session.prior && session.prior.items) || [];
+  if(t.answered){
+    const conn = c.options && f.connPick!=null ? c.options[f.connPick] : '';
+    return `<div class="meta-score-card"><div class="msc-title">스스로 점검 — 냈어요</div>
+      <div class="msc-note"><b>평소 공부법:</b> ${esc([uv.chip, uv.text].filter(Boolean).join(' · ')||'-')}</div>
+      ${(t.scen||[]).map(id=>{ const sc = STRAT_SCENARIOS.find(x=>x.id===id); return `<div class="msc-note"><b>${esc(sc.short)}:</b> ${esc(stratChip((f.scen||{})[id]))}</div>`; }).join('')}
+      ${(conn||f.connText) ? `<div class="msc-note"><b>이어지는 것:</b> ${esc([conn, f.connText].filter(Boolean).join(' — '))}</div>` : ''}</div>`;
+  }
+  const usualRow = `<div class="mf-row"><label class="field-label">${esc(META_USUAL.title)} <span class="req-tag">하나 고르기</span></label>
+    <div class="chip-list">${META_USUAL.chips.map(x=>`<button type="button" class="chip mf-chip ${uv.chip===x?'is-selected':''}" data-v="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+    <input class="input mf-text" data-k="usualText" placeholder="${esc(META_USUAL.ph)}" value="${esc(uv.text||'')}" maxlength="120" /></div>`;
+  const judged = items.map((it,i)=>({ it, i })).filter(x=>x.it.conf!=null);
+  const monitor = judged.length ? `<div class="mf-row"><label class="field-label"><span class="mf-n">①</span> 이해 점검 — 아는 것 확인 때 내 느낌은 맞았을까요?</label>
+    <div class="mf-mon">${judged.map(({it,i})=>{ const graded = it.score!=null, ok = graded && ((+it.conf===1)===(it.score>=50));
+      return `<div class="mf-mon-row ${!graded?'':ok?'ok':'no'}"><span class="mf-mon-n">${i+1}번</span><span>${+it.conf===1?'😀 맞을 것 같았어요':'🤔 잘 모르겠었어요'}</span><span class="mf-mon-arrow">→</span><span>${!graded?'채점 못 했어요':it.score>=50?'맞았어요':'아직이에요'}</span><b>${!graded?'':ok?'✓ 느낌이 맞았어요':'느낌과 달랐어요'}</b></div>`; }).join('')}</div>
+    <input class="input mf-text" data-k="understand" placeholder="가장 헷갈린 부분을 한 줄로(선택)" value="${esc(f.understandText||'')}" maxlength="120" /></div>` : '';
+  const scen = `<div class="mf-row"><label class="field-label"><span class="mf-n">②</span> 방법 알기 — 이럴 땐 어떤 방법이 가장 알맞을까요? <span class="req-tag">하나씩 고르기</span></label>
+    ${(t.scen||[]).map(id=>{ const sc = STRAT_SCENARIOS.find(x=>x.id===id), cur = (f.scen||{})[id];
+      return `<div class="mf-scen"><div class="mf-scen-q">💭 ${esc(sc.text)}</div><div class="chip-list">${STRATS.map(x=>`<button type="button" class="chip mf-sc ${cur===x.id?'is-selected':''}" data-sid="${id}" data-v="${x.id}">${x.emoji} ${esc(x.label)}</button>`).join('')}</div></div>`; }).join('')}</div>`;
+  const conn = `<div class="mf-row"><label class="field-label"><span class="mf-n">③</span> 연결 짓기 — 오늘 배울 것과 가장 가깝게 이어지는 것은? <span class="req-tag">${c.options?'하나 고르기':'한 줄 쓰기'}</span></label>
+    ${c.loading ? '<p class="hint">고를 거리를 준비하는 중이에요…</p>' : c.options ? `<div class="chip-list">${c.options.map((o,k)=>`<button type="button" class="chip mf-cp ${f.connPick===k?'is-selected':''}" data-k="${k}">${esc(o)}</button>`).join('')}</div>` : ''}
+    <input class="input mf-text" data-k="connText" placeholder="${c.options?'두 가지는 어떤 점이 같아요? 한 줄(선택)':'오늘 배울 것과 이어지는 것, 그리고 같은 점을 한 줄로'}" value="${esc(f.connText||'')}" maxlength="120" /></div>`;
+  return `<div class="paper meta-form" data-tid="${t.id}"><div class="tab">스스로 점검</div><div class="body stack">${usualRow}${monitor}${scen}${conn}</div>
+    <div style="text-align:right;padding:0 16px 16px"><button type="button" class="btn btn-sm btn-primary mf-submit" ${metaFormValid(t)?'':'disabled'}>다 했어요</button></div></div>`;
+}
+async function genConnectOptions(){
+  const raw = await callLLM([
+    { role:'system', content:'너는 초중등 교육과정 전문가다. 반드시 순수 JSON만 출력한다.' },
+    { role:'user', content:`학년: ${session.ctx.grade||session.ctx.band}\n과목: ${session.ctx.subject}\n오늘 배울 성취기준: "${session.ctx.std}"\n교육과정 해설: ${session.ctx.concept||'-'}\n이 학생이 이전 학년이나 앞 단원에서 이미 배웠을 개념 가운데, 오늘 내용을 배우는 바탕이 되는 개념 1개(related)와, 이미 배웠지만 오늘 내용과는 거의 관계없는 개념 2개(others)를 골라라. 모두 학생이 아는 쉬운 낱말로 15자 이내로 쓰고, 오늘 성취기준 문장의 낱말을 그대로 옮기지 마라.\n{"related":"...","others":["...","..."]}` }
+  ], { temperature:0, json:true });
+  const j = parseJSON(raw) || {};
+  const rel = String(j.related||'').trim(), oth = (Array.isArray(j.others) ? j.others : []).map(x=>String(x).trim()).filter(x=>x && x!==rel).slice(0,2);
+  if(!rel || oth.length<2) return { options:null };
+  const opts = [rel, ...oth];
+  for(let i=opts.length-1;i>0;i--){ const k = Math.floor(Math.random()*(i+1)); [opts[i],opts[k]] = [opts[k],opts[i]]; }
+  return { options:opts, key:opts.indexOf(rel) };
 }
 function pushMetaForm(){
-  session.turns.push({ id:uid(), role:'note', kind:'meta-form', answered:false, form:{} });
-  session.pendingMetaForm = true; renderStream(); syncComposeLock();
+  const t = { id:uid(), role:'note', kind:'meta-form', answered:false, form:{}, scen:pickScenarios(), conn:{ loading:true } };
+  session.turns.push(t); session.pendingMetaForm = true; renderStream(); syncComposeLock();
+  genConnectOptions().then(c=>{ t.conn = c; }).catch(()=>{ t.conn = { options:null }; }).finally(()=>{ if(!t.answered) renderStream(); });
 }
-document.addEventListener('click', async e=>{
-  const ch = e.target.closest && e.target.closest('.mf-chip');
-  if(ch && session){ const t = session.turns.find(x=>x.kind==='meta-form' && !x.answered); if(!t) return;
-    const cur = (t.form[ch.dataset.k]||{}); t.form = Object.assign({}, t.form, { [ch.dataset.k]: Object.assign({}, cur, { chip: cur.chip===ch.dataset.v ? null : ch.dataset.v }) });
-    renderStream(); return; }
-  const sb = e.target.closest && e.target.closest('.mf-submit');
-  if(sb && session && !busy){ const t = session.turns.find(x=>x.kind==='meta-form' && !x.answered); if(!t || !metaFormValid(t.form)) return;
-    const txt = k => { const v = t.form[k]||{}; return anonymize([v.chip, (v.text||'').trim()].filter(Boolean).join('. ')); };
+document.addEventListener('click', e=>{
+  if(!session || !e.target.closest) return;
+  const T = ()=> session.turns.find(x=>x.kind==='meta-form' && !x.answered);
+  const ch = e.target.closest('.mf-chip');
+  if(ch){ const t = T(); if(!t) return; const cur = t.form.usual||{};
+    t.form = Object.assign({}, t.form, { usual: Object.assign({}, cur, { chip: cur.chip===ch.dataset.v ? null : ch.dataset.v }) }); renderStream(); return; }
+  const sc = e.target.closest('.mf-sc');
+  if(sc){ const t = T(); if(!t) return; t.form = Object.assign({}, t.form, { scen: Object.assign({}, t.form.scen||{}, { [sc.dataset.sid]: sc.dataset.v }) }); renderStream(); return; }
+  const cp = e.target.closest('.mf-cp');
+  if(cp){ const t = T(); if(!t) return; t.form = Object.assign({}, t.form, { connPick: +cp.dataset.k }); renderStream(); return; }
+  const sb = e.target.closest('.mf-submit');
+  if(sb && !busy){ const t = T(); if(!t || !metaFormValid(t)) return;
+    const f = t.form, u = f.usual||{}, c = t.conn||{};
     t.answered = true; session.pendingMetaForm = false;
-    session.meta.usualMethod = txt('usual');
-    session.meta.answers = { understand: txt('understand'), strategy: txt('strategy'), connect: txt('connect') };
-    session.meta.raw = [txt('understand'), txt('strategy'), txt('connect')].join(' / ');
+    session.meta.usualMethod = anonymize([u.chip, (u.text||'').trim()].filter(Boolean).join('. '));
+    const scen = (t.scen||[]).map(id=>{ const x = STRAT_SCENARIOS.find(y=>y.id===id); return { id, key:x.key, pick:f.scen[id], short:x.short, text:x.text }; });
+    const connPicked = c.options && f.connPick!=null ? c.options[f.connPick] : '';
+    session.meta.answers = {
+      understand: anonymize((f.understandText||'').trim()),
+      strategy: scen.map(x=>`${x.text} → ${stratChip(x.pick)}`).join(' / '),
+      connect: anonymize([connPicked, (f.connText||'').trim()].filter(Boolean).join(' — '))
+    };
+    session.meta.raw = [session.meta.answers.understand, session.meta.answers.strategy, session.meta.answers.connect].filter(Boolean).join(' / ') || '(점검함)';
+    session.meta.task = { scen, connect:{ options:c.options||null, key:c.key!=null?c.key:null, pick:f.connPick!=null?f.connPick:null, text:anonymize((f.connText||'').trim()) } };
+    session.meta.v3 = true;
     session.meta.step = SCAFFOLD_ORDER.length; session.meta.form = t.form;
     renderStream(); prepNext();
   }
@@ -304,8 +370,11 @@ document.addEventListener('click', async e=>{
 document.addEventListener('input', e=>{
   const it = e.target.closest && e.target.closest('.mf-text'); if(!it || !session) return;
   const t = session.turns.find(x=>x.kind==='meta-form' && !x.answered); if(!t) return;
-  const cur = t.form[it.dataset.k]||{}; t.form = Object.assign({}, t.form, { [it.dataset.k]: Object.assign({}, cur, { text: it.value }) });
-  const b = document.querySelector('.mf-submit'); if(b) b.disabled = !metaFormValid(t.form);
+  const k = it.dataset.k;
+  if(k==='usualText') t.form = Object.assign({}, t.form, { usual: Object.assign({}, t.form.usual||{}, { text: it.value }) });
+  else if(k==='understand') t.form = Object.assign({}, t.form, { understandText: it.value });
+  else if(k==='connText') t.form = Object.assign({}, t.form, { connText: it.value });
+  const b = document.querySelector('.mf-submit'); if(b) b.disabled = !metaFormValid(t);
 });
 
 /* ---------- 탐구 범위 가이드·자료 카드·대표 오개념 (WP3-2·3-5) ---------- */
@@ -332,7 +401,9 @@ function paintScope(){
   $('#scope-list').innerHTML = toks.map(t=>`<span class="chip">${esc(t)}</span>`).join('');
 }
 function scopeNudge(text){
-  const v = CS.scopeVerdict(text, session.scopeWide || session.scope || []);
+  const lastAi = [...session.turns].reverse().find(t=>t.role==='ai' && t.text);
+  const near = CS.contentTokens([lastAi ? lastAi.text : '', session.currentTask ? session.currentTask.task : ''].join(' '));
+  const v = CS.scopeVerdict(text, [...(session.scopeWide || session.scope || []), ...near]);
   (session.scopeLog = session.scopeLog||[]).push({ v, at:new Date().toISOString() });
   if(v!=='out') return;
   const typed = session.turns.filter(t=>t.role==='me' && t.src==='typed').length;
@@ -526,3 +597,11 @@ function polishAux(raw){
   if(CS.looksBroken(t).broken){ flag('broken', t); }
   return CS.hideCodes(t);
 }
+
+/* ---------- 아는지 체크: '알아요' 항목의 한 줄 답 저장 ---------- */
+document.addEventListener('input', e=>{
+  const it = e.target.closest && e.target.closest('.ck-proof'); if(!it || !session) return;
+  const box = it.closest('.struct-box'); const t = box && session.turns.find(x=>x.id===box.dataset.tid);
+  if(!t || !t.structured) return;
+  t.structured.proof = Object.assign({}, t.structured.proof||{}, { [it.dataset.idx]: it.value });
+});

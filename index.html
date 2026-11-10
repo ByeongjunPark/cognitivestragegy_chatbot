@@ -1056,6 +1056,41 @@
   details.gp-read{font-size:12.5px;color:var(--muted);margin:0 0 8px}
   details.gp-read summary{cursor:pointer;font-weight:700;color:var(--accent-ink);list-style:none;display:inline-block}
   details.gp-read summary::-webkit-details-marker{display:none}
+
+  /* ===== (개선) 간격·팝업·스스로 점검 ===== */
+  [data-screen="home"] .rail{margin-bottom:22px}
+  #home-glance{margin-top:20px}
+  #home-draft:not(:empty){margin-top:14px}
+  [data-screen="home"] .home-top{margin:0 0 24px}
+  [data-screen="home"] .widget{margin-bottom:24px}
+  .sd-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 4px}
+  .sd-tile{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:11px 13px;display:flex;flex-direction:column;gap:3px;min-width:0}
+  .sd-tile .sd-ic{font-size:20px;line-height:1}
+  .sd-tile small{font-size:12px;color:var(--muted);font-weight:700}
+  .sd-tile b{font-size:15px;color:var(--ink);overflow-wrap:anywhere}
+  .sd-tile em{font-style:normal;font-size:12px;color:var(--ink-2)}
+  .sd-line{display:flex;gap:10px;font-size:13px;padding:2px 0}
+  .sd-line span{flex:none;color:var(--muted);font-weight:700;min-width:5.5em}
+  .sd-line b{font-weight:600;color:var(--ink)}
+  details.sd-chat{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#fff}
+  details.sd-chat summary{cursor:pointer;font-weight:800;font-size:13.5px}
+  .sd-chat-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;max-height:320px;overflow-y:auto;padding-right:4px}
+  .sd-chat-list .sd-turn{display:block;max-width:85%;background:var(--surface-2);border-radius:14px 14px 14px 4px;padding:8px 11px;font-size:13px;line-height:1.5;border:0!important}
+  .sd-chat-list .sd-turn.me{align-self:flex-end;background:var(--me-wash,#e8f0ff);border-radius:14px 14px 4px 14px}
+  .sd-chat-list .sd-turn .r{font-size:11px;font-weight:800;color:var(--muted);margin-bottom:2px}
+  .aq-conf{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:var(--ink-2)}
+  .aq-conf > span{font-weight:700;margin-right:4px}
+  .mf-n{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;align-items:center;justify-content:center;font-size:12px;margin-right:4px}
+  .mf-mon{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+  .mf-mon-row{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px;background:var(--surface-2);border-radius:10px;padding:7px 10px}
+  .mf-mon-row.ok{background:#e7f6ee}.mf-mon-row.no{background:#fff4de}
+  .mf-mon-row .mf-mon-n{font-weight:800}.mf-mon-row .mf-mon-arrow{color:var(--muted)}
+  .mf-mon-row b{margin-left:auto;font-size:12.5px}
+  .mf-scen{margin:6px 0 10px}
+  .mf-scen-q{font-size:13.5px;font-weight:700;margin-bottom:6px}
+
+  .ck-row{flex-wrap:wrap}
+  .ck-proof{flex-basis:100%;margin-top:6px}
 </style>
 </head>
 <body>
@@ -1807,7 +1842,7 @@ const STRUCT_SCHEMAS = {
                const n = s.support==='low' ? '4~5개' : s.support==='mid' ? '5~6개' : '6~7개';
                const focus = s.currentTask ? ` 지금 과업은 "${s.currentTask.task}"이고 학습 목표는 "${s.goal||'-'}"이다. 표의 틀은 이 과업과 목표에 딱 맞게 지어라.` : (s.goal ? ` 학습 목표는 "${s.goal}"이다. 표의 틀은 이 목표와 지금까지 나눈 이야기에 딱 맞게 지어라.` : '');
                const ex = s.support==='high' ? ' example은 이 과업과 다른 아주 쉬운 보기 하나로 한 줄(칸 수 = headers 수)을 채워 칸 채우는 방식만 보여 줘라.' : ' example은 만들지 마라(빈 배열).';
-               return `"${s.ctx.std}"를 공부하는 학생이 바로 채울 수 있는 표의 틀을 만들어줘.${focus} 규칙: (1) headers 2~3개는 "열1" 같은 자리표시가 아니라 이 내용에 맞는 분류 기준으로, 학년 수준의 쉬운 한국어 낱말로 지어라(예: "상황 / 식 / 계산 방법", "원인 / 결과", "뜻 / 예시"). (2) rowLabels 3~4개는 첫째 열에 미리 적어 둘 정리 대상으로, 지금까지 이야기한 실제 낱말·상황에서 뽑아라(정답·계산 결과는 넣지 마라). (3) hints는 headers마다 그 칸에 무엇을 쓰면 되는지 묻는 10~20자 안팎 질문 하나씩(정답을 알려 주지 마라). (4) 표 칸에 채울 재료가 될 낱말·사실 후보(bank) ${n}개를 흩어서 줘라.${ex} 어느 후보를 어느 칸에 넣을지, 칸의 답은 절대 정하지 마라. 모든 글자는 한국어로만 쓰고 일본어·영어·한자를 섞지 마라.`;
+               return `"${s.ctx.std}"를 공부하는 학생이 바로 채울 수 있는 표의 틀을 만들어줘.${focus} 규칙: (1) headers 2~3개는 "열1" 같은 자리표시가 아니라 이 내용에 맞는 분류 기준으로, 학년 수준의 쉬운 한국어 낱말로 지어라(예: "상황 / 식 / 계산 방법", "원인 / 결과", "뜻 / 예시"). (2) rowLabels 3~4개는 첫째 열(headers[0])에 미리 적어 둘 정리 대상이다. 모두 headers[0]이 가리키는 종류에 속해야 한다(예: headers[0]이 \"자연재해\"면 태풍·홍수·가뭄처럼 모두 자연재해여야 하고, 피해 모습·장소·대책·행동은 넣지 마라). 지금 과업과 교육과정 해설에서 뽑고, 정답·계산 결과는 넣지 마라. (3) hints는 headers마다 그 칸에 무엇을 쓰면 되는지 묻는 10~20자 안팎 질문 하나씩(정답을 알려 주지 마라). (4) 표 칸에 채울 재료가 될 낱말·사실 후보(bank) ${n}개를 흩어서 줘라.${ex} 어느 후보를 어느 칸에 넣을지, 칸의 답은 절대 정하지 마라. 모든 글자는 한국어로만 쓰고 일본어·영어·한자를 섞지 마라.`;
              } },
   // 원리1 적응적 페이딩: AI 도움이 클수록(high) 후보 낱말을 더 많이, 학습자가 숙련될수록(low) 적게
   // 준다. 후보들 사이의 관계·순서·위계는 절대 제안하지 않는다 — 그건 학습자가 직접 판단할 몫이다.
@@ -1841,7 +1876,7 @@ const STRUCT_SCHEMAS = {
   retrieval:{ shape:'{"type":"retrieval","items":[{"q":"질문1","a":"핵심 정답1"},{"q":"질문2","a":"핵심 정답2"}]}',
              ask:s=>`지금까지 나눈 이야기에서, "${s.ctx.std}"와 관련해 학습자가 안 보고 스스로 떠올려볼 수 있는 짧은 인출 질문(q) 3~4개와, 그 핵심 정답(a, 한 문장 이내로 짧게)을 만들어줘. 질문은 지금까지 대화에서 이미 다룬 내용만 확인해라(아직 안 다룬 새 내용을 시험하지 마라).` },
   checklist:{ shape:'{"type":"checklist","items":["…","…","…"]}',
-             ask:s=>`"${s.ctx.std}"와 관련해 학습자가 스스로 아는지 확인해볼 수 있는 짧은 점검 항목(문장 또는 질문)을 3~5개 만들어줘.` }
+             ask:s=>`"${s.ctx.std}"의 핵심 개념을 학습자가 한 줄로 직접 답해 볼 수 있는 짧은 질문을 3~4개 만들어줘(예: "태풍이 여름에 자주 오는 까닭은?"). "~할 수 있는가?"처럼 자기 평가만 묻는 문장은 쓰지 마라. 교육과정 해설 범위 안에서, 정답은 쓰지 마라.` }
 };
 /* ---------- 인지 전략 다중 선택 헬퍼(원리8) ---------- */
 // 과거 데이터(단일 strategy) 호환: strategies 배열이 없으면 strategy 하나를 배열로 취급한다.
@@ -1929,7 +1964,7 @@ async function generateTaskSpec(strat){
 도움 정도: ${session.support==='high'?'과업을 작게 쪼개고 첫 단서를 준다':session.support==='mid'?'방향만 준다':'과업만 주고 단서는 주지 않는다'}
 ${session.ctx.subject==='수학' && (session.tasks||[]).length ? `앞서 낸 과업: ${(session.tasks||[]).slice(-3).map(t=>'"'+t.task+'"').join(', ')} — 이번에는 같은 성취기준 안에서 유형이나 난이도가 다른 문제(예: 계산 → 문장제 → 오류 찾기 → 거꾸로 풀기)로 낸다. 새 문제는 1개만.` : ''}
 ${lastEval ? `직전 시도 진단: 빠진 점=${(lastEval.missing||[]).join(', ')||'없음'}, 착오 유형=${lastEval.errorType||'-'} — 이번 과업은 이 부분을 다시 다룰 수 있게 해라.` : ''}
-규칙: 과업은 지금까지 대화에서 다룬 실제 내용(아래 대화 이력)을 소재로 하고, 해설의 범위를 벗어나지 마라. 과업 1개만, 학생이 한 번의 답으로 해낼 수 있는 크기로. 과업 문장 안에 정답·풀이·계산 결과·"예:" 예시 답을 절대 넣지 마라(학습자가 할 몫이다). 성공 기준은 학습자의 답에서 눈으로 확인할 수 있는 것으로, 각 20자 안팎.
+규칙: 과업은 지금까지 대화에서 다룬 실제 내용(아래 대화 이력)을 소재로 하고, 해설의 범위를 벗어나지 마라. 과업은 target에 적은 핵심 개념(해설에 나온 개념)을 이해해야만 해낼 수 있어야 한다 — 장소·상황을 떠올려 묘사하게만 하는 과업은 안 된다. 성공 기준 가운데 적어도 1개는 그 핵심 개념을 바르게 쓰는 것이어야 한다. 과업 1개만, 학생이 한 번의 답으로 해낼 수 있는 크기로. 과업 문장 안에 정답·풀이·계산 결과·"예:" 예시 답을 절대 넣지 마라(학습자가 할 몫이다). 성공 기준은 학습자의 답에서 눈으로 확인할 수 있는 것으로, 각 20자 안팎.
 {"task":"학습자에게 줄 과업(한두 문장, 학년에 맞는 쉬운 말)","target":"이 과업이 다루는 핵심 내용","form":"결과물 형태","criteria":["성공 기준1","성공 기준2","성공 기준3"],"commonErrors":["예상 착오1","예상 착오2"]}`;
   const raw = await callLLM(buildMessages(sys, null, 10).concat([{ role:'user', content:'위 조건으로 과업 명세 JSON을 만들어라.' }]), { temperature:0.3 });
   const j = parseJSON(raw);
@@ -1959,13 +1994,7 @@ async function issueTask(strat, leadInstr){
     if(t) t.taskId = spec.id;
     renderStream();
   }
-  // 표·마인드맵·사슬처럼 정리 도구가 붙는 공부 방법은 과업을 건넨 바로 뒤에 도구를 자동으로 펼친다.
-  // (버튼을 따로 누르게 하면 학생이 못 찾는다 — 도구 머리글·재료는 지금 과업 내용에 맞춰 AI가 만든다)
-  if(offerStructs && offerStructs.length && !busy){
-    const first = offerStructs[0];
-    const dup = session.turns.slice(-8).some(x=>x.structured && x.structured.type===first.type);
-    if(!dup) await requestStructured(first.type, first.label, { auto:true });
-  }
+  // 정리 도구는 버튼으로만 제안한다(저절로 펼치면 학생이 고르지 않은 활동판이 '멋대로' 뜬다 — 원리2).
 }
 function taskById(id){ return (session.tasks||[]).find(x=>x.id===id) || null; }
 // 학습자 시도를 과업 명세의 성공 기준에 비추어 진단한다(temperature 0 — 같은 시도면 같은 진단).
@@ -2010,17 +2039,17 @@ function onTaskEvaluated(ev){
 function evalFeedbackInstr(spec, ev){
   const strat = STRATS.find(x=>x.id===spec.stratId);
   return `학습자가 방금 과업("${spec.task}")을 시도했다. 아래는 성공 기준에 비춘 진단이다(너만 참고). 충족: ${ev.met.join(' / ')||'없음'}. 빠진·어긋난 점: ${ev.missing.join(' / ')||'없음'}. 착오 유형(추정): ${ev.errorType}. 방법 사용: ${ev.strategyUsed?'씀':'안 씀'}.
-이 진단에 근거해 피드백하라: (1) 학습자가 실제로 쓴 낱말을 그대로 짚으며 잘한 점 1가지, (2) 빠지거나 어긋난 점이 있으면 1가지를 "제가 보기엔 ~ 부분이 ~해서 헷갈린 것 같아요"처럼 이유와 함께 알려주되 정답을 통째로 불러주지 말고 고칠 단서만 줘라(착오 유형을 쉬운 말로), ${ev.strategyUsed?'':'(3) 답만 쓰고 '+(strat?strat.label:'고른 방법')+' 방법은 아직 안 썼다는 점도 짚어라, '}마지막으로 "이 진단에 동의해? 그리고 ${strat?strat.label:'이 방법'}이 이번에 도움이 됐어?"처럼 학습자가 스스로 판단하게 1개만 물어라. 새 문제나 다음 과업은 절대 덧붙이지 마라(다음 과업은 시스템이 따로 낸다). 진단을 판결처럼 단정하지 말고, 학습자가 반박할 수 있게 열어 둬라. 5문장 이내.`;
+이 진단에 근거해 피드백하라. 화면 카드에 잘한 점·고칠 점이 따로 보이니 나열하거나 되풀이하지 마라. 가장 중요한 고칠 점 딱 1가지만 골라, 학습자가 실제로 쓴 낱말을 그대로 짚어 무엇이 어긋났는지 한 문장, 어떻게 고치면 되는지 단서 한 문장으로 말해라(정답을 통째로 불러주지 마라). 고칠 점이 없으면 잘한 점 1가지만 한 문장으로 말해라. ${ev.strategyUsed?'':'답만 쓰고 '+(strat?strat.label:'고른 방법')+' 방법은 아직 안 썼다면 그 점을 고칠 점으로 삼아라. '}전체 2문장, 질문은 하지 마라(동의 여부는 화면의 [판단하기]로 받는다). 새 문제나 다음 과업은 덧붙이지 마라.`;
 }
 function taskCardHTML(spec){
   return `<div class="task-card"><div class="tc-head">이렇게 하면 성공이에요</div><ul>${spec.criteria.map(c=>`<li>${esc(c)}</li>`).join('')}</ul></div>`;
 }
 function evalCardHTML(ev){
   const lv = ['아직 많이 남았어요','일부 해냈어요','대부분 해냈어요'][ev.level];
-  return `<div class="task-card eval"><div class="tc-head">AI가 본 내 답 — ${lv} <span class="tc-sub">(AI의 생각이에요. 아니라고 생각하면 "판단하기"로 알려줘요)</span></div>
-    ${ev.met.length?`<div class="tc-row"><b>잘한 점</b> ${ev.met.map(esc).join(' · ')}</div>`:''}
-    ${ev.missing.length?`<div class="tc-row"><b>더 해볼 점</b> ${ev.missing.map(esc).join(' · ')}</div>`:''}
-    ${ev.errorType && ev.errorType!=='특별한 착오 없음'?`<div class="tc-row err"><b>헷갈린 곳</b> ${esc(ev.errorType)} (AI 짐작)</div>`:''}
+  const good = ev.met[0], fix = ev.missing[0];
+  return `<div class="task-card eval"><div class="tc-head">AI가 본 내 답 — ${lv} <span class="tc-sub">(아니라고 생각하면 "판단하기")</span></div>
+    ${good?`<div class="tc-row"><b>👍 잘한 점</b> ${esc(good)}</div>`:''}
+    ${fix?`<div class="tc-row"><b>👉 고칠 점</b> ${esc(fix)}</div>`:''}
   </div>`;
 }
 function isAnswerRequest(v){
@@ -2372,8 +2401,10 @@ let ppSubj = ''; // 공부 전·후 그래프에서 고른 과목('' = 모든 �
 // 두 기준을 한 선에 이으면 기준이 바뀐 것이 "점수가 내려간 것"처럼 보이므로, 새 기준 기록이 있으면 새 기준만 그린다.
 function metaSessionsForTrend(S){
   const all = S.filter(s => s.meta && s.meta.scoreDetail);
+  const v3 = all.filter(s => s.meta.scoreVersion === 'v3-task');
   const v2 = all.filter(s => s.meta.scoreVersion === 'v2-subind');
-  return { list: v2.length ? v2 : all, excluded: v2.length ? all.length - v2.length : 0 };
+  const cur = v3.length ? v3 : v2; // 재는 방법이 다른 기록을 한 선에 잇지 않는다
+  return { list: cur.length ? cur : all, excluded: cur.length ? all.length - cur.length : 0 };
 }
 function renderHome(){
   const acc = account(); if(!acc) return show('auth');
@@ -2729,14 +2760,15 @@ function renderGrowth(S, sc, topStrat){
       const lastS = ms[ms.length-1], I = lastS.meta.indicators || null, EV = lastS.meta.scoreEvidence || {};
       const keys = ['understand','strategy','connect'];
       const IND_LAB = { understand:['구체적인 곳','이유','언제·어떻게 확인'], strategy:['구체적인 방법','이유','언제 쓰고 막히면'], connect:['연결 대상','같은 점·다른 점','정확함·한계'] };
+      const V3_DESC = { understand:'문제마다 맞았는지 스스로 잘 알았나', strategy:'상황에 알맞은 공부 방법을 골랐나', connect:'오늘 내용과 이어지는 것을 찾고 같은 점을 말했나' };
       const ansOf = k => ((lastS.meta.answers||{})[k] || '').trim();
       lastBox.innerHTML = `<div class="gp-sub">가장 최근 공부(${ms.length}번째)</div>` + rows.map((r,i)=>{
         const k = keys[i];
-        const chips = I && I[k] ? `<div class="msi-chips">${['s','r','c'].map((x,j)=>`<span class="msi ${I[k][x]?'on':''}">${I[k][x]?'✓':'·'} ${IND_LAB[k][j]}</span>`).join('')}</div>` : '';
+        const chips = (lastS.meta.indLabels && lastS.meta.indLabels[k]) ? `<div class="msi-chips">${lastS.meta.indLabels[k].map(x=>`<span class="msi ${x.on?'on':''}">${x.on?'✓':'·'} ${esc(x.label)}</span>`).join('')}</div>` : I && I[k] ? `<div class="msi-chips">${['s','r','c'].map((x,j)=>`<span class="msi ${I[k][x]?'on':''}">${I[k][x]?'✓':'·'} ${IND_LAB[k][j]}</span>`).join('')}</div>` : '';
         const said = ansOf(k) ? `<div class="msi-said">내 답: "${esc(trim(ansOf(k),70))}"${EV[k] ? '' : ''}</div>` : (I ? `<div class="msi-said">이 질문에 남긴 답이 없어요</div>` : '');
         const a = CS.metaScoreView(lastS.meta).axes[i] || { label:r[0], level:null, levelLabel:'-', indicators:[] };
-        return levelBarHTML(Object.assign({}, a, { indicators:[] })) + `<div class="hint" style="margin:-2px 0 4px">${esc(r[1])}</div>${chips}${said}`;
-      }).join('') + (msExcluded ? `<p class="gp-note">10월 1일 전에 한 ${msExcluded}번은 점수 매기는 방법이 지금과 달라서 아래 그래프에서 뺐어요.</p>` : '');
+        return levelBarHTML(Object.assign({}, a, { indicators:[] })) + `<div class="hint" style="margin:-2px 0 4px">${esc(lastS.meta.scoreVersion==='v3-task' ? V3_DESC[k] : r[1])}</div>${chips}${said}`;
+      }).join('') + (msExcluded ? `<p class="gp-note">점수 매기는 방법이 바뀌기 전에 한 ${msExcluded}번은 아래 그래프에서 뺐어요.</p>` : '');
       lastBox.hidden = false;
     } else { lastBox.innerHTML = ''; lastBox.hidden = true; }
   }
@@ -2770,21 +2802,22 @@ function openSessDetail(s){
       <div style="font-weight:800;font-size:15px">${emo} ${esc(s.ctx.std)}</div>
       <p class="hint" style="margin-top:4px">${s.startedAt.slice(0,10)} · ${s.ctx.grade||s.ctx.band} ${s.ctx.subject}${s.ctx.area?' · '+esc(s.ctx.area):''}</p>
     </div>
-    ${(s.ctx.extraStds&&s.ctx.extraStds.length) ? `<div class="kv"><span>함께 다룬 것</span><b>${esc(s.ctx.extraStds.map(e=>e.subject+' · '+e.name).join(' / '))}</b></div>` : ''}
-    ${s.goal ? `<div class="kv"><span>그날 목표</span><b>${esc(s.goal)}</b></div>` : ''}
+    ${(s.ctx.extraStds&&s.ctx.extraStds.length) ? `<div class="sd-line"><span>함께 다룬 것</span><b>${esc(s.ctx.extraStds.map(e=>e.subject+' · '+e.name).join(' / '))}</b></div>` : ''}
+    ${s.goal ? `<div class="sd-line"><span>그날 목표</span><b>${esc(s.goal)}</b></div>` : ''}
     ${s.incomplete ? `<div class="callout warn inc-box">
       <b>끝내지 않은 공부예요</b> — ${({chat:'AI와 이야기하던 중', reflect:'돌아보던 중', residual:'혼자 풀어보던 중'}[s.stoppedAt]||'공부하던 중')}에 멈췄어요. 멈춘 곳부터 이어서 끝낼 수 있어요.
       <div class="inc-actions"><button type="button" class="btn btn-primary btn-sm" id="sd-resume" data-id="${esc(s.id)}">이어서 끝내기</button>
       <button type="button" class="btn btn-ghost btn-sm" id="sd-hide" data-id="${esc(s.id)}">${s.hidden?'목록에 다시 보이기':'목록에서 숨기기'}</button></div>
       <p class="hint" style="margin:6px 0 0">숨겨도 기록은 지워지지 않아요. 아래 [숨긴 기록 보기]로 다시 볼 수 있어요.</p>
     </div>` : ''}
-    <div class="kv"><span>고른 방법</span><b>${esc(s.strategyLabel||'안 골랐어요')}</b></div>
-    ${s.strategyReason ? `<div class="kv"><span>고른 이유</span><b>${esc(s.strategyReason)}</b></div>` : ''}
-    <div class="kv"><span>AI 도움 크기</span><b>${SUPPORT_LABEL[s.support]||'-'}</b></div>
-    ${scoreRows.map(r=>`<div class="kv"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')}
+    <div class="sd-grid">
+      <div class="sd-tile"><span class="sd-ic">📚</span><small>고른 방법</small><b>${esc(s.strategyLabel||'안 골랐어요')}</b>${s.strategyReason?`<em>까닭: ${esc(s.strategyReason)}</em>`:''}</div>
+      <div class="sd-tile"><span class="sd-ic">📝</span><small>공부 전 → 혼자 풀기</small><b>${s.prior&&s.prior.diagScore!=null?s.prior.diagScore+'점':'–'} → ${s.residual&&s.residual.postScore!=null?s.residual.postScore+'점':'–'}</b></div>
+      <div class="sd-tile"><span class="sd-ic">🧭</span><small>스스로 점검</small><b>${(()=>{ const r = scoreRows.find(x=>x[0]==='스스로 점검'); return r ? esc(r[1]) : '–'; })()}</b></div>
+      <div class="sd-tile"><span class="sd-ic">🪜</span><small>AI 도움</small><b>${SUPPORT_LABEL[s.support]||'-'}</b></div>
+    </div>
     <div>
-      <h4 style="font-size:13px;font-weight:800;margin:4px 0 8px">그때 나눈 이야기</h4>
-      <div class="stack" style="gap:4px;max-height:220px;overflow-y:auto">${turnsHTML}</div>
+      <details class="sd-chat"><summary>💬 그때 나눈 이야기 보기</summary><div class="sd-chat-list">${turnsHTML}</div></details>
     </div>
     ${(s.reflect && (s.reflect.noteA||s.reflect.note)) ? `<div>
       <h4 style="font-size:13px;font-weight:800;margin:4px 0 8px">그때 남긴 돌아보기</h4>
@@ -2968,7 +3001,7 @@ function renderTaskBlocks(){
   if(!sliderBox) return;
   const movable = TASK_BLOCKS.filter(b=>!b.fixed);
   sliderBox.innerHTML = movable.map(b=>{
-    const v = stTaskBlocks[b.id];
+    const v = stTaskBlocks[b.id] = Math.max(0, Math.min(100, Math.round((+stTaskBlocks[b.id]||0)/10)*10)); // 막대가 10 단위라 값도 맞춘다
     // (WP1-1, 전문가4·2) 예전엔 왼쪽 끝 라벨이 "AI가 맡아요"인데 값 0은 실제로 학습자 담당이라 정반대로 보였다.
     // 값의 뜻(오른쪽=AI)은 그대로 두고 라벨·aria·툴팁을 맞춘다. 끝 라벨은 학년군 문구(UI_COPY)를 쓴다.
     const ub = CS.uiBand($('#st-band') && $('#st-band').value);
@@ -3622,6 +3655,8 @@ function renderStream(){
         return;
       }
       if(t.kind==='source-card'){ box.insertAdjacentHTML('beforeend', `<div class="msg note">${sourceCardHTML(t)}</div>`); return; }
+      if(t.kind==='next-strat'){ const nx = STRATS.find(x=>x.id===t.next), dn = STRATS.find(x=>x.id===t.done);
+        box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card"><div class="msc-title">${esc(dn?dn.label:'지금 방법')}은 충분히 해 봤어요. 다음엔 어떻게 할까요?</div>${t.answered?`<div class="msc-note">${t.go?`"${esc(nx?nx.label:'')}"(으)로 넘어갔어요.`:'지금 방법으로 계속해요.'}</div>`:`<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-sm btn-primary ns-go" data-id="${t.id}">${nx?nx.emoji+' '+esc(nx.label):'다음 방법'}(으)로 해 보기</button><button type="button" class="btn btn-sm ns-stay" data-id="${t.id}">지금 방법 계속</button></div>`}</div></div>`); return; }
       if(t.kind==='meta-form'){ box.insertAdjacentHTML('beforeend', `<div class="msg note">${metaFormHTML(t)}</div>`); return; }
       if(t.kind==='activate-quiz'){
         const items = session.prior.items||[];
@@ -3984,8 +4019,9 @@ function describeStruct(s){
   }
   if(s.type==='checklist'){
     const items = p.items||[];
-    const know = items.filter((_,i)=>st[i]==='know'), confused = items.filter((_,i)=>st[i]==='confused');
-    return { label:'아는지 체크리스트', text:`"알아요"로 표시: ${know.join(', ')||'없음'}. "헷갈려요"로 표시: ${confused.join(', ')||'없음'}.` };
+    const pf = s.proof || {};
+    const know = items.map((it,i)=>st[i]==='know' ? `${it} → 내 답: ${(pf[i]||'').trim()||'(안 씀)'}` : null).filter(Boolean), confused = items.filter((_,i)=>st[i]==='confused');
+    return { label:'아는지 체크리스트', text:`"알아요"라고 한 것과 내가 쓴 한 줄 답: ${know.join(' / ')||'없음'}. "헷갈려요"로 표시: ${confused.join(', ')||'없음'}.` };
   }
   if(s.type==='retrieval'){
     const items = p.items||[];
@@ -4026,12 +4062,19 @@ function describeStruct(s){
 async function reviewStruct(tid){
   if(busy) return;
   const t = session.turns.find(x=>x.id===tid); if(!t || !t.structured) return;
+  if(t.structured.type==='checklist'){ const st = t.structured.state||{}, pf = t.structured.proof||{};
+    const miss = Object.keys(st).filter(i=>st[i]==='know' && !(pf[i]||'').trim());
+    if(!Object.keys(st).some(i=>st[i])){ pushNote('항목마다 "알아요" 또는 "헷갈려요"를 골라요.'); return; }
+    if(miss.length){ pushNote(`"알아요"라고 한 ${miss.map(i=>+i+1+'번').join(', ')}에 한 줄 답을 써요. 써 봐야 정말 아는지 알 수 있어요.`); return; } }
   const d = describeStruct(t.structured);
   t.structured.reviewCount = (t.structured.reviewCount||0) + 1;
   const secondReview = t.structured.reviewCount >= 2;
   pushMe(secondReview ? '다시 고쳤어요. 이제 어때요?' : '다 했어요. 봐 줄래요?', false, 'button');
   // (개선) 산출물도 과업 명세의 성공 기준에 비추어 진단한다(원리9). 명세가 없을 때만 예전 방식.
-  const spec = session.currentTask;
+  // 아는지 체크는 앞 과업의 성공 기준이 아니라 체크리스트 자체의 기준으로 본다(체크만 하라 해 놓고 설명이 없다고 깎던 문제)
+  const spec = t.structured.type==='checklist' && session.currentTask
+    ? Object.assign({}, session.currentTask, { task:'아는지 체크리스트: 항목마다 알아요/헷갈려요를 고르고, 알아요라고 한 항목은 한 줄로 직접 답하기', form:'체크리스트와 한 줄 답', criteria:['알아요라고 한 항목마다 한 줄 답을 썼다','한 줄 답이 개념에 맞다','헷갈리는 항목은 헷갈려요로 솔직하게 골랐다'] })
+    : session.currentTask;
   let ev = null;
   if(spec){
     busy = true; syncComposeLock(); showPending();
@@ -4060,8 +4103,8 @@ async function reviewStruct(tid){
   const at = [...session.turns].reverse().find(x=>x.role==='ai' && !x.structured);
   if(at && ev){ at.evalId = ev.id; at.evalTaskId = spec.id; renderStream(); }
   if(nextStrat){
-    session.cycleIdx = 2; session.cycleNow = 'apply'; renderCycleStrip();
-    await issueTask(nextStrat, `"${doneStrat.label}" 방법은 이 정도면 됐다고 짧게 알려주고, 다음 방법인 ${nextStrat.label}으로 넘어가 과업을 낸다.`);
+    session.turns.push({ id:uid(), role:'note', kind:'next-strat', next:nextStrat.id, done:doneStrat.id, answered:false });
+    session.cycleIdx = 3; session.cycleNow = 'check'; renderCycleStrip(); renderStream();
   } else {
     // 산출물 검토가 곧 점검(check) 단계이므로, 다음 학습자 입력은 조정(adjust)으로 이어지게 한다.
     session.cycleIdx = 3; session.cycleNow = 'check'; renderCycleStrip();
@@ -4131,10 +4174,11 @@ function renderStructHTML(tid, s){
     return `<div class="struct-box" data-tid="${tid}"><div class="struct-head">스스로 아는지 확인해봐요</div>
       <div class="struct-checklist">${p.items.map((it,i)=>{
         const v = st[i];
+        const pf = (s.proof||{})[i] || '';
         return `<div class="ck-row"><span class="ck-q">${esc(it)}</span><span class="ck-btns">
           <button type="button" class="ck-btn ${v==='know'?'on-know':''}" data-idx="${i}" data-v="know">알아요</button>
           <button type="button" class="ck-btn ${v==='confused'?'on-confused':''}" data-idx="${i}" data-v="confused">헷갈려요</button>
-        </span></div>`;
+        </span>${v==='know'?`<input class="input ck-proof" data-idx="${i}" maxlength="120" placeholder="정말 아는지 한 줄로 답해 봐요" value="${esc(pf)}" />`:''}</div>`;
       }).join('')}</div>${reviewBtnHTML(tid)}</div>`;
   }
   return `<div class="bubble">정리한 내용을 표시하지 못했어요.</div>`;
@@ -4269,6 +4313,21 @@ function normalizeTablePayload(p){
   const rows = Array.from({length:Math.max(labels.length,3)}, (_,i)=> headers.map((_,c)=> (c===0 && labels[i]) ? labels[i] : ''));
   return { type:'table', headers, hints:headers.map((_,i)=>hints[i]||''), bank:cleanKo(p.bank), example, rows, labelRows:labels.length };
 }
+// 표 첫 칸 항목이 첫 열 이름의 종류인지 한 번 더 확인한다(예: '자연재해' 칸에 '간판 떨어짐'·'배수로 살펴보기'가 들어가던 문제).
+async function verifyTableRows(p){
+  const n = p.labelRows || 0; if(n < 1) return p;
+  const labels = p.rows.slice(0, n).map(r=>r[0]);
+  try{
+    const raw = await callLLM([
+      { role:'system', content:'너는 분류 검사 보조자다. 반드시 순수 JSON만 출력한다.' },
+      { role:'user', content:`분류 이름: "${p.headers[0]}"\n항목: ${labels.map((x,i)=>`${i+1}. ${x}`).join(' / ')}\n각 항목이 "${p.headers[0]}"의 한 종류(구성원)이면 true, 피해 모습·장소·행동·대책처럼 종류가 아니면 false.\n{"ok":[true,false]}` }
+    ], { temperature:0, json:true });
+    const j = parseJSON(raw); if(!j || !Array.isArray(j.ok)) return p;
+    const keep = labels.filter((_, i)=>j.ok[i]!==false);
+    const rows = Array.from({ length:Math.max(keep.length, 3) }, (_, i)=>p.headers.map((_, c)=>(c===0 && keep[i]) ? keep[i] : ''));
+    return Object.assign({}, p, { rows, labelRows: keep.length });
+  }catch(e){ return p; }
+}
 async function requestStructured(type, label, opts){
   opts = opts || {};
   if(busy || session.phase!=='explore' || !session.cycleStarted) return;
@@ -4291,7 +4350,7 @@ async function requestStructured(type, label, opts){
     // 마인드맵: AI가 준 것은 "중심 낱말 + 후보 낱말"뿐이다. 배치·관계·순서는 여기서부터
     // 전부 학습자 몫이라, 관계를 암시하지 않는 무작위 배치로 변환해 저장한다(원리2·8).
     if(type==='mindmap') payload = mmInitPayload(String(payload.root||'중심 낱말'), cleanKo(payload.children));
-    if(type==='table') payload = normalizeTablePayload(payload || {});
+    if(type==='table') payload = await verifyTableRows(normalizeTablePayload(payload || {}));
     if(type==='compare' && payload){ ['leftHint','rightHint','leftTitle','rightTitle'].forEach(k=>{ if(payload[k] && KO_ONLY.test(String(payload[k]))) delete payload[k]; }); }
     $('#pending')?.remove();
     session.turns.push({ id:uid(), role:'ai', text:'', structured:{ type, payload }, phase:session.phase, kind:null, support:session.support, judge:null, comment:'', taskId:(session.currentTask||{}).id||null });
@@ -4333,8 +4392,8 @@ async function prepNext(){
     busy = true; syncComposeLock(); showPending();
     try{ await gradeMeta(); } finally { $('#pending')?.remove(); busy = false; syncComposeLock(); } // 원리7: 서술 답변을 루브릭으로 채점
     pushMetaScoreCard(); // 계산만 하고 안 보여주면 진단이 아니다 — 대화 흐름 안에 카드로 노출한다
-    strategyPickMode = 'initial'; pendingStrategyPick = lastNextPlan(); // (WP5-3) 지난번에 "다음엔 이렇게"로 고른 방법을 미리 골라 둔다
-    if(pendingStrategyPick.length){ const sp = STRATS.find(x=>x.id===pendingStrategyPick[0]); if(sp) pushNote(`지난 공부에서 "다음엔 ${sp.label}" 방법을 해 보기로 했어요. 미리 골라 두었으니 바꿔도 돼요.`); }
+    strategyPickMode = 'initial'; const _np = lastNextPlan(); pendingStrategyPick = []; // (WP5-3) 지난번 계획은 알려 주기만 한다(미리 체크해 두면 고르지 않은 방법이 섞인다)
+    if(_np.length){ const sp = STRATS.find(x=>x.id===_np[0]); if(sp) pushNote(`지난 공부에서 "다음엔 ${sp.label}" 방법을 해 보기로 했어요. 고를지는 내가 정해요.`); }
     // (실제 모델 검증 10-05) 이 전환 턴에서 모델이 지시를 무시하고 새 문제를 내는 일이 10번 중 8번이었고(예전 문구도 같음),
     // 한 문장 공감만 맡겨도 문제를 내거나 지시를 흉내 내는 말이 섞였다. 이 턴은 내용이 정해진 안내라 고정 문장으로 낸다.
     pushAi(CS.COPY.strategyPickIntro, 'strategy-pick'); // (WP1-4) 비표준어("너가")·반말 고정 문구를 해요체 사전 문구로
@@ -4481,7 +4540,11 @@ async function startActivationQuiz(){
 }
 // 요청사항(8번째 피드백) 4: mcq 문항은 텍스트 입력칸 대신 선택지 버튼을 준다 — 고른 선택지의
 // 실제 문구를 그대로 it.a에 저장해서, 채점(gradeActivationQuiz)은 손대지 않고 그대로 쓴다.
-function aqFieldHTML(it, i){
+function aqConfHTML(it, i){
+  return `<div class="aq-conf" data-i="${i}"><span>이 답, 맞을 것 같아요?</span><button type="button" class="chip ${it.conf===1?'is-selected':''}" data-i="${i}" data-conf="1">😀 맞을 것 같아요</button><button type="button" class="chip ${it.conf===0?'is-selected':''}" data-i="${i}" data-conf="0">🤔 잘 모르겠어요</button></div>`;
+}
+function aqFieldHTML(it, i){ return aqFieldBody(it, i).replace(/<\/div>\s*$/, aqConfHTML(it, i) + '</div>'); }
+function aqFieldBody(it, i){
   if(it.type==='mcq' && Array.isArray(it.options)){
     return `<div><label class="field-label">${i+1}. ${esc(it.q)}</label>
       <div class="choices aq-mcq" data-i="${i}" style="grid-template-columns:1fr 1fr">
@@ -4507,7 +4570,7 @@ async function gradeActivationQuiz(){
   }
 }
 function activationQuizValid(){
-  return session.prior.items.length>0 && session.prior.items.every(it=>(it.a||'').trim().length>=1);
+  return session.prior.items.length>0 && session.prior.items.every(it=>(it.a||'').trim().length>=1 && it.conf!=null);
 }
 async function submitActivationQuiz(turnId){
   if(busy) return;
@@ -4536,6 +4599,7 @@ async function submitActivationQuiz(turnId){
    "타당하게 아는 것"을 구분한다. 관련 연구의 자기보고식 총점(MAI류)과 달리, 이번 학습 내용에
    실제로 근거해 개별 채점하므로 그 순간의 이해에 더 밀착된 지표가 된다. ===== */
 async function gradeMeta(){
+  if(session.meta.v3) return gradeMetaV3();
   // (개선) 원리7: ① 질문별 답을 따로 채점, ② 0~100 자유 점수 대신 기준점이 있는 3수준 루브릭(0/50/100),
   // ③ temperature 0, ④ 전략 지식의 핵심 근거인 "평소 공부법"도 전략 축 채점에 포함한다.
   // "자기 이해 상태를 얼마나 정확히 아는가"는 LLM이 판정할 수 없으므로, 따로 보정도(calibration:
@@ -4588,6 +4652,32 @@ async function gradeMeta(){
   }
   if(!ok){ session.meta.score=null; session.meta.scoreDetail=null; session.meta.feedback=''; session.meta.gradeFailed=true; }
   else session.meta.gradeFailed=false;
+  session.meta.calib = computeCalibration();
+}
+// (v3) 한 화면 스스로 점검: 수행 기록으로 점수를 낸다(CS.metaTaskScore). LLM은 '같은 점' 한 줄의 개념 일치 여부만 본다.
+async function gradeMetaV3(){
+  const T = session.meta.task || {}; const c = Object.assign({}, T.connect || {});
+  const picked = c.options && c.pick!=null ? c.options[c.pick] : '';
+  c.relOk = false;
+  if(c.text){
+    try{
+      const raw = await callLLM([
+        { role:'system', content:'너는 채점 보조자다. 반드시 순수 JSON만 출력한다.' },
+        { role:'user', content:`오늘 배울 내용: "${session.ctx.std}"\n교육과정 해설: ${session.ctx.concept||'-'}\n학습자가 이어진다고 고른 것: "${picked||'(직접 씀)'}"\n학습자가 쓴 말: "${c.text}"\n학습자가 오늘 내용과 그것이 어떻게 이어지는지(같은 점이나 바탕이 되는 점)를 개념에 맞게 말했으면 1, 아니면 0이다. 표현이 서툴거나 짧아도 뜻이 맞으면 1이다. {"ok":0}` }
+      ], { temperature:0, json:true });
+      const j = parseJSON(raw); c.relOk = !!(j && +j.ok >= 1);
+    }catch(e){ c.relOk = null; }
+  }
+  const r = CS.metaTaskScore({ items: session.prior.items || [], scenarios: T.scen || [], connect: c });
+  const vals = Object.values(r.detail).filter(x=>x!=null);
+  session.meta.scoreVersion = 'v3-task'; session.meta.indicators = null; session.meta.indLabels = r.indLabels;
+  session.meta.scoreDetail = vals.length ? r.detail : null;
+  session.meta.scoreEvidence = { understand:'', strategy:'', connect: c.text || '' };
+  session.meta.score = vals.length ? Math.round(vals.reduce((x,y)=>x+y,0)/vals.length) : null;
+  session.meta.gradeFailed = !vals.length;
+  const low = ['understand','strategy','connect'].filter(k=>r.detail[k]!=null).sort((x,y)=>r.detail[x]-r.detail[y])[0];
+  session.meta.feedback = !low || r.detail[low] >= 100 ? '세 가지 모두 잘 해냈어요.'
+    : { understand:'답을 낸 뒤 "정말 맞을까?" 한 번 더 따져 보면 내 느낌이 더 정확해져요.', strategy:'상황마다 어떤 방법이 맞는지 떠올려 보면 공부 방법을 더 잘 고를 수 있어요.', connect:'전에 배운 것 가운데 오늘 내용의 바탕이 되는 것을 찾아보면 더 잘 이어져요.' }[low];
   session.meta.calib = computeCalibration();
 }
 // 보정도: 사전 자신감(1~5 → 0~100)과 실제 사전 확인 점수의 차이. +면 과대평가, -면 과소평가.
@@ -5080,10 +5170,7 @@ function sendChat(){
       session.prepStep='ready'; session.cycleStarted=true; session.cycleIdx=1; session.cycleNow='ask'; paintPhase();
       maybePushSourceCard(); // (WP3-5) 교과 자료 카드(원문 발췌·출처 표시)
       const strat = currentApplyStrat();
-      // 표·마인드맵으로 정리하는 방법을 골랐다면, 첫 말이 끝나는 대로 정리 도구를 바로 펼친다(머리글·재료는 AI가 오늘 내용에 맞춰 만든다)
-      const organizing = !!strat && strat.id==='organization';
-      const first = ai(`학습자가 "${session.strategyLabel}" 방법(들)을 고른 이유("${v}")를 존중하며 짧게 반응해줘(그 이유가 맞다 틀리다 평가하지 마). 그 이유와 오늘 배울 내용을 연결해서, ${strat?strat.verb:'스스로 생각하도록'} 유도하는 첫 질문을 1개 던져. 질문에는 오늘 목표의 구체적인 낱말을 그대로 넣고, 학생이 무엇을 어떻게 쓰면 되는지(예: '한 문장으로', '예를 하나 들어') 형식도 함께 말해라. '이 내용', '오늘 배울 내용' 같은 막연한 말은 쓰지 마라.`);
-      if(organizing) Promise.resolve(first).then(()=>{ const list = structsFor(strat); if(list && list.length && !session.turns.some(x=>x.structured)) return requestStructured(list[0].type, list[0].label, { auto:true }); }).catch(()=>{});
+      ai(`학습자가 "${session.strategyLabel}" 방법을 골랐고, 고른 까닭은 "${v}"이다. 첫 문장은 고른 방법을 받아 주는 짧은 말 한 마디로만 써라(까닭을 풀이하거나 평가하지 말고, '추천 표시' 같은 화면 이야기는 하지 마라). 이어서 오늘 성취기준의 핵심 개념(교육과정 해설에 나온 개념) 하나를 이해해야만 답할 수 있는 요청을 딱 1개 해라. ${strat?strat.verb:'스스로 생각하도록'} 하는 요청이어야 하고, 무엇을 어떤 형식(예: 한 문장으로)으로 쓰면 되는지 분명히 말해라. 개념과 상관없는 장소·상황 묘사만 요구하지 마라. 요청 뒤에 다른 질문이나 '~해 볼까요?'를 덧붙이지 마라.`);
       return;
     }
     return;
@@ -5943,8 +6030,14 @@ function init(){
       if(t && t.structured){ t.structured.state = t.structured.state||{}; const idx=+di.dataset.idx; t.structured.state[idx]=!t.structured.state[idx]; renderStream(); }
       return;
     }
+    const nsb = e.target.closest('.ns-go, .ns-stay');
+    if(nsb && !busy){ const t = session.turns.find(x=>x.id===nsb.dataset.id); if(!t || t.answered) return;
+      t.answered = true; t.go = nsb.classList.contains('ns-go'); renderStream();
+      if(t.go){ const nx = STRATS.find(x=>x.id===t.next); session.cycleIdx = 2; session.cycleNow = 'apply'; renderCycleStrip(); issueTask(nx, `학습자가 다음 방법인 ${nx.label}(으)로 넘어가기로 직접 골랐다. 그 방법의 과업을 낸다.`); }
+      else { if(session.stratDone) delete session.stratDone[t.done]; pushNote('좋아요. 지금 방법으로 계속해요.'); }
+      return; }
     const ckb = e.target.closest('.ck-btn');
-    if(ckb){
+    if(ckb && !e.target.closest('.ck-proof')){
       const box = ckb.closest('.struct-box'); const t = session.turns.find(x=>x.id===box.dataset.tid);
       if(t && t.structured){ t.structured.state = t.structured.state||{}; const idx=+ckb.dataset.idx; t.structured.state[idx] = (t.structured.state[idx]===ckb.dataset.v ? null : ckb.dataset.v); renderStream(); }
       return;
@@ -6039,6 +6132,8 @@ function init(){
       renderStream();
       return;
     }
+    const aqConf = e.target.closest('.aq-conf [data-conf]');
+    if(aqConf){ const i = +aqConf.dataset.i; if(session.prior.items[i]) session.prior.items[i].conf = +aqConf.dataset.conf; renderStream(); return; }
     const aqOpt = e.target.closest('.aq-mcq .choice');
     if(aqOpt){
       const i = +aqOpt.dataset.i;
@@ -6169,8 +6264,8 @@ function init(){
       const i = +aqA.dataset.i;
       if(session.prior.items[i]) session.prior.items[i].a = aqA.value;
       const btn = document.querySelector('.aq-submit');
-      { const g = document.querySelector('.aq-gate'); const miss = session.prior.items.map((it,k)=>(it.a||'').trim()?null:(k+1)+'번').filter(Boolean);
-        if(g){ g.textContent = miss.length ? `아직 안 한 문항: ${miss.join(', ')} — 모르면 "모르겠어요"라고 써도 돼요` : ''; } }
+      { const g = document.querySelector('.aq-gate'); const miss = session.prior.items.map((it,k)=>((it.a||'').trim() && it.conf!=null)?null:(k+1)+'번').filter(Boolean);
+        if(g){ g.textContent = miss.length ? `아직 안 한 문항: ${miss.join(', ')} — 답과 "맞을 것 같아요?"를 모두 골라요. 모르면 "모르겠어요"라고 써도 돼요` : ''; } }
       if(btn) btn.disabled = !activationQuizValid();
       return;
     }

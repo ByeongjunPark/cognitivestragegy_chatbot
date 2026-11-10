@@ -27,7 +27,8 @@
     if (!d) return { ok: false, failed, axes: [], avg: null, avgLevel: null };
     const axes = META_AXES.map(a => {
       const score = d[a.k] == null ? null : round(+d[a.k]);
-      const ind = I && I[a.k] ? ['s', 'r', 'c'].map((x, i) => ({ label: a.ind[i], on: !!I[a.k][x] })) : [];
+      const ind = m.indLabels && m.indLabels[a.k] ? m.indLabels[a.k].map(x => ({ label: String(x.label), on: !!x.on }))
+        : I && I[a.k] ? ['s', 'r', 'c'].map((x, i) => ({ label: a.ind[i], on: !!I[a.k][x] })) : [];
       const lv = level3(score);
       return { k: a.k, label: a.label, short: a.short, score, level: lv, levelLabel: lv == null ? '이번엔 채점하지 못했어요' : LEVEL_LABELS[lv], indicators: ind, quote: (m.scoreEvidence || {})[a.k] || '' };
     });
@@ -43,6 +44,34 @@
       : tone === 'over' ? '공부 전에 고른 자신감이 "사전 확인 문제" 결과보다 높았어요. 안다고 느낀 부분을 한 번 더 확인해 봐요.'
         : '"사전 확인 문제" 결과가 공부 전에 고른 자신감보다 좋았어요. 생각보다 많이 알고 있어요.';
     return { tone, text, confPct: c.confPct, diag: c.diag };
+  }
+
+  /* ---------- 스스로 점검 v3: 응답 내용이 아니라 수행으로 재는 점수 ----------
+     이해 점검 = 아는 것 확인 문항마다 고른 자신감(맞을 것 같다/모르겠다)이 실제 채점 결과와 맞은 비율(모니터링 정확도)
+     방법 알기 = 상황 2개에 알맞은 공부 방법을 고른 비율(조건적 지식)
+     연결 짓기 = 오늘 내용의 바탕 개념을 고르기(1) + 같은 점을 개념에 맞게 말하기(1) */
+  function metaTaskScore(input) {
+    const inp = input || {};
+    const items = (inp.items || []).map((it, i) => ({ it, i })).filter(x => x.it && x.it.conf != null && x.it.score != null);
+    const agree = items.map(x => (+x.it.conf === 1) === (+x.it.score >= 50));
+    const understand = items.length ? round(agree.filter(Boolean).length / items.length * 100) : null;
+    const sc = inp.scenarios || [];
+    const sOk = sc.map(x => x.pick != null && x.pick === x.key);
+    const strategy = sc.length ? round(sOk.filter(Boolean).length / sc.length * 100) : null;
+    const c = inp.connect || {};
+    const hasOpt = Array.isArray(c.options) && c.key != null;
+    const pickOk = hasOpt && c.pick != null && +c.pick === +c.key;
+    let connect;
+    if (hasOpt) connect = c.relOk == null ? (pickOk ? 50 : 0) : round(((pickOk ? 1 : 0) + (c.relOk ? 1 : 0)) / 2 * 100);
+    else connect = c.relOk == null ? null : (c.relOk ? 100 : 0);
+    return {
+      detail: { understand, strategy, connect },
+      indLabels: {
+        understand: items.map((x, j) => ({ label: `${x.i + 1}번 ${+x.it.conf === 1 ? '자신 있음' : '헷갈림'} → ${+x.it.score >= 50 ? '맞음' : '아직'}`, on: agree[j] })),
+        strategy: sc.map((x, j) => ({ label: x.short || `상황 ${j + 1}`, on: sOk[j] })),
+        connect: hasOpt ? [{ label: '이어지는 것 고르기', on: pickOk }, { label: '같은 점 말하기', on: !!c.relOk }] : [{ label: '이어지는 것과 같은 점 말하기', on: !!c.relOk }]
+      }
+    };
   }
 
   /* ---------- 역할분담 슬라이더 (WP1-1) — 데이터 의미: 값 ≥ 50 = AI가 맡음(하위 호환) ---------- */
@@ -68,7 +97,7 @@
       meTasks: blocks.filter(b => b.fixed === 'me' || (!b.fixed && tb[b.id] != null && !isAiSide(tb[b.id]))).map(b => b.label.replace(/^\S+\s/, ''))
     };
   }
-  const PRESETS = Object.freeze({ ai: 80, half: 50, me: 25 });
+  const PRESETS = Object.freeze({ ai: 80, half: 50, me: 20 }); // 막대가 10 단위로 움직이므로 프리셋도 10 단위
   function applyPreset(blocks, values, preset) {
     const v = PRESETS[preset];
     if (v == null) return Object.assign({}, values);
@@ -188,7 +217,7 @@
 
   Object.assign(CS, {
     META_AXES, LEVEL_LABELS, level3, metaScoreView, calibView,
-    sliderLabel, isAiSide, taskSplit, PRESETS, applyPreset, presetOf,
+    sliderLabel, isAiSide, taskSplit, PRESETS, applyPreset, presetOf, metaTaskScore,
     srcOf, isTypedTurn, migrateTurnsSrc,
     phaseEnter, phaseLeave, phaseSwitch, phaseMs, totalMs, median,
     effectiveSupport, startBoost, weakAxis, nextPlanCandidates, growthCard

@@ -118,3 +118,17 @@ test('WP5-3 다음엔 이렇게: 약한 축에 맞춘 방법 2개', () => {
   const ids = CS.nextPlanCandidates({ diagScore: 90 }, { scoreDetail: { understand: 100, strategy: 100, connect: 33 } });
   assert.equal(ids.length, 2); assert.ok(ids.includes('elaboration'));
 });
+
+test('스스로 점검 v3: 자신감-결과 일치, 상황별 방법, 연결 고르기로 점수를 낸다', () => {
+  const r = CS.metaTaskScore({
+    items: [{ conf: 1, score: 100 }, { conf: 1, score: 0 }],
+    scenarios: [{ key: 'rehearsal', pick: 'rehearsal', short: 'a' }, { key: 'critical', pick: 'monitoring', short: 'b' }],
+    connect: { options: ['x', 'y', 'z'], key: 1, pick: 1, relOk: true }
+  });
+  assert.deepEqual(r.detail, { understand: 50, strategy: 50, connect: 100 });
+  assert.equal(r.indLabels.understand[1].on, false);
+  const v = CS.metaScoreView({ scoreDetail: r.detail, indLabels: r.indLabels });
+  assert.equal(v.axes[1].indicators[0].label, 'a');
+  const none = CS.metaTaskScore({ items: [{ conf: null, score: 50 }], scenarios: [], connect: {} });
+  assert.deepEqual(none.detail, { understand: null, strategy: null, connect: null });
+});
