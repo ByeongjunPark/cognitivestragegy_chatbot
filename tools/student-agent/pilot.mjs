@@ -132,12 +132,18 @@ async function runOne(pid, sid, idx) {
       for (let i = 0; i < n; i++) { const opts = page.locator('.aq-mcq').nth(i).locator('.choice'); await opts.nth(rng() < P.correct ? 0 : 1 + Math.floor(rng() * 3)).click(); await note('click'); }
       const tn = await page.locator('.aq-a').count();
       for (let i = 0; i < tn; i++) await fill('.aq-a', pid === 'lowgrade' ? '몰라요' : '분모를 같게 맞춰야 더할 수 있어요', i);
+      { const cn = await page.locator('.aq-conf').count(); for (let i = 0; i < cn; i++) { await page.locator('.aq-conf').nth(i).locator('[data-conf]').nth(rng() < 0.6 ? 0 : 1).click(); await note('click'); } }
       await click('.aq-submit'); continue;
     }
     if (st.prior) { await click('[data-pick="prior"] .u-chip', P.conf - 1); continue; }
     if (st.mf) {
-      const rows = page.locator('.meta-form .mf-row');
-      for (let r = 0; r < await rows.count(); r++) { const chips = rows.nth(r).locator('.mf-chip'); await chips.nth(Math.floor(rng() * (await chips.count()))).click(); await note('click'); if (pid === 'average' && r > 0) await fill('.meta-form .mf-text', '분모가 다를 때 헷갈려요', r); }
+      for (let w = 0; w < 30 && await page.locator('.meta-form .hint', { hasText: '준비하는 중' }).count(); w++) await page.waitForTimeout(100);
+      { const u = page.locator('.meta-form .mf-chip'); if (await u.count()) { await u.nth(Math.floor(rng() * (await u.count()))).click(); await note('click'); } }
+      for (const scid of await page.$$eval('.meta-form .mf-scen .mf-sc', els => [...new Set(els.map(e => e.dataset.sid))])) {
+        const ch = page.locator(`.meta-form .mf-sc[data-sid="${scid}"]`); await ch.nth(Math.floor(rng() * (await ch.count()))).click(); await note('click');
+      }
+      if (await page.locator('.meta-form .mf-cp').count()) { await page.locator('.meta-form .mf-cp').nth(Math.floor(rng() * 3)).click(); await note('click'); }
+      if (pid !== 'lowgrade' || !(await page.locator('.meta-form .mf-cp').count())) await fill('.meta-form .mf-text[data-k="connText"]', '둘 다 같은 크기로 나눈다는 점이 같아요');
       await click('.mf-submit'); continue;
     }
     if (st.cp) {
@@ -145,6 +151,7 @@ async function runOne(pid, sid, idx) {
       if (await page.locator('.cp-rchip').count()) await click('.cp-rchip', Math.floor(rng() * 3)); else await fill('.checkpoint-card .cp-reason', '예시가 떠올라서 조금 알 것 같아요');
       await click('.checkpoint-card .cp-submit'); continue;
     }
+    if (await page.locator('.ns-go').count()) { await click(pid === 'average' ? '.ns-go' : '.ns-stay'); continue; }
     if (st.fade) { await click(pid === 'struggling' ? '.fade-decline' : '.fade-accept'); continue; }
     if (st.rr) { if (await page.locator('.rr-attempt').count()) await fill('.rr-attempt', '분모를 같게 해요'); if (!(await click('.rr-reveal'))) await click('.rr-done'); else await click('.rr-done'); continue; }
     if (st.phase === 'prep' && st.prep === 'meta') {
@@ -170,6 +177,8 @@ async function runOne(pid, sid, idx) {
   }
   await idle();
   // 스스로 점검 결과 카드에 학생에게 보인 글(척도가 섞이는지·숫자가 보이는지 점검)
+  { const fi = await ev(() => ({ start: session.supportStart || 'high', end: session.support, proposals: session.turns.filter(t => t.kind === 'fade-propose').length, accepted: session.turns.filter(t => t.kind === 'fade-propose' && t.accepted).length, uIdx: (session.uIdx || []).map(x => x.src + ':' + x.v), checkpoints: (session.checkpoints || []).map(c => c.score), tasks: (session.tasks || []).length, role: session.roleStats || null }));
+    fs.appendFileSync(path.join(OUT, 'adaptive.jsonl'), JSON.stringify(Object.assign({ persona: pid, scenario: sid }, fi)) + '\n'); }
   const metaCardText = await ev(() => { const c = [...document.querySelectorAll('#stream .meta-score-card')].find(x => /스스로 점검 결과/.test(x.textContent)); return c ? c.textContent : ''; /* 접힌 카드도 읽는다 */ });
   const chatTurns = await ev(() => session.turns.map(t => ({ role: t.role, kind: t.kind || null, text: t.text || '', src: t.src || null, phase: t.phase, structured: !!t.structured, reveal: /풀이 공개 턴/.test(t.instr || ''), instr: (t.instr || '').slice(0, 120) })));
   const hscroll = {}; const measure = async k => { hscroll[k] = await ev(() => { const cw = document.documentElement.clientWidth; if (document.documentElement.scrollWidth <= cw) return false; return [...document.querySelectorAll('.screen.is-active *')].filter(e => e.getBoundingClientRect().right > cw + 1).map(e => e.tagName.toLowerCase() + (e.id ? '#' + e.id : '') + '.' + [...e.classList].join('.')).slice(0, 4); }); };

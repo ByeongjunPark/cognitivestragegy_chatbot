@@ -2070,9 +2070,9 @@ function pushUnderstanding(val, src){
   const recent = session.uIdx.slice(since).slice(-FADE_WINDOW);
   if(recent.length < FADE_WINDOW) return;
   const avg = recent.reduce((a,x)=>a+x.v,0)/recent.length;
-  const last = recent[recent.length-1];
   const pending = (session.turns||[]).some(t=>t.kind==='fade-propose' && !t.answered);
-  if(avg >= FADE_THRESHOLD && last.v > 0 && !pending){ session.uIdxSince = session.uIdx.length; proposeFade(); }
+  // 두 신호가 모두 '일부 이상'(50↑)이어야 한다: 과업은 해냈어도 학생 스스로 '잘 모르겠다'(2점↓)고 하면 줄이자고 하지 않는다(학습자의 자기 판단 존중)
+  if(avg >= FADE_THRESHOLD && recent.every(x=>x.v >= 50) && !pending){ session.uIdxSince = session.uIdx.length; proposeFade(); }
 }
 function onTaskEvaluated(ev){
   // 과업을 해 보고 AI 의견을 받은 바로 그 자리에서 이해도를 묻는다(턴 수만 세면 한 차시에서는 거의 안 떴다 — 원리9)

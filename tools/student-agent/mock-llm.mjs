@@ -74,6 +74,10 @@ export function mockLLM(messages, rng, cfg, log, state) {
   const sys = String(messages[0] && messages[0].content || '');
   const u = lastUser(messages);
   if (/문항 출제자/.test(sys)) { log.push({ type: 'items' }); return itemsJSON(messages, rng, state); }
+  if (/초중등 교육과정 전문가/.test(sys)) return JSON.stringify({ related: '분수의 뜻', others: ['시계 보기', '물의 순환'] });
+  if (/역할 분담 점검 보조자/.test(sys)) { const v = rng() < (cfg.roleFail != null ? cfg.roleFail : 0.25); log.push({ type: 'role', v }); return JSON.stringify({ violated: v, task: v ? '핵심만 요약해서 보여주기' : '' }); }
+  if (/분류 검사 보조자/.test(sys)) return JSON.stringify({ ok: [true, true, true, true] });
+  if (/^너는 채점 보조자/.test(sys) && /같은 점이나 바탕/.test(u)) return JSON.stringify({ ok: rng() < 0.6 ? 1 : 0 });
   if (/^너는 채점 보조자/.test(sys)) { const n = (u.match(/"level":1/g) || []).length || 1; return JSON.stringify({ items: Array.from({ length: n }, () => ({ level: rng() < 0.4 ? 2 : rng() < 0.7 ? 1 : 0, note: '분모를 같게 한다는 점을 썼어요.' })) }); }
   if (/메타인지 지식 평가 보조자/.test(sys)) {
     if (rng() < (cfg.metaFail || 0)) return '채점을 못 했어요';
