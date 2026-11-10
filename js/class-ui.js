@@ -181,13 +181,23 @@ function paintTodo(){
   const taskLine = (key==='todo.explore' && session && session.currentTask && session.currentTask.task) ? CS.concretize(String(session.currentTask.task), concreteTopic()).slice(0, 90) : '';
   box.innerHTML = `<b>${taskLine ? '지금 할 일' : '여기서 할 일'}</b> <span class="todo-text">${esc(taskLine || CS.uiCopy(band, key))}</span>${est?` <span class="todo-est">${est}</span>`:''}${req?` <span class="${/필수/.test(req)?'req-tag':'opt-tag'}">${esc(req)}</span>`:''}${band==='초저' && window.speechSynthesis ? ` <button type="button" class="head-link todo-speak" aria-label="안내 읽어 주기">🔊 읽어 주기</button>`:''}`;
 }
+const STEP_DESC = { start:'배울 것을 정하고, AI와 할 일을 나눠요', activate:'이미 아는 것을 확인해요', meta:'내가 어떻게 공부하는지 돌아봐요', pick:'이번에 쓸 공부 방법을 골라요', reflect:'누가 이끌었는지, 내 질문은 어땠는지 돌아봐요', residual:'AI 없이 혼자 풀어봐요', journal:'마지막으로 짧은 글을 남겨요' };
+const STEP_GROUPS = [ { t:'계획하기', keys:['start','activate','meta','pick'] }, { t:'해 보기', keys:['explore'] }, { t:'돌아보기', keys:['reflect','residual','journal'] } ];
 function progressLine(){
   if(!session && currentScreen()!=='start') return '';
   const step = stepKeyNow(); if(!step) return '';
-  const i = CS.STEPS.findIndex(s=>s.k===step);
+  const steps = CS.STEPS, i = steps.findIndex(s=>s.k===step); if(i<0) return '';
   const times = session && session.phaseTimes ? CS.phaseMs(session.phaseTimes, Date.now()) : {};
   const rem = CS.remainingMinutes(currentMode(), step, times[step] || 0);
-  return `<div class="pb-progress" aria-live="polite"><b>지금 ${i+1} / ${CS.STEPS.length}단계</b> · ${esc(CS.STEPS[i].t)} · 남은 시간 약 ${rem}분 <span class="pb-mode">${esc(cfg().label)}</span></div>`;
+  const c = cfg();
+  const total = steps.reduce((a,s)=>a + (s.budget ? c.budgetMin[s.budget] : 0), 0) || 1;
+  const used = Math.max(0, Math.min(100, Math.round((1 - rem/total) * 100)));
+  const desc = step==='explore' && typeof cycleNowText==='function' ? cycleNowText().replace(/^지금:\s*/, '') : STEP_DESC[step];
+  const groups = STEP_GROUPS.map(g=>`<div class="pbx-grp" style="flex:${g.keys.length}"><span class="pbx-gl">${esc(g.t)}</span><div class="pbx-segs">${g.keys.map(k=>{
+    const n = steps.findIndex(s=>s.k===k); const cls = n<i ? 'done' : n===i ? 'now' : '';
+    return `<div class="pbx-seg ${cls}"><span class="pbx-bar"></span><em>${esc(steps[n].t)}</em></div>`;
+  }).join('')}</div></div>`).join('');
+  return `<div class="pbx" aria-live="polite" aria-label="${i+1}/${steps.length}단계 ${esc(steps[i].t)}, 남은 시간 약 ${rem}분"><div class="pbx-head"><span class="pbx-badge">${i+1}<small>/${steps.length}</small></span><div class="pbx-now"><b>${esc(steps[i].t)}</b><span>${esc(desc||'')}</span></div><div class="pbx-clock" title="${esc(c.label)} 기준으로 남은 시간이에요"><b>⏱ 약 ${rem}분 남았어요</b><i class="pbx-time"><s style="width:${used}%"></s></i><small>${esc(c.label)}</small></div></div><div class="pbx-track">${groups}</div></div>`;
 }
 
 /* ---------- 단계별 소요시간 (WP0-3) ---------- */
