@@ -15,6 +15,7 @@
 <script src="js/lib/rag.js"></script>
 <script src="js/class-ui.js"></script>
 <script src="js/badges.js"></script>
+<script src="js/loading.js"></script>
 <script src="js/math-input.js"></script>
 <script src="js/onboarding.js"></script>
 <style>
@@ -1174,6 +1175,22 @@
   .bdg-pop-tip{margin:0;font-size:13px;color:var(--ink-2)}
   .bdg-confetti{font-size:22px;letter-spacing:4px;animation:bdgPop .6s ease}
   @keyframes bdgPop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
+
+  /* ===== 로딩 화면 ===== */
+  #app-loader{position:fixed;inset:0;z-index:9999;background:rgba(245,247,250,.92);display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+  #app-loader[hidden]{display:none}
+  .ld-card{background:#fff;border-radius:24px;box-shadow:0 12px 40px rgba(30,41,59,.15);padding:28px 34px;text-align:center;max-width:320px;width:calc(100% - 40px)}
+  .ld-books{display:flex;justify-content:center;gap:10px;font-size:34px;margin-bottom:12px}
+  .ld-books span{display:inline-block;animation:ldHop 1s ease-in-out infinite}
+  .ld-books span:nth-child(2){animation-delay:.15s}.ld-books span:nth-child(3){animation-delay:.3s}
+  .ld-text{font-size:17px;font-weight:900;color:var(--ink)}
+  .ld-sub{font-size:13px;color:var(--muted);margin-top:4px}
+  .ld-dots{display:flex;justify-content:center;gap:6px;margin-top:14px}
+  .ld-dots i{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:ldDot 1s infinite}
+  .ld-dots i:nth-child(2){animation-delay:.2s}.ld-dots i:nth-child(3){animation-delay:.4s}
+  @keyframes ldHop{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  @keyframes ldDot{0%,100%{opacity:.25}50%{opacity:1}}
+  @media(prefers-reduced-motion:reduce){.ld-books span,.ld-dots i{animation:none}}
 </style>
 </head>
 <body>
@@ -2449,6 +2466,7 @@ async function doAuth(){
   if(!nick || !pinReady()){ msg.hidden=false; msg.textContent='이름과 그림 4개를 모두 정해 주세요.'; return; }
   const code = reels.join('');
   const btn = $('#auth-go'); btn.disabled = true; msg.hidden = true;
+  showLoader(authTab==='signup' ? '내 공부방을 만들고 있어요' : '내 공부방을 불러오는 중이에요');
   try{
     const j = await apiJSON('/api/auth', { method:'POST', body: JSON.stringify({
       mode: authTab==='signup' ? 'signup' : 'login', nickname:nick, pin:code
@@ -2462,7 +2480,7 @@ async function doAuth(){
   }catch(e){
     msg.hidden=false; msg.textContent = e.message; window._justSignedUp = null;
   }finally{
-    btn.disabled = false; refreshAuth();
+    hideLoader(); btn.disabled = false; refreshAuth();
   }
 }
 
@@ -6592,12 +6610,14 @@ function init(){
   // 서버 세션 쿠키가 살아있으면 바로 학습터로, 아니면 로그인 화면
   switchAuthTab('login'); show('auth');
   (async ()=>{
+    showLoader('공부방을 준비하고 있어요', '잠깐만 기다려 주세요');
     try{
       const j = await apiJSON('/api/data', { method:'GET' });
       DB.accounts = { [j.nickname]: migrateAccountData(j.data) }; markSaved(j.data);
       DB.currentUser = j.nickname;
       show('home');
     }catch(e){ /* 미로그인: auth 화면 유지 */ }
+    finally{ hideLoader(); }
   })();
 }
 document.addEventListener('DOMContentLoaded', init);

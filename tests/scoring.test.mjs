@@ -143,16 +143,21 @@ test('점검 결과 → 전략 조정: 착오 유형에 맞는 방법을 까닭�
   assert.equal(none.rec, 'rehearsal'); assert.equal(none.keep, true);
 });
 
-test('디지털 배지: 끝낸 공부 기록에서 배지마다 포인트를 세고, 목표에 닿은 날을 남긴다', () => {
+test('디지털 배지: 끝낸 공부 기록에서 10 단위 포인트를 세고, 히어로는 점수 오른 만큼, 목표에 닿은 날을 남긴다', () => {
   const sess = (d, extra) => Object.assign({ startedAt: d, strategies: ['elaboration'], prior: { diagScore: 50, items: [{ conf: 1, score: 100 }, { conf: 0, score: 0 }] }, residual: { postScore: 75, items: [{ c: 80, score: 100 }] }, reflect: { tags: {}, promptRatings: [{ specificity: 4, logic: 5, clarity: 4 }] }, turns: [{ id: 'm1', role: 'me', src: 'typed', text: '나는 이렇게 생각해요' }, { kind: 'fade-propose', accepted: true }], strategyChangeLog: [], nextPlan: 'critical' }, extra || {});
-  const r = CS.computeBadges([sess('2026-11-01'), sess('2026-11-02', { strategies: ['organization'] }), sess('2026-11-03', { strategies: ['monitoring', 'critical'] })]);
+  const days = ['2026-11-01', '2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05'];
+  const strat = [['elaboration'], ['organization'], ['monitoring'], ['critical'], ['rehearsal']];
+  const r = CS.computeBadges(days.map((d, i) => sess(d, { strategies: strat[i] })));
   const by = Object.fromEntries(r.map(x => [x.id, x]));
   assert.equal(CS.BADGES.length, 8);
-  assert.equal(by.finish.earned, true); assert.equal(by.finish.earnedAt, '2026-11-03');
-  assert.equal(by.monitor.raw, 9); assert.equal(by.monitor.earned, true);
-  assert.equal(by.strategy.raw, 4); assert.equal(by.strategy.earned, true);
-  assert.equal(by.solo.raw, 3); assert.equal(by.fade.raw, 3); assert.equal(by.question.raw, 3); assert.equal(by.retry.raw, 3);
-  assert.equal(by.selfFirst.raw, 3); assert.equal(by.selfFirst.earned, false); assert.equal(by.selfFirst.cur, 3);
-  const empty = CS.computeBadges([]);
-  assert.ok(empty.every(x => !x.earned && x.cur === 0));
+  assert.ok(CS.BADGES.every(b => b.goal % 10 === 0));
+  assert.equal(by.finish.raw, 50); assert.equal(by.finish.earned, true); assert.equal(by.finish.earnedAt, '2026-11-05');
+  assert.equal(by.monitor.raw, 150); assert.equal(by.monitor.earned, true); assert.equal(by.monitor.earnedAt, '2026-11-04');
+  assert.equal(by.strategy.raw, 50); assert.equal(by.strategy.earned, true);
+  assert.equal(by.solo.raw, 150); assert.equal(by.solo.earnedAt, '2026-11-04'); // 50→75는 30포인트씩(25를 10 단위로 반올림)
+  assert.equal(by.fade.raw, 50); assert.equal(by.question.raw, 50); assert.equal(by.retry.raw, 50);
+  assert.equal(by.selfFirst.raw, 50); assert.equal(by.selfFirst.earned, false); assert.equal(by.selfFirst.cur, 50);
+  const down = CS.computeBadges([sess('2026-11-01', { prior: { diagScore: 80, items: [] }, residual: { postScore: 60, items: [] } })]);
+  assert.equal(down.find(x => x.id === 'solo').raw, 0);
+  assert.ok(CS.computeBadges([]).every(x => !x.earned && x.cur === 0));
 });

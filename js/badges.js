@@ -5,37 +5,37 @@
   const CS = root.CS = root.CS || {};
 
   const BADGES = [
-    { id: 'finish', emoji: '🧭', name: '끝까지 탐험대', c1: '#6ee7b7', c2: '#059669', goal: 3,
+    { id: 'finish', emoji: '🧭', name: '끝까지 탐험대', c1: '#6ee7b7', c2: '#059669', goal: 50,
       what: '공부를 처음부터 돌아보기까지 끝까지 해낸 탐험가에게 주는 배지예요.',
-      how: '공부 하나를 끝까지 마치면 1포인트',
+      how: '공부 하나를 끝까지 마치면 10포인트',
       tip: '돌아보기와 혼자 풀어보기까지 마치면 포인트가 쌓여요.' },
-    { id: 'monitor', emoji: '🔍', name: '마음 돋보기 탐정', c1: '#93c5fd', c2: '#2563eb', goal: 8,
+    { id: 'monitor', emoji: '🔍', name: '마음 돋보기 탐정', c1: '#93c5fd', c2: '#2563eb', goal: 100,
       what: '내가 아는지 모르는지 정확히 알아차리는 힘(메타인지)을 가진 탐정 배지예요.',
-      how: '문제를 풀고 고른 “맞을 것 같아요 / 잘 모르겠어요”가 실제 결과와 맞으면 1포인트',
+      how: '문제를 풀고 고른 “맞을 것 같아요 / 잘 모르겠어요”가 실제 결과와 맞으면 10포인트',
       tip: '답을 낸 뒤 “정말 맞을까?” 한 번 더 따져 보고 골라 봐요.' },
-    { id: 'strategy', emoji: '🎒', name: '공부 방법 수집가', c1: '#fde68a', c2: '#d97706', goal: 4,
+    { id: 'strategy', emoji: '🎒', name: '공부 방법 수집가', c1: '#fde68a', c2: '#d97706', goal: 50,
       what: '여러 가지 공부 방법을 써 보며 나에게 맞는 방법을 찾는 수집가 배지예요.',
-      how: '처음 써 보는 공부 방법이 생길 때마다 1포인트',
+      how: '처음 써 보는 공부 방법마다 10포인트(5가지를 모두 모으면 50포인트)',
       tip: '다음 공부에서는 아직 안 써 본 방법을 골라 봐요.' },
-    { id: 'solo', emoji: '🦸', name: '혼자서도 척척 히어로', c1: '#f9a8d4', c2: '#db2777', goal: 3,
-      what: 'AI 도움 없이도 배운 것을 해내는 히어로 배지예요.',
-      how: '혼자 풀어보기 점수가 공부 전보다 같거나 오르면 1포인트',
+    { id: 'solo', emoji: '🦸', name: '혼자서도 척척 히어로', c1: '#f9a8d4', c2: '#db2777', goal: 100,
+      what: 'AI 도움 없이도 배운 것이 내 머릿속에 남아, 공부 전보다 점수가 오른 만큼 힘이 세지는 히어로 배지예요.',
+      how: '혼자 풀어보기 점수가 공부 전보다 오른 만큼 포인트(예: 50점 → 80점이면 30포인트)',
       tip: '혼자 풀어보기 전에 오늘 배운 것을 한 번 떠올려 봐요.' },
-    { id: 'fade', emoji: '🪜', name: '스스로 사다리', c1: '#c4b5fd', c2: '#7c3aed', goal: 3,
+    { id: 'fade', emoji: '🪜', name: '스스로 사다리', c1: '#c4b5fd', c2: '#7c3aed', goal: 50,
       what: 'AI 도움을 조금씩 줄이며 스스로 한 칸씩 올라가는 배지예요.',
-      how: '“AI 도움을 줄여볼까요?”에서 [줄여볼래요]를 고르면 1포인트',
+      how: '“AI 도움을 줄여볼까요?”에서 [줄여볼래요]를 고르면 10포인트',
       tip: '잘 이해했다는 신호가 쌓이면 줄여 보자는 제안이 나와요.' },
-    { id: 'selfFirst', emoji: '✍️', name: '생각 먼저 작가', c1: '#fdba74', c2: '#ea580c', goal: 20,
+    { id: 'selfFirst', emoji: '✍️', name: '생각 먼저 작가', c1: '#fdba74', c2: '#ea580c', goal: 300,
       what: 'AI에게 맡기기 전에 내 생각을 먼저 쓰는 작가 배지예요.',
-      how: 'AI에게 맡기지 않고 내 생각을 먼저 쓴 말 하나마다 1포인트',
+      how: 'AI에게 맡기지 않고 내 생각을 먼저 쓴 말 하나마다 10포인트',
       tip: '“답 알려 줘” 대신 “나는 ○○라고 생각해요”로 시작해 봐요.' },
-    { id: 'question', emoji: '🪄', name: '질문 마법사', c1: '#67e8f9', c2: '#0891b2', goal: 3,
+    { id: 'question', emoji: '🪄', name: '질문 마법사', c1: '#67e8f9', c2: '#0891b2', goal: 50,
       what: '자세하고 분명한 질문으로 AI와 잘 대화하는 마법사 배지예요.',
-      how: '돌아보기에서 자세함·이어짐·분명함을 모두 4점 이상 준 내 질문 하나마다 1포인트',
+      how: '돌아보기에서 자세함·이어짐·분명함을 모두 4점 이상 준 내 질문 하나마다 10포인트',
       tip: '헷갈리는 곳을 먼저 말하고 물어보면 질문이 좋아져요.' },
-    { id: 'retry', emoji: '🛡️', name: '다시 도전 용사', c1: '#fca5a5', c2: '#dc2626', goal: 3,
+    { id: 'retry', emoji: '🛡️', name: '다시 도전 용사', c1: '#fca5a5', c2: '#dc2626', goal: 50,
       what: '점검 결과를 보고 공부 방법을 바꾸거나 다음 계획을 세우는 용사 배지예요.',
-      how: '공부 방법을 바꾸거나, 돌아보기에서 다음 공부 방법을 정하면 1포인트',
+      how: '공부 방법을 바꾸거나, 돌아보기에서 다음 공부 방법을 정하면 10포인트',
       tip: '돌아보기 끝의 “다음엔 어떤 방법으로 할까요?”에서 골라 봐요.' }
   ];
 
@@ -52,13 +52,13 @@
     const tags = (s.reflect && s.reflect.tags) || {};
     const ratings = (s.reflect && s.reflect.promptRatings) || [];
     return {
-      finish: 1,
-      monitor: agreePre + agreePost,
-      solo: ps != null && (pre == null || ps >= pre) ? 1 : 0,
-      fade: (s.turns || []).filter(t => t.kind === 'fade-propose' && t.accepted).length,
-      selfFirst: typedMine(s, autoRe).filter(t => tags[t.id] ? tags[t.id] === 'self' : !t.delegate).length,
-      question: ratings.filter(r => ['specificity', 'logic', 'clarity'].every(k => r[k] != null && r[k] >= 4)).length,
-      retry: (s.strategyChangeLog || []).length + (s.nextPlan ? 1 : 0)
+      finish: 10,
+      monitor: (agreePre + agreePost) * 10,
+      solo: ps != null && pre != null ? Math.max(0, Math.round((ps - pre) / 10) * 10) : 0, // 오른 만큼(10점 단위로 반올림)
+      fade: (s.turns || []).filter(t => t.kind === 'fade-propose' && t.accepted).length * 10,
+      selfFirst: typedMine(s, autoRe).filter(t => tags[t.id] ? tags[t.id] === 'self' : !t.delegate).length * 10,
+      question: ratings.filter(r => ['specificity', 'logic', 'clarity'].every(k => r[k] != null && r[k] >= 4)).length * 10,
+      retry: ((s.strategyChangeLog || []).length + (s.nextPlan ? 1 : 0)) * 10
     };
   }
 
@@ -71,7 +71,7 @@
       const p = pointsOf(s, autoRe);
       ids(s).forEach(id => seen.add(id));
       Object.keys(p).forEach(k => { sum[k] += p[k]; });
-      sum.strategy = seen.size;
+      sum.strategy = seen.size * 10;
       BADGES.forEach(b => { if (!at[b.id] && sum[b.id] >= b.goal) at[b.id] = String(s.startedAt || '').slice(0, 10) || '-'; });
     });
     return BADGES.map(b => ({ id: b.id, cur: Math.min(sum[b.id], b.goal), raw: sum[b.id], goal: b.goal, earned: sum[b.id] >= b.goal, earnedAt: at[b.id] || null }));
