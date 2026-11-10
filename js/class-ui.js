@@ -59,6 +59,10 @@ const ASK_RE = /(\?|？|보세요|봐요|써요|적어요|골라요|말해 줘�
 function askSentences(text){ return CS.splitSentences(String(text||'')).filter(x=>ASK_RE.test(x.trim())); }
 function askCount(text){ return askSentences(text).length; }
 function keepFirstAsk(text){ const ss = CS.splitSentences(String(text||'')); const i = ss.findIndex(x=>ASK_RE.test(x.trim())); if(i<0) return text; const rest = ss.slice(i+1).filter(x=>!ASK_RE.test(x.trim())); return ss.slice(0, i+1).concat(rest).join(' ').trim(); }
+// 오늘의 초점: 학습자가 '오늘 공부하고 싶은 것'에 성취기준 안의 특정 내용을 적었으면, 대화·과업·문항을 그 안으로 좁힌다.
+// 성취기준·해설은 정확성 판단 기준과 경계로만 쓴다(예: '합리적 선택' 성취기준에서 '시장 실패'만 원하면 기회비용·기업의 역할은 먼저 꺼내지 않는다).
+function focusText(){ const g = String((session && session.goal) || '').trim(); return g && !CS.isBroadGoal(g) ? g : ''; }
+function focusRule(){ const f = focusText(); return f ? `오늘의 초점(학습자가 직접 적은 공부하고 싶은 것): "${f}". 대화·과업·문항·정리 재료는 이 초점 안에서만 다뤄라. 성취기준과 해설은 내용이 맞는지 판단하는 기준과 벗어나지 않을 경계로만 쓰고, 초점 밖의 다른 하위 내용은 학습자가 먼저 묻기 전에는 꺼내지 마라. 초점이 성취기준과 맞지 않는 부분이 있으면 성취기준 안에서 가장 가까운 내용으로 다룬다.` : ''; }
 function qualityIssues(text, opts){
   const o = opts||{}; const issues = [];
   const subj = session && session.ctx && session.ctx.subject;
@@ -324,7 +328,7 @@ function metaFormHTML(t){
 async function genConnectOptions(){
   const raw = await callLLM([
     { role:'system', content:'너는 초중등 교육과정 전문가다. 반드시 순수 JSON만 출력한다.' },
-    { role:'user', content:`학년: ${session.ctx.grade||session.ctx.band}\n과목: ${session.ctx.subject}\n오늘 배울 성취기준: "${session.ctx.std}"\n교육과정 해설: ${session.ctx.concept||'-'}\n이 학생이 이전 학년이나 앞 단원에서 이미 배웠을 개념 가운데, 오늘 내용을 배우는 바탕이 되는 개념 1개(related)와, 이미 배웠지만 오늘 내용과는 거의 관계없는 개념 2개(others)를 골라라. 모두 학생이 아는 쉬운 낱말로 15자 이내로 쓰고, 오늘 성취기준 문장의 낱말을 그대로 옮기지 마라.\n{"related":"...","others":["...","..."]}` }
+    { role:'user', content:`학년: ${session.ctx.grade||session.ctx.band}\n과목: ${session.ctx.subject}\n오늘 배울 성취기준: "${session.ctx.std}"\n교육과정 해설: ${session.ctx.concept||'-'}\n${focusText() ? `오늘의 초점: "${focusText()}" — 바탕 개념은 이 초점의 바탕이 되는 것으로 골라라.\n` : ''}이 학생이 이전 학년이나 앞 단원에서 이미 배웠을 개념 가운데, 오늘 내용을 배우는 바탕이 되는 개념 1개(related)와, 이미 배웠지만 오늘 내용과는 거의 관계없는 개념 2개(others)를 골라라. 모두 학생이 아는 쉬운 낱말로 15자 이내로 쓰고, 오늘 성취기준 문장의 낱말을 그대로 옮기지 마라.\n{"related":"...","others":["...","..."]}` }
   ], { temperature:0, json:true });
   const j = parseJSON(raw) || {};
   const rel = String(j.related||'').trim(), oth = (Array.isArray(j.others) ? j.others : []).map(x=>String(x).trim()).filter(x=>x && x!==rel).slice(0,2);

@@ -1916,7 +1916,7 @@ const STRUCT_SCHEMAS = {
   retrieval:{ shape:'{"type":"retrieval","items":[{"q":"질문1","a":"핵심 정답1"},{"q":"질문2","a":"핵심 정답2"}]}',
              ask:s=>`지금까지 나눈 이야기에서, "${s.ctx.std}"와 관련해 학습자가 안 보고 스스로 떠올려볼 수 있는 짧은 인출 질문(q) 3~4개와, 그 핵심 정답(a, 한 문장 이내로 짧게)을 만들어줘. 질문은 지금까지 대화에서 이미 다룬 내용만 확인해라(아직 안 다룬 새 내용을 시험하지 마라).` },
   checklist:{ shape:'{"type":"checklist","items":["…","…","…"]}',
-             ask:s=>`"${s.ctx.std}"의 핵심 개념을 학습자가 한 줄로 직접 답해 볼 수 있는 짧은 질문을 3~4개 만들어줘(예: "태풍이 여름에 자주 오는 까닭은?"). "~할 수 있는가?"처럼 자기 평가만 묻는 문장은 쓰지 마라. 교육과정 해설 범위 안에서, 정답은 쓰지 마라.` }
+             ask:s=>`"${focusText() || s.ctx.std}"의 핵심 개념을 학습자가 한 줄로 직접 답해 볼 수 있는 짧은 질문을 3~4개 만들어줘(예: "태풍이 여름에 자주 오는 까닭은?"). "~할 수 있는가?"처럼 자기 평가만 묻는 문장은 쓰지 마라. 교육과정 해설 범위 안에서, 정답은 쓰지 마라.` }
 };
 /* ---------- 인지 전략 다중 선택 헬퍼(원리8) ---------- */
 // 과거 데이터(단일 strategy) 호환: strategies 배열이 없으면 strategy 하나를 배열로 취급한다.
@@ -1998,6 +1998,7 @@ async function generateTaskSpec(strat){
 성취기준: ${session.ctx.std} (${session.ctx.grade||session.ctx.band} · ${session.ctx.subject})
 교육과정 해설(내용 범위): ${session.ctx.concept||'-'}
 학습 목표: ${session.goal||'-'}
+${focusRule()}
 내용 성격: ${k?KNOWLEDGE_TYPES[k].label:'미상'}
 적용할 공부 방법: ${strat.label}(${strat.theory})
 이 방법의 과업 원칙: ${STRAT_TASK_GUIDE[strat.id]||strat.verb}
@@ -4473,6 +4474,7 @@ async function generateDiagItems(mode){
   const base = `성취기준: "${session.ctx.std}" (${session.ctx.grade||session.ctx.band} · ${session.ctx.subject})
 교육과정 해설(출제 범위 — 벗어나지 말 것): ${session.ctx.concept||'-'}
 ${evidence ? '교육과정 원문 근거(이 범위 안의 사실·용어만 쓸 것): ' + evidence + '\n' : ''}학습목표: ${session.goal||'-'}
+${focusRule()}
 `;
   const shape = `{"items":[${tags.map(t=> typeOf(t)==='mcq' ? `{"tag":"${t}","type":"mcq","q":"...","options":["...","...","...","..."],"answer":0}` : `{"tag":"${t}","type":"text","q":"...","rubric":{"full":"만점 답에 꼭 들어갈 핵심 요소","partial":"부분 점수를 줄 수 있는 최소 요소"}}`).join(',')}]}`;
   const ladder = `난이도 사다리(반드시 지킬 것):
@@ -4803,6 +4805,7 @@ function sysPrompt(instruction){
 session.ctx.concept ? `이 성취기준의 핵심 개념·내용요소(교육과정 해설): ${session.ctx.concept} — 대화 내용이 이 범위를 벗어나지 않도록 반드시 참고하라(그대로 읽어주지 말고, 학습자 수준으로 풀어서 자연스럽게 녹여라).` : '',
 (session.ctx.extraStds && session.ctx.extraStds.length) ? `학습자가 이 공부와 함께 다루고 싶다고 직접 더한 관련 성취기준: ${session.ctx.extraStds.map(e=>`[${e.subject}] ${e.name}${e.concept?' — '+e.concept:''}`).join(' / ')} — 기회가 되면 원래 성취기준과 이 내용을 자연스럽게 연결해줘라(억지로 매 턴 끼워 넣지는 마라).` : '',
 `학습목표: ${session.goal || '(아직 미정)'}`,
+focusRule(),
 `지원강도(비계) 단계: ${effSupport()} — high면 구체적 힌트, mid면 방향만, low면 되묻는 질문 위주로 행동하되 이 단계명도 말하지 마라.`,
 `학습자가 고른 공부 방법(인지전략, 여러 개 가능): ${stratLabel}`,
 `그 방법을 고른 이유: ${session.strategyReason || '(아직 없음)'}`,
