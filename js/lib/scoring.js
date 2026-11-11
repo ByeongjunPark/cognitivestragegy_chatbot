@@ -1,6 +1,6 @@
 /* 점수 표시 정규화·슬라이더 해석·발화 출처·소요시간·성장 기록 템플릿(순수 함수).
-   학생 화면·내 공부방·교사 화면·CSV가 모두 이 함수를 거쳐 같은 값을 보여 준다(WP1-2).
-   브라우저: window.CS.*, node·서버(api/teacher.js): globalThis.CS.* */
+   학생 화면·내 공부방이 모두 이 함수를 거쳐 같은 값을 보여 준다(WP1-2).
+   브라우저: window.CS.*, node(tests/*.mjs): globalThis.CS.* */
 (function (root) {
   const CS = root.CS = root.CS || {};
 

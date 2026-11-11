@@ -14,9 +14,6 @@
     },
     "api/auth.js": {
       "maxDuration": 30
-    },
-    "api/teacher.js": {
-      "maxDuration": 60
     }
   }
 }
