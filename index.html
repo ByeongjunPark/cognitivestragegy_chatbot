@@ -589,6 +589,7 @@
   .mm-node2:active{cursor:grabbing}
   .mm-edge-label{position:absolute;transform:translate(-50%,-50%);background:#fff;border:1px solid var(--line-strong);border-radius:999px;
     padding:2px 8px;font-size:10.5px;font-weight:700;color:var(--ink-2);cursor:pointer;white-space:nowrap;pointer-events:auto}
+  .mm-edge-label.selected{outline:3px solid var(--warn);outline-offset:1px}
   .mm-edit-popover{position:fixed;z-index:60;background:#fff;border:1px solid var(--line-strong);border-radius:10px;padding:6px;
     box-shadow:0 8px 24px -8px rgba(16,24,40,.32);display:flex;gap:6px}
   .mm-edit-popover input{border:1px solid var(--line-strong);border-radius:7px;padding:5px 8px;font-size:12.5px;width:160px}
@@ -3281,11 +3282,12 @@ function startSession(){
 let busy = false;
 let pendingStrategyPick = [];      // 방법 카드 다중 선택 중 임시 상태(확정 전)
 let strategyPickMode = 'initial';  // 'initial'(처음 고르기) | 'change'(원리9: 대화 중 바꾸기)
-let mmSelected = null;    // 마인드맵에서 선택된 노드 {tid, nodeId}
-let mmConnectFrom = null; // 마인드맵 연결선 긋기 모드 {tid, nodeId|null}
+let mmSelected = null;     // 마인드맵에서 선택된 노드 {tid, nodeId}
+let mmConnectFrom = null;  // 마인드맵 연결선 긋기 모드 {tid, nodeId|null}
+let mmSelectedEdge = null; // 마인드맵에서 선택된 연결선 {tid, edgeId} — Delete 키로 지우는 대상(요청사항 14)
 function enterChat(){
   $('#chat-std').textContent = session.ctx.subject;
-  mmSelected = null; mmConnectFrom = null; closeMmPopover();
+  mmSelected = null; mmConnectFrom = null; mmSelectedEdge = null; closeMmPopover();
   renderGoalStrip(); paintSupport(); paintPhase();
   renderStream();
   // 요청사항(2번째 피드백) 3: 영어는 국어·사회·과학과 달리 말하기·듣기 어포던스가 필요하다는
@@ -4331,9 +4333,13 @@ function renderMindmapHTML(tid, payload){
   const lines = edges.map(e=>{ const a=byId(e.from), b=byId(e.to); if(!a||!b) return ''; return `<line data-eid="${e.id}" x1="${a.x}%" y1="${a.y}%" x2="${b.x}%" y2="${b.y}%" />`; }).join('');
   const labels = edges.map(e=>{
     const a=byId(e.from), b=byId(e.to); if(!a||!b) return '';
-    return `<div class="mm-edge-label" data-eid="${e.id}" style="left:${(a.x+b.x)/2}%;top:${(a.y+b.y)/2}%">${e.label?esc(e.label):'+ 이름 붙이기'}</div>`;
+    const sel = mmSelectedEdge && mmSelectedEdge.tid===tid && mmSelectedEdge.edgeId===e.id;
+    return `<div class="mm-edge-label${sel?' selected':''}" data-eid="${e.id}" style="left:${(a.x+b.x)/2}%;top:${(a.y+b.y)/2}%">${e.label?esc(e.label):'+ 이름 붙이기'}</div>`;
   }).join('');
   const connectingHere = mmConnectFrom && mmConnectFrom.tid===tid;
+  // 요청사항(14번째 피드백) 다: 선택한 낱말이 있는 채로 [+ 낱말 추가]를 누르면 그 낱말의 가지로
+  // 바로 이어 붙여, 중심 낱말→2차 중심 낱말→곁가지의 3단계 위계를 쉽게 만들 수 있게 한다.
+  const parentSel = mmSelected && mmSelected.tid===tid ? byId(mmSelected.nodeId) : null;
   const nodeDivs = nodes.map(n=>{
     const cls = ['mm-node2'];
     if(n.id==='n0') cls.push('root');
@@ -4344,7 +4350,7 @@ function renderMindmapHTML(tid, payload){
   return `<div class="struct-box">
     <div class="struct-head">마인드맵 — 낱말을 옮기고, 연결선을 긋고, 관계 이름을 붙여보세요</div>
     <div class="mm-toolbar" data-tid="${tid}">
-      <button type="button" class="mm-btn" data-act="add">+ 낱말 추가</button>
+      <button type="button" class="mm-btn" data-act="add">+ 낱말 추가${parentSel ? ` (“${esc(trim(parentSel.text,10))}” 가지로)` : ''}</button>
       <button type="button" class="mm-btn ${connectingHere?'on':''}" data-act="connect">연결선 긋기${connectingHere && mmConnectFrom.nodeId==null ? ' (첫 낱말 눌러요)' : connectingHere ? ' (둘째 낱말 눌러요)' : ''}</button>
       <button type="button" class="mm-btn" data-act="del" ${mmSelected&&mmSelected.tid===tid?'':'disabled'}>선택한 낱말 지우기</button>
     </div>
@@ -4353,7 +4359,7 @@ function renderMindmapHTML(tid, payload){
       ${labels}
       ${nodeDivs}
     </div></div>
-    <p class="hint" style="padding:0 12px 10px">낱말을 눌러서 선택하거나 드래그로 옮겨요. "연결선 긋기"를 켜고 낱말 두 개를 차례로 누르면 선이 이어져요. 선 가운데 이름표를 누르면 관계 이름을 붙일 수 있어요.</p>
+    <p class="hint" style="padding:0 12px 10px">낱말을 눌러서 선택하거나 드래그로 옮겨요. 낱말을 두 번 눌러 이름을 고칠 수 있어요. 낱말을 선택한 채로 [+ 낱말 추가]를 누르면 그 낱말 아래 가지가 생겨요(중심 낱말 → 2차 중심 낱말 → 곁가지, 3단계까지). "연결선 긋기"를 켜고 낱말 두 개를 차례로 누르면 선이 이어져요. 선 가운데 이름표를 누르면 선택되고(다시 누르면 이름도 고쳐요), 선택된 선은 Delete 키로 지워요.</p>
     ${reviewBtnHTML(tid)}
   </div>`;
 }
@@ -4395,6 +4401,7 @@ function mmHandleNodeClick(tid, nodeId){
     return;
   }
   mmSelected = (mmSelected && mmSelected.tid===tid && mmSelected.nodeId===nodeId) ? null : { tid, nodeId };
+  mmSelectedEdge = null;
   renderStream();
 }
 // 노드/연결선 이름 입력용 인라인 팝오버(네이티브 prompt() 대신 앱 톤에 맞춘 최소 입력창).
@@ -4964,6 +4971,11 @@ function hasMetaLeak(s){
   // 경우(실제로는 그 시점에 카드가 안 뜨는 경우도 있어 "카드 안 뜨는데요?"로 혼란을 줬다).
   // 카드 등장은 시스템이 화면에 직접 붙이므로 AI가 말로 예고할 필요도 근거도 없다.
   if(/\([^)]{0,25}카드[^)]{0,20}\)/.test(t)) return true;
+  // 요청사항(14번째 피드백) 1: "표로 정리해 줬어"처럼, 실제로는 학습자가 버튼을 눌러야만
+  // 생기는 표·마인드맵 같은 산출물을 말로만 "만들어 줬다"고 보고하는 경우(화면엔 아무것도 안
+  // 뜸) — "~해볼래?"처럼 학습자에게 해보라고 권하는 말은 그대로 두고, AI 자신이 이미
+  // 만들어서/보여줬다고 완료형으로 말한 경우만 잡는다.
+  if(/(표|도표|그림|마인드맵|차트)\s*(를|을|으로|로)?\s*(정리|작성)?\s*(해\s*줬|해줄게|해\s*놨|해놨|만들어\s*줬|만들어줄게|그려\s*줬|그려줄게|그려\s*놨|보여\s*줬|보여\s*줄게|드렸)(어|습니다|요)?/.test(t)) return true;
   return false;
 }
 async function ai(instruction, kind, structOffer, opts){
@@ -5007,7 +5019,7 @@ async function ai(instruction, kind, structOffer, opts){
     }
     if(hasListDump(text) || hasMetaLeak(text) || hasTableDump(text)){
       try{
-        const retrySys = sysPrompt(instruction + ' (경고: 방금 번호 목록·표로 대신 정리하거나, 지시문·조건문·괄호 설명, 3인칭 서술, 학습자 말을 지어낸 대화, 화면 카드 예고를 썼다. 그런 것 없이 학습자에게 실제로 건넬 말만, 질문은 1개만 다시 말하라.)');
+        const retrySys = sysPrompt(instruction + ' (경고: 방금 번호 목록·표로 대신 정리하거나, 지시문·조건문·괄호 설명, 3인칭 서술, 학습자 말을 지어낸 대화, 화면 카드 예고를 썼다. 또는 표·마인드맵·그림처럼 학습자가 버튼을 눌러야만 화면에 생기는 것을 네가 이미 만들어서 줬다고 말했다(실제로는 화면에 아무것도 안 뜬다) — 그런 것 없이 학습자에게 실제로 건넬 말만, 질문은 1개만 다시 말하라.)');
         const retryText = await callLLM(buildMessages(retrySys).concat([tail]));
         if(!hasListDump(retryText) && !hasMetaLeak(retryText) && !hasTableDump(retryText)) text = retryText;
       }catch(e){ /* 재시도 실패 시 원래 text를 후처리 필터에 맡긴다 */ }
@@ -5170,6 +5182,9 @@ function stripMetaLeak(s){
     if(/(^|[^가-힣])학습자(가|는|에게|를|의)\s/.test(t)) return false;
     if(/(답했다고|말했다고|대답했다고|썼다고)\s*(치|가정)/.test(t)) return false;
     if(/^(학습자|학생)\s*[:：]/.test(t)) return false;
+    // 요청사항(14번째 피드백) 1: 재시도 후에도 "표로 정리해 줬어" 같은 헛 보고가 남으면 그
+    // 줄만 지운다(실제로 만들어진 것이 없는데 "줬다"고 말하면 학습자가 화면에서 못 찾고 헷갈린다).
+    if(/(표|도표|그림|마인드맵|차트)\s*(를|을|으로|로)?\s*(정리|작성)?\s*(해\s*줬|해줄게|해\s*놨|해놨|만들어\s*줬|만들어줄게|그려\s*줬|그려줄게|그려\s*놨|보여\s*줬|보여\s*줄게|드렸)(어|습니다|요)?/.test(t)) return false;
     return true;
   }).join('\n').replace(/\n{3,}/g, '\n\n').trim();
   return kept || String(s);
@@ -6125,6 +6140,11 @@ function init(){
     session.helpBoost = CS.startBoost(aiTurnCount(), 2);
     (session.helpRequests = session.helpRequests||[]).push({ kind:'boost', support:session.support, at:new Date().toISOString(), aiTurn:aiTurnCount() });
     pushNote(CS.COPY.helpBoostNote); paintSupport();
+    // 버그 수정(요청사항 14번째 피드백 2): 예전엔 설정만 바꾸고 다음에 내가 먼저 말을 걸어야만
+    // 효과가 보였다 — 눌러도 그 자리에서 눈에 띄는 변화가 없어 "안 바뀐다"는 지적을 받았다.
+    // "막혔어요"처럼 누르자마자 바로 지금 막힌 부분에 더 자세한 힌트를 하나 내준다.
+    pushMe('조금 더 자세히 도와줘.', false, 'button');
+    ai('학습자가 지금 막힌 부분을 조금 더 자세히 도와달라고 했다. 지금까지 나눈 이야기를 바탕으로, 바로 다음에 해볼 수 있는 더 구체적인 힌트나 단서를 하나 줘라(정답은 주지 마라).');
   });
   $('#stream').addEventListener('click', e=>{
     const cc = e.target.closest('[data-pick="choice"] .chip');
@@ -6364,14 +6384,22 @@ function init(){
       const act = mmBtn.dataset.act;
       if(act==='add'){
         const rect = mmBtn.getBoundingClientRect();
+        // 요청사항(14번째 피드백) 다: 선택한 낱말이 있으면 그 낱말을 부모로 삼아 바로 이어
+        // 붙인다(3단계 위계: 중심 낱말 → 2차 중심 낱말 → 곁가지). 선택이 없으면 예전처럼
+        // 중심 낱말 근처에 흩어서 놓는다(첫 낱말들을 만들 때 쓰던 방식 그대로 유지).
+        const parent = (mmSelected && mmSelected.tid===tid) ? payload.nodes.find(n=>n.id===mmSelected.nodeId) : null;
         mmEditPopover(rect.left, rect.bottom+6, '', val=>{
           if(!val) return;
-          payload.nodes.push({ id:'n'+uid(), text:anonymize(val).slice(0,40), x:20+Math.random()*60, y:20+Math.random()*60 });
+          const nid = 'n'+uid();
+          const x = parent ? Math.max(6, Math.min(94, parent.x + (Math.random()*30-15))) : 20+Math.random()*60;
+          const y = parent ? Math.max(8, Math.min(92, parent.y + (Math.random()*26-13))) : 20+Math.random()*60;
+          payload.nodes.push({ id:nid, text:anonymize(val).slice(0,40), x, y });
+          if(parent) payload.edges.push({ id:uid(), from:parent.id, to:nid, label:'' });
           renderStream();
         });
       } else if(act==='connect'){
         mmConnectFrom = (mmConnectFrom && mmConnectFrom.tid===tid) ? null : { tid, nodeId:null };
-        mmSelected = null;
+        mmSelected = null; mmSelectedEdge = null;
         renderStream();
       } else if(act==='del'){
         if(!mmSelected || mmSelected.tid!==tid) return;
@@ -6383,18 +6411,27 @@ function init(){
       }
       return;
     }
+    // 요청사항(14번째 피드백) 나: 연결선은 지울 방법이 아예 없었다 — 이름표를 누르면 먼저
+    // "선택"만 되고(Delete 키로 지울 수 있는 상태), 이미 선택된 상태에서 한 번 더 누르면
+    // 이름을 고치는 팝오버가 뜬다(원래 있던 "눌러서 이름 고치기"는 그대로 둔 채 한 단계만 앞에 추가).
     const mmLbl = e.target.closest('.mm-edge-label');
     if(mmLbl){
       const canvas = mmLbl.closest('.mm-canvas'); const tid = canvas.dataset.tid; const eid = mmLbl.dataset.eid;
       const t = session.turns.find(x=>x.id===tid); if(!t) return;
       const edge = t.structured.payload.edges.find(x=>x.id===eid); if(!edge) return;
+      const already = mmSelectedEdge && mmSelectedEdge.tid===tid && mmSelectedEdge.edgeId===eid;
+      if(!already){
+        mmSelectedEdge = { tid, edgeId:eid }; mmSelected = null; mmConnectFrom = null;
+        renderStream();
+        return;
+      }
       const rect = mmLbl.getBoundingClientRect();
       mmEditPopover(rect.left, rect.bottom+4, edge.label||'', val=>{ edge.label = anonymize(val).slice(0,24); renderStream(); });
       return;
     }
     const mmCanvasBg = e.target.closest('.mm-canvas');
     if(mmCanvasBg && e.target===mmCanvasBg){
-      mmSelected = null; mmConnectFrom = null; renderStream();
+      mmSelected = null; mmConnectFrom = null; mmSelectedEdge = null; renderStream();
       return;
     }
   });
@@ -6476,6 +6513,20 @@ function init(){
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
   });
+  // 요청사항(14번째 피드백) 가: 중심 낱말을 포함해 어떤 낱말이든 두 번 눌러 이름을 고칠 수 있게 한다
+  // (예전엔 중심 낱말은 처음 정해진 뒤로 고칠 방법이 아예 없었다).
+  $('#stream').addEventListener('dblclick', e=>{
+    const nodeEl = e.target.closest('.mm-node2'); if(!nodeEl) return;
+    const canvas = nodeEl.closest('.mm-canvas'); if(!canvas) return;
+    const tid = canvas.dataset.tid, nid = nodeEl.dataset.nid;
+    const node = mmNodeAt(tid, nid); if(!node) return;
+    const rect = nodeEl.getBoundingClientRect();
+    mmEditPopover(rect.left, rect.bottom+6, node.text||'', val=>{
+      if(!val) return;
+      node.text = anonymize(val).slice(0,40);
+      renderStream();
+    });
+  });
   $('#btn-change-strategy').addEventListener('click', ()=>{
     if(busy || session.phase!=='explore' || !session.cycleStarted) return;
     strategyPickMode = 'change';
@@ -6514,6 +6565,30 @@ function init(){
   // (눌린 버튼은 목록을 다시 그리면서 화면에서 사라지므로, 눌린 시점의 경로로 안/밖을 가린다)
   document.addEventListener('click', e=>{ const q = $('#quick-actions'); if(q && q.classList.contains('qa-open') && !(e.composedPath ? e.composedPath() : []).includes(q)){ q.classList.remove('qa-open'); renderQuickActions(); } });
   document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ const q = $('#quick-actions'); if(q && q.classList.contains('qa-open')){ q.classList.remove('qa-open'); renderQuickActions(); } } });
+  // 요청사항(14번째 피드백) 나: 연결선(그리고 낱말)을 Delete 키로 지운다. 글자를 입력하는 칸에
+  // 포커스가 있을 때는(지우기가 아니라 글자를 지우려는 것일 수 있으니) 동작하지 않는다.
+  document.addEventListener('keydown', e=>{
+    if(e.key!=='Delete' && e.key!=='Backspace') return;
+    const tag = (document.activeElement && document.activeElement.tagName) || '';
+    if(tag==='INPUT' || tag==='TEXTAREA') return;
+    if(mmSelectedEdge){
+      const t = session && session.turns.find(x=>x.id===mmSelectedEdge.tid); if(!t || !t.structured) return;
+      e.preventDefault();
+      const payload = t.structured.payload;
+      payload.edges = payload.edges.filter(ed=>ed.id!==mmSelectedEdge.edgeId);
+      mmSelectedEdge = null;
+      renderStream();
+    } else if(mmSelected){
+      const t = session && session.turns.find(x=>x.id===mmSelected.tid); if(!t || !t.structured) return;
+      if(mmSelected.nodeId==='n0'){ modal('안내','중심 낱말은 지울 수 없어요.'); return; }
+      e.preventDefault();
+      const payload = t.structured.payload;
+      payload.nodes = payload.nodes.filter(n=>n.id!==mmSelected.nodeId);
+      payload.edges = payload.edges.filter(ed=>ed.from!==mmSelected.nodeId && ed.to!==mmSelected.nodeId);
+      mmSelected = null;
+      renderStream();
+    }
+  });
   $('#btn-prep-next').addEventListener('click', prepNext);
   $('#chat-finish').addEventListener('click', ()=> show('reflect'));
 

@@ -266,8 +266,12 @@ function choiceChipsHTML(list, group){
 /* ---------- 스스로 점검 카드 (WP1-2) — 숫자 대신 3단계 막대 + 하위 지표 체크 ---------- */
 function levelBarHTML(a){
   const w = a.level==null ? 0 : [22, 58, 100][a.level];
+  // 요청사항(14번째 피드백) 5: "아는 것 확인 결과"는 내 답을 그대로 보여주는데, "스스로 점검
+  // 결과"는 점수만 있고 근거가 안 보인다는 지적 — metaScoreView가 이미 만들어 두고도 안 쓰던
+  // a.quote(채점할 때 AI가 그대로 뽑아 둔 내 말 한 토막)를 여기서 보여준다.
   return `<div class="lv3-row"><span class="lv3-lab">${esc(a.label)}</span><span class="lv3-bar l${a.level==null?'x':a.level}" role="img" aria-label="${esc(a.label)}: ${esc(a.levelLabel)}"><i style="width:${w}%"></i></span><b class="lv3-txt">${esc(a.levelLabel)}</b></div>` +
-    (a.indicators.length ? `<div class="msc-ind">${a.indicators.map(x=>`<span class="${x.on?'on':''}">${x.on?'✓':'·'} ${esc(x.label)}</span>`).join('')}</div>` : '');
+    (a.indicators.length ? `<div class="msc-ind">${a.indicators.map(x=>`<span class="${x.on?'on':''}">${x.on?'✓':'·'} ${esc(x.label)}</span>`).join('')}</div>` : '') +
+    (a.quote ? `<div class="msc-note">근거: "${esc(a.quote)}"</div>` : '');
 }
 function metaCardInner(meta){
   const v = CS.metaScoreView(meta);
