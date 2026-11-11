@@ -18,12 +18,14 @@ test('WP1-4 고정 문구 사전은 모두 해요체(반말 0건)', () => {
   assert.deepEqual(bad, []);
 });
 
-test('WP3-7 반응 방식 4종이 차례로 돌고, 모두 "인정 1문장 + 질문 1개 + 추궁 금지" 구조를 갖는다', () => {
+test('WP3-7 반응 방식 4종이 차례로 돌고, 모두 "먼저 대답·정리 + 동의·칭찬 + 필요할 때만 질문 1개 + 추궁 금지" 구조를 갖는다', () => {
   const seen = [0, 1, 2, 3].map(i => CS.buildReactionInstr(i));
   CS.REACTION_STYLES.forEach((st, i) => assert.ok(seen[i].includes(st.instr)));
   assert.equal(new Set(seen).size, 4);
   assert.equal(CS.buildReactionInstr(4), seen[0]);
-  seen.forEach(s => { assert.ok(/질문은 딱 1개/.test(s)); assert.ok(/왜 그렇게 말했어/.test(s)); });
+  seen.forEach(s => { assert.ok(/질문 1개/.test(s)); assert.ok(/분명히 동의/.test(s)); assert.ok(/왜 그렇게 말했어/.test(s)); });
+  // 질문이 이어졌으면 이번엔 질문 없이 안내
+  assert.ok(/질문하지 마라/.test(CS.buildReactionInstr(0, { noQuestion: true })));
   const p = CS.pickVaried(['a', 'b', 'c'], 1); assert.notEqual(p.i, 1);
 });
 

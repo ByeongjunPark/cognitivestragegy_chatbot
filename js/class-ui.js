@@ -150,7 +150,14 @@ function lastTypedText(){
 function reactionAddon(o){
   const said = lastTypedText(); if(!said) return '';
   session.reactIdx = (session.reactIdx||0) + 1;
-  let add = ' ' + CS.buildReactionInstr(session.reactIdx);
+  // 최근 AI 말이 두 번 연달아 질문으로 끝났으면 이번엔 질문 없이 대답·정리·안내만(질문만 계속한다는 지적)
+  const aiTexts = session.turns.filter(t=>t.role==='ai' && t.text && !t.structured).slice(-2).map(t=>t.text);
+  const qStreak = aiTexts.length===2 && aiTexts.every(x=>/[?？]\s*$/.test(x.trim()));
+  let add = ' ' + CS.buildReactionInstr(session.reactIdx, { noQuestion: qStreak && !(o && o.suffix) });
+  // 같은 질문을 되풀이하면(원하는 답이 안 나와서) 방식을 바꾸게 한다
+  if(aiTexts.length===2){ const qs = aiTexts.map(x=>CS.splitSentences(x).filter(CS.isQuestion).pop()||'').map(x=>new Set(CS.contentTokens(x)));
+    const inter = [...qs[0]].filter(w=>qs[1].has(w)).length, uni = new Set([...qs[0], ...qs[1]]).size;
+    if(uni && inter/uni >= 0.5) add += ' 방금 같은 질문을 되풀이했다. 또 같은 질문을 하지 마라. 학습자 답에서 맞는 부분을 인정해 한 줄로 정리하고, 고를 수 있는 보기 두 개를 주거나 작은 단서를 준 뒤 다른 방식으로 묻거나, 그 질문은 넘어가라.'; }
   if(o && o.suffix) add += ' 이번 턴은 질문을 하지 말고 ①②만 한다(질문은 화면이 따로 붙인다).';
   const kind = CS.classifyOffScript(said, session.scope||[]);
   if(kind && session.phase!=='prep'){ add += ' ' + CS.OFFSCRIPT_POLICY[kind]; (session.offScript = session.offScript||[]).push({ kind, at:new Date().toISOString() }); }
@@ -766,3 +773,13 @@ document.addEventListener('click', e=>{
   const el = document.getElementById('chat-input'); if(!el || el.disabled) return;
   el.value = (el.value ? el.value + ' ' : '') + b.dataset.v; el.focus();
 });
+
+/* ---------- 과목별 대화 방식(사회·국어는 관점과 배경지식, 과학·수학은 근거와 과정) ---------- */
+function subjectTalkRule(){
+  const subj = String((session && session.ctx && session.ctx.subject) || '');
+  if(/사회|역사|도덕/.test(subj)) return '사회 과목 대화 규칙: 정답이 하나가 아닌 물음이 많다. 학습자의 견해를 먼저 존중해 짚고, 교육과정 원문 근거에 있는 배경지식(사실·사례) 한두 가지를 짧게 덧붙여 생각할 거리를 준다. 필요하면 다른 입장(관련된 사람·집단)의 관점을 하나 소개하고 학습자 생각과 비교해 보게 한다. 사실과 의견을 구분해서 말한다.';
+  if(/국어/.test(subj)) return '국어 과목 대화 규칙: 학습자의 해석을 먼저 존중하고, 글이나 문장의 근거가 되는 부분을 짚어 주며, 다른 해석도 가능함을 보여 준다.';
+  if(/과학/.test(subj)) return '과학 과목 대화 규칙: 학습자의 생각을 현상·관찰과 이어 주고, 근거(관찰·실험 결과)를 바탕으로 말하게 돕는다.';
+  if(/수학/.test(subj)) return '수학 과목 대화 규칙: 답보다 풀이 과정을 함께 보고, 맞게 한 단계는 분명히 칭찬한 뒤 처음 어긋난 단계 하나만 짚는다.';
+  return '';
+}

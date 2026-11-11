@@ -95,10 +95,16 @@
     { k: 'check', t: '이해 확인', instr: '학습자가 말한 내용 중 하나를 학습자 스스로 확인해 보게 한다(정답 여부를 대신 판정하지 않는다)' },
     { k: 'praise', t: '칭찬', instr: '학습자가 실제로 한 행동(시도·설명·연결)을 구체적으로 칭찬한다' }
   ];
-  function buildReactionInstr(styleIdx) {
+  function buildReactionInstr(styleIdx, o) {
     const st = REACTION_STYLES[((styleIdx || 0) % REACTION_STYLES.length + REACTION_STYLES.length) % REACTION_STYLES.length];
-    return `[반응 순서] ① ${st.instr}. ② 그 말에서 잘한 점이나 마음을 구체적으로 인정하는 한 문장. ③ 질문은 딱 1개. ` +
-      `"왜 그렇게 말했어?", "왜 그랬어?"처럼 따지는 말투는 쓰지 말고, 까닭이 궁금하면 "어떤 점 때문에 그렇게 생각했어요?"처럼 부드럽게 묻는다. 예상과 다른 답이어도 탓하지 말고 자연스럽게 받아 이어 간다.`;
+    const opt = o || {};
+    const ask = opt.noQuestion
+      ? '③ 이번에는 질문하지 마라. 대신 "~해 봐요"처럼 다음에 할 일을 한 문장으로 안내한다.'
+      : '③ 꼭 필요할 때만 질문 1개(학습자 말에 먼저 대답하고 정리하는 게 우선이다).';
+    return `[반응 순서] ① 학습자가 물었으면 먼저 짧게 대답하거나 단서를 준다(정답·풀이를 통째로 주지는 않는다). 물은 게 아니면 ${st.instr}. ` +
+      `② 동의할 부분이 있으면 "맞아요", "좋은 생각이에요"처럼 분명히 동의하고, 학습자가 실제로 한 시도·생각을 구체적으로 칭찬하는 한 문장. ${ask} ` +
+      `"왜 그렇게 말했어?", "왜 그랬어?"처럼 따지는 말투는 쓰지 말고, 까닭이 궁금하면 "어떤 점 때문에 그렇게 생각했어요?"처럼 부드럽게 묻는다. ` +
+      `예상과 다른 답이어도 탓하지 말고, 그 답에서 맞는 부분을 먼저 살려 한 줄로 정리해 준 뒤 이어 간다.`;
   }
   function pickVaried(list, lastIdx) {
     if (!list.length) return { i: -1, v: '' };
