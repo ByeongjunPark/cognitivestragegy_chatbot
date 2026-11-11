@@ -146,8 +146,10 @@ const TOUR_STEPS = [
     b:'지난 공부 기록이에요. 눌러서 그날 나눈 이야기와 점수를 다시 볼 수 있어요. (지금 보이는 내용은 미리 보기용 예시예요)' },
   { sec:'1-나', t:'나의 성장 보기', screen:'home', mockHome:true, el:()=>document.querySelector('.widget.growth'),
     b:'공부 방법·공부 전후·질문 실력·스스로 점검, 네 가지 탭으로 내가 쌓아온 기록을 그래프로 봐요. (지금 보이는 그래프는 미리 보기용 예시예요)' },
-  { sec:'1-다', t:'디지털 배지 보기', screen:'home', mockHome:true, el:()=>document.getElementById('home-badges'),
-    b:'끝까지 하기·도움 줄이기처럼 메타인지 행동을 하면 포인트가 쌓여 배지를 모을 수 있어요. 눌러서 어떻게 모으는지 봐요. (지금 보이는 진행 정도는 미리 보기용 예시예요)' },
+  { sec:'1-다', t:'디지털 배지 보기', screen:'home', mockHome:true, el:()=>[document.getElementById('home-badges'), document.querySelector('#scrim .modal')],
+    // 요청사항(23번째 피드백): "새 배지를 얻었어요!" 팝업은 배지를 소개하는 이 단계에서만 띄운다.
+    postShow:()=>{ const s=document.getElementById('scrim'); if(s && !s.classList.contains('open') && window.openBadge) window.openBadge('finish', true); },
+    b:'끝까지 하기·도움 줄이기처럼 메타인지 행동을 하면 포인트가 쌓여 배지를 모아요. 목표 포인트에 닿으면 이렇게 축하 팝업이 떠요. (지금 보이는 건 미리 보기용 예시예요)' },
   { sec:'2-가', t:'공부 방식 · 학교급 · 배울 것 정하기', screen:'start', el:()=>{ const m = document.getElementById('st-mode'); return m && m.closest('.card'); },
     b:'수업시간모드(학교급별 시간 제한)와 자유모드 중 고르고, 학교급을 고르면 학년·과목이 그 학교급만 나와요. "오늘 공부하고 싶은 것"을 내 말로 적으면 맞는 내용을 찾아 줘요.' },
   { sec:'2-나', t:'AI와 할 일 나누기', screen:'start', el:()=>document.getElementById('tb-sliders'),
@@ -162,13 +164,16 @@ const TOUR_STEPS = [
   { sec:'3-라', t:'방법대로 해 보기', mockScreen:'chat', mockSetup:'apply', el:()=>document.getElementById('btn-stuck'),
     b:'고른 방법으로 실제 과업을 해 봐요. 막히면 [막혔어요]를 눌러 필요한 도움을 골라요. 다음 몇 단계에서 판단하기·정리 도구·수식 기호도 보여줄게요.' },
   { sec:'3-마', t:'이 말 판단하기', mockScreen:'chat', mockSetup:'apply', el:()=>document.querySelector('#judge-scrim .modal'),
-    postShow:()=>openJudgeModal('t1'),
+    postShow:()=>{ const j=document.getElementById('judge-scrim'); if(j && !j.classList.contains('open')) openJudgeModal('t1'); },
     b:'AI 말이 맞는지 틀렸는지는 AI가 정하지 않아요 — "좋아요 / 잘 모르겠어요 / 다른 생각"으로 내가 직접 판단해요.' },
-  { sec:'3-바', t:'정리 도구', mockScreen:'chat', mockSetup:'apply', el:()=>document.getElementById('quick-actions'),
-    postShow:()=>{ const q=document.getElementById('quick-actions'); if(q){ q.classList.add('qa-open'); renderQuickActions(); } },
-    b:'생각을 표·마인드맵 같은 판에 직접 정리하는 도구예요. 하나를 고르면 그 도구가 바로 펼쳐져요.' },
-  { sec:'3-사', t:'수식 기호', mockScreen:'chat', mockSetup:'apply', el:()=>document.getElementById('math-symbols'),
-    b:'수학 공부에서는 분수·제곱 같은 수식 기호를 눌러서 바로 넣을 수 있어요.' },
+  // 정리 도구 목록(.qa-menu)은 버튼 위로 떠 있는(absolute) 상자라 버튼과 목록을 함께 감싸 가리킨다.
+  { sec:'3-바', t:'정리 도구', mockScreen:'chat', mockSetup:'apply', el:()=>[document.getElementById('quick-actions'), document.querySelector('#quick-actions .qa-menu')],
+    postShow:()=>{ const q=document.getElementById('quick-actions'); if(q && !q.classList.contains('qa-open')){ q.classList.add('qa-open'); renderQuickActions(); } },
+    b:'[정리 도구]를 누르면 이렇게 목록이 열려요 — 표로 정리하기, 마인드맵으로 정리하기처럼 고른 공부 방법에 맞는 도구가 나와요. 하나를 고르면 그 판이 대화창에 바로 펼쳐지고, 칸은 내가 직접 채워요.' },
+  // 수식 기호판은 [수식 기호] 버튼을 눌러야(body.tools-open) 보이는 판이라, 이 단계에서만 열어 둔다.
+  { sec:'3-사', t:'수식 기호', mockScreen:'chat', mockSetup:'apply', el:()=>[document.getElementById('btn-tools'), document.getElementById('math-symbols')],
+    postShow:()=>{ if(!document.body.classList.contains('tools-open')){ document.body.classList.add('tools-open'); _tourOpenedTools = true; } },
+    b:'[수식 기호]를 누르면 분수 틀·제곱·√·×·÷ 같은 기호판이 열려요. 누르면 지금 쓰는 칸에 바로 들어가고, [풀이 단계로 쓰기]로 한 줄에 한 단계씩 풀이를 쓸 수도 있어요.' },
   { sec:'4-가', t:'돌아보기 — AI위임 성찰', mockScreen:'reflect', mockSetup:'reflect', el:()=>document.querySelector('.tl-tags'),
     b:'내가 한 말마다 "내가 생각했는지 · AI에게 맡겼는지"를 표시해요.' },
   { sec:'4-나', t:'돌아보기 — 프롬프트 성찰', mockScreen:'reflect', mockSetup:'reflect', el:()=>document.querySelector('.prompt-rate'),
@@ -184,13 +189,27 @@ let _tourSessionBackup;
 let _tourHasBackup = false;
 let _tourAccBackup;
 let _tourHasAccBackup = false;
+let _tourSyncTimer = null;
+let _tourOpenedTools = false;
 // DOM(막·구멍·설명카드)만 지운다 — 단계를 넘길 때마다 매번 부른다(투어 자체를 끝내는 건 아님).
-// 버그 수정(22번째 피드백): 판단하기 모달을 쓰는 단계(3-마)를 지나 다음 단계로 가도
-// 모달이 안 닫혀 있으면 그다음 단계 위에 계속 겹쳐 보인다 — 단계를 넘길 때마다 닫는다.
+// 그 단계가 열어 둔 실제 팝업(판단하기 모달·배지 팝업·정리 도구 목록·수식 기호판)도 함께 닫는다
+// — 안 닫으면 다음 단계 위에 계속 겹쳐 보인다.
 function clearTourDom(){
   document.querySelectorAll('.tour-dim,.tour-hole,.tour-card').forEach(e=>e.remove());
-  if(_tourResize){ window.removeEventListener('resize', _tourResize); _tourResize = null; }
+  if(_tourResize){ window.removeEventListener('resize', _tourResize, true); window.removeEventListener('scroll', _tourResize, true); _tourResize = null; }
+  if(_tourSyncTimer){ clearInterval(_tourSyncTimer); _tourSyncTimer = null; }
   const judgeScrim = document.getElementById('judge-scrim'); if(judgeScrim) judgeScrim.classList.remove('open');
+  const scrim = document.getElementById('scrim'); if(scrim) scrim.classList.remove('open');
+  const q = document.getElementById('quick-actions'); if(q && q.classList.contains('qa-open')){ q.classList.remove('qa-open'); if(typeof renderQuickActions==='function' && session) renderQuickActions(); }
+  if(_tourOpenedTools){ document.body.classList.remove('tools-open'); _tourOpenedTools = false; }
+}
+// 여러 요소(예: 정리 도구 버튼 + 그 위에 떠 있는 목록)를 한 번에 감싸는 사각형
+function tourRect(targets){
+  const rs = targets.map(t=>t.getBoundingClientRect()).filter(r=>r.width>0 || r.height>0);
+  if(!rs.length) return null;
+  const left = Math.min(...rs.map(r=>r.left)), top = Math.min(...rs.map(r=>r.top));
+  const right = Math.max(...rs.map(r=>r.right)), bottom = Math.max(...rs.map(r=>r.bottom));
+  return { left, top, right, bottom, width:right-left, height:bottom-top };
 }
 // 투어를 완전히 끝낸다 — 가짜 세션·더미 기록이 있었으면 원래 값(session은 대개 null,
 // acc.sessions는 내 진짜 기록)으로 되돌리고 홈으로 간다.
@@ -201,12 +220,14 @@ function closeTour(){
   clearTourDom();
   if(_tourHasAccBackup){ const acc=account(); if(acc) acc.sessions=_tourAccBackup; _tourAccBackup=undefined; _tourHasAccBackup=false; }
   if(_tourHasBackup){ session = _tourSessionBackup; _tourSessionBackup = undefined; _tourHasBackup = false; }
+  window._tourActive = false;
   show('home');
 }
 function renderTour(i){
   clearTourDom();
-  // 방어적으로 한 번 더: 투어가 떠 있는 동안은 이 팝업(#scrim)이 항상 닫혀 있어야 한다.
-  const scrim = document.getElementById('scrim'); if(scrim) scrim.classList.remove('open');
+  // 투어 중임을 표시 — 더미 기록으로 그린 배지가 "새 배지를 얻었어요!"를 멋대로 띄우거나
+  // "이미 봤다" 기록을 남기지 않게 한다(js/badges.js).
+  window._tourActive = true;
   _tourIdx = Math.max(0, Math.min(TOUR_STEPS.length-1, i||0));
   const step = TOUR_STEPS[_tourIdx];
   // 이 단계가 더 이상 가짜 세션/더미 기록을 안 쓰면, 떠나기 전에 원래 값으로 되돌린다.
@@ -241,34 +262,51 @@ function renderTour(i){
       <span class="row" style="gap:8px">${_tourIdx>0?'<button type="button" class="btn btn-sm" id="tour-prev">← 이전</button>':''}${_tourIdx<total-1?`<button type="button" class="btn btn-sm btn-primary" id="tour-next">다음 (${_tourIdx+1}/${total}) →</button>`:'<button type="button" class="btn btn-sm btn-primary" id="tour-practice">연습해 보기</button>'}</span>
     </div>`;
   document.body.appendChild(card);
-  const target = step.el ? step.el() : null;
-  if(target){
+  const getTargets = ()=>{ const t = step.el ? step.el() : null; return (Array.isArray(t) ? t : [t]).filter(Boolean); };
+  const first = getTargets()[0];
+  if(first){
     document.body.insertAdjacentHTML('beforeend', '<div class="tour-hole"></div>');
     const hole = document.querySelector('.tour-hole');
+    // 카드 자리: 가리키는 상자의 아래 → 위 → 오른쪽 → 왼쪽 중 화면 안에 들어가고 상자와 안
+    // 겹치는 곳을 고르고, 다 안 되면 화면 오른쪽 아래 구석에 둔다(상자를 가리지 않게).
     const place = ()=>{
-      const r = target.getBoundingClientRect(), pad = 6;
+      const r = tourRect(getTargets()); if(!r){ hole.style.width='0px'; card.classList.add('centered'); return; }
+      card.classList.remove('centered');
+      const pad = 6, gap = 12, vw = window.innerWidth, vh = window.innerHeight;
       hole.style.left = (r.left-pad)+'px'; hole.style.top = (r.top-pad)+'px';
       hole.style.width = (r.width+pad*2)+'px'; hole.style.height = (r.height+pad*2)+'px';
-      const vw = window.innerWidth, vh = window.innerHeight;
-      const cardH = card.offsetHeight || 180;
-      let top = r.bottom + pad + 12;
-      if(top + cardH > vh - 10) top = Math.max(10, r.top - pad - cardH - 12);
-      const left = Math.min(Math.max(10, r.left), vw - card.offsetWidth - 10);
-      card.style.top = top+'px'; card.style.left = left+'px';
+      const cw = card.offsetWidth || 300, ch = card.offsetHeight || 180;
+      const clampX = x => Math.min(Math.max(10, x), vw - cw - 10);
+      const clampY = y => Math.min(Math.max(10, y), vh - ch - 10);
+      const cand = [
+        { top: r.bottom + pad + gap, left: clampX(r.left), ok: r.bottom + pad + gap + ch <= vh - 10 },
+        { top: r.top - pad - gap - ch, left: clampX(r.left), ok: r.top - pad - gap - ch >= 10 },
+        { top: clampY(r.top), left: r.right + pad + gap, ok: r.right + pad + gap + cw <= vw - 10 },
+        { top: clampY(r.top), left: r.left - pad - gap - cw, ok: r.left - pad - gap - cw >= 10 }
+      ];
+      const c = cand.find(x=>x.ok) || { top: vh - ch - 10, left: vw - cw - 10 };
+      card.style.top = c.top+'px'; card.style.left = c.left+'px';
     };
-    // 버그 수정(22번째 피드백 "최종 성찰 팝업이 저지랄"): 부드러운 스크롤 애니메이션이 끝나기
-    // 전에 고정된 260ms 뒤 좌표를 다시 재던 것이 타이밍이 안 맞아 카드가 엉뚱한 곳에 겹쳐
-    // 보였다 — 스크롤을 즉시 이동으로 바꾸고, 다음 화면이 그려진 직후(requestAnimationFrame)
-    // 딱 한 번만 다시 잰다.
-    target.scrollIntoView({ block:'center', behavior:'auto' });
-    requestAnimationFrame(place);
+    // 그 단계가 연 실제 팝업(정리 도구 목록 등)이 다른 이벤트로 닫혀도 다시 열어 두고, 화면이
+    // 스크롤되거나 크기가 바뀌어도 구멍·카드가 가리키는 대상을 계속 따라가게 한다.
+    // 버그 수정(23번째 피드백 "하이라이트 싱크가 안 맞는다"): 예전엔 창 크기 변경에만 다시
+    // 쟀고 스크롤(대화창 안쪽 스크롤 포함)에는 안 따라가서, 화면이 움직이면 구멍이 엉뚱한 곳에
+    // 남았다 — scroll을 capture로 듣고, 0.2초마다 한 번씩도 다시 맞춘다.
+    const sync = ()=>{ if(step.postShow) step.postShow(); place(); };
+    first.scrollIntoView({ block:'center', behavior:'auto' });
     place();
-    _tourResize = place;
-    window.addEventListener('resize', _tourResize);
+    requestAnimationFrame(place);
+    _tourResize = sync;
+    window.addEventListener('resize', sync, true);
+    window.addEventListener('scroll', sync, true);
+    _tourSyncTimer = setInterval(sync, 200);
   } else {
     card.classList.add('centered');
   }
-  const on = (id, fn)=>{ const el = document.getElementById(id); if(el) el.onclick = fn; };
+  // 버그 수정(23번째 피드백 "정리 도구 상자가 안 열려 있다"): [다음]을 누른 클릭이 문서까지
+  // 올라가, 방금 연 정리 도구 목록을 "바깥을 눌렀다"며 바로 닫아 버렸다 — 투어 버튼의 클릭은
+  // 위로 올려 보내지 않는다.
+  const on = (id, fn)=>{ const el = document.getElementById(id); if(el) el.onclick = e => { e.stopPropagation(); fn(); }; };
   on('tour-skip', closeTour);
   on('tour-prev', ()=>renderTour(_tourIdx-1));
   on('tour-next', ()=>renderTour(_tourIdx+1));

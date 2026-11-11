@@ -104,12 +104,19 @@
         return `<button type="button" class="bdg ${s.earned ? 'on' : ''}" data-bdg="${b.id}" aria-label="${esc2(b.name)} ${s.earned ? '얻음' : `${s.cur} / ${s.goal} 포인트`}">
           ${medalHTML(b, s)}<span class="bdg-name">${esc2(b.name)}</span>
           <span class="bdg-prog">${s.earned ? '얻었어요!' : `<i><s style="width:${Math.round(s.cur / s.goal * 100)}%"></s></i>${s.cur}/${s.goal}`}</span></button>`; }).join('')}</div></div>`;
+    // 튜토리얼이 더미 기록으로 홈을 미리 보여주는 동안엔 실제로 딴 배지가 아니니, 축하 팝업도
+    // "이미 봤다" 기록(localStorage)도 남기지 않는다 — 남기면 진짜 배지 축하가 영영 안 뜰 수 있다.
+    if (root._tourActive) return;
     // 새로 얻은 배지는 한 번 축하
     let seen = []; try { seen = JSON.parse(localStorage.getItem(seenKey()) || '[]'); } catch (e) {}
     const fresh = st.filter(x => x.earned && !seen.includes(x.id));
     if (fresh.length) {
-      try { localStorage.setItem(seenKey(), JSON.stringify(st.filter(x => x.earned).map(x => x.id))); } catch (e) {}
-      if (seen.length || fresh.length < BADGES.length) setTimeout(() => openBadge(fresh[0].id, true), 400);
+      const markSeen = () => { try { localStorage.setItem(seenKey(), JSON.stringify(st.filter(x => x.earned).map(x => x.id))); } catch (e) {} };
+      // 실제로 배지를 얻으면 축하 팝업을 띄운다. 다만 0.4초 뒤에 튜토리얼이 시작돼 있으면 그 화면을
+      // 가리지 않도록 이번엔 건너뛰고 "봤다"고도 기록하지 않는다 — 튜토리얼이 끝나 홈으로 돌아오면
+      // 그때 다시 축하 팝업이 뜬다(튜토리얼 안에서는 배지를 소개하는 1-다 단계에서만 따로 보여 준다).
+      if (seen.length || fresh.length < BADGES.length) setTimeout(() => { if (root._tourActive) return; markSeen(); openBadge(fresh[0].id, true); }, 400);
+      else markSeen();
     }
   };
   function openBadge(id, celebrate) {
@@ -129,6 +136,7 @@
       ${s.earned ? '' : `<p class="bdg-pop-tip">💡 ${esc2(b.tip)}</p>`}
     </div>`);
   }
+  root.openBadge = openBadge; // 튜토리얼(1-다)이 배지 팝업을 실제로 열어 보여줄 때 쓴다
   document.addEventListener('click', e => {
     const b = e.target.closest && e.target.closest('.bdg[data-bdg]'); if (!b) return;
     openBadge(b.dataset.bdg, false);
