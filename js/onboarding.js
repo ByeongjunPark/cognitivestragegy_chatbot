@@ -132,17 +132,26 @@ const TOUR_SETUPS = {
     postScore:82, journal:'처음엔 통분이 헷갈렸는데, 표로 정리하면서 알게 됐어요.'
   }); }
 };
+// 요청사항(22번째 피드백): 홈 화면 미리보기(나의 성장·배지)에 쌓인 기록이 없으면 그래프가
+// 안 보인다 — "예시 데이터 채우기"와 같은 재료(SAMPLE_SESSIONS_SPEC)로 더미 기록을 만들어
+// 투어 동안만 계정에 끼워 넣는다. 배지(renderBadges)는 isSample인 기록을 일부러 빼고
+// 세므로, 배지도 함께 채워지게 isSample을 꺼 둔다 — 실제 서버에는 저장(flushSave)하지
+// 않고 메모리의 acc.sessions만 잠깐 바꿨다가 투어가 끝나면 원래 기록으로 되돌린다.
+function buildMockHomeSessions(){
+  return SAMPLE_SESSIONS_SPEC.map((spec,i)=> Object.assign(makeSampleSession(spec,i), { isSample:false, practice:false }));
+}
 const TOUR_STEPS = [
   { sec:'', t:'내 공부방에 온 걸 환영해요', b:'여기서 AI와 함께 공부하고, 내가 어떻게 공부했는지 돌아봐요. 화면을 하나씩 직접 짚어가며 보여줄게요.' },
-  { sec:'1-가', t:'공부 내역 보기', screen:'home', el:()=>{ const s = document.getElementById('sess-list'); return s && s.closest('.widget'); },
-    b:'지난 공부 기록이에요. 눌러서 그날 나눈 이야기와 점수를 다시 볼 수 있어요.' },
-  { sec:'1-나', t:'나의 성장 보기', screen:'home', el:()=>document.querySelector('.widget.growth'),
-    b:'공부 방법·공부 전후·질문 실력·스스로 점검, 네 가지 탭으로 내가 쌓아온 기록을 그래프로 봐요.' },
-  { sec:'1-다', t:'디지털 배지 보기', screen:'home', el:()=>document.getElementById('home-badges'),
-    b:'끝까지 하기·도움 줄이기처럼 메타인지 행동을 하면 포인트가 쌓여 배지를 모을 수 있어요. 눌러서 어떻게 모으는지 봐요.' },
+  { sec:'1-가', t:'공부 내역 보기', screen:'home', mockHome:true, el:()=>{ const s = document.getElementById('sess-list'); return s && s.closest('.widget'); },
+    b:'지난 공부 기록이에요. 눌러서 그날 나눈 이야기와 점수를 다시 볼 수 있어요. (지금 보이는 내용은 미리 보기용 예시예요)' },
+  { sec:'1-나', t:'나의 성장 보기', screen:'home', mockHome:true, el:()=>document.querySelector('.widget.growth'),
+    b:'공부 방법·공부 전후·질문 실력·스스로 점검, 네 가지 탭으로 내가 쌓아온 기록을 그래프로 봐요. (지금 보이는 그래프는 미리 보기용 예시예요)' },
+  { sec:'1-다', t:'디지털 배지 보기', screen:'home', mockHome:true, el:()=>document.getElementById('home-badges'),
+    b:'끝까지 하기·도움 줄이기처럼 메타인지 행동을 하면 포인트가 쌓여 배지를 모을 수 있어요. 눌러서 어떻게 모으는지 봐요. (지금 보이는 진행 정도는 미리 보기용 예시예요)' },
   { sec:'2-가', t:'공부 방식 · 학교급 · 배울 것 정하기', screen:'start', el:()=>{ const m = document.getElementById('st-mode'); return m && m.closest('.card'); },
     b:'수업시간모드(학교급별 시간 제한)와 자유모드 중 고르고, 학교급을 고르면 학년·과목이 그 학교급만 나와요. "오늘 공부하고 싶은 것"을 내 말로 적으면 맞는 내용을 찾아 줘요.' },
-  { sec:'2-나', t:'AI와 할 일 나누기', screen:'start', el:()=>document.getElementById('tb-details'),
+  { sec:'2-나', t:'AI와 할 일 나누기', screen:'start', el:()=>document.getElementById('tb-sliders'),
+    postShow:()=>{ const d=document.getElementById('tb-details'); if(d) d.open=true; },
     b:'이 공부에서 AI가 맡을 일과 내가 할 일을 미리 정해요. 막대를 밀어서 비율을 바꿀 수 있어요.' },
   { sec:'3-가', t:'아는 것 확인하기', mockScreen:'chat', mockSetup:'activate', el:()=>{ const all=document.querySelectorAll('#stream .msg.note'); return all[all.length-1]; },
     b:'시험이 아니에요. 지금 아는 만큼 적어요. 몰라도 "모르겠어요"라고 쓰면 돼요. 결과는 맞다·틀리다가 아니라 참고만 해요.' },
@@ -151,30 +160,48 @@ const TOUR_STEPS = [
   { sec:'3-다', t:'공부 방법 고르기', mockScreen:'chat', mockSetup:'pick', el:()=>{ const all=document.querySelectorAll('#stream .msg.ai'); return all[all.length-1]; },
     b:'5가지 방법 중 하나 이상 골라요. 오늘 내용에 잘 맞는 방법엔 안내 배지가 붙어요.' },
   { sec:'3-라', t:'방법대로 해 보기', mockScreen:'chat', mockSetup:'apply', el:()=>document.getElementById('btn-stuck'),
-    b:'고른 방법으로 실제 과업을 해 봐요. 막히면 [막혔어요]로 도움을 고르고, AI 말은 [이 말 판단하기]로 내가 직접 판단해요.' },
-  { sec:'4-가', t:'돌아보기 — AI위임 성찰 · 프롬프트 성찰', mockScreen:'reflect', mockSetup:'reflect', el:()=>document.querySelector('.tl-tags'),
-    b:'내가 한 말마다 "내가 생각했는지·AI에게 맡겼는지" 표시하고(AI위임 성찰), 내가 쓴 질문의 자세함·이어짐·분명함도 스스로 매겨요(프롬프트 성찰).' },
-  { sec:'4-나', t:'혼자 풀어보기', mockScreen:'residual', mockSetup:'residualDoing', el:()=>document.getElementById('res-items'),
+    b:'고른 방법으로 실제 과업을 해 봐요. 막히면 [막혔어요]를 눌러 필요한 도움을 골라요. 다음 몇 단계에서 판단하기·정리 도구·수식 기호도 보여줄게요.' },
+  { sec:'3-마', t:'이 말 판단하기', mockScreen:'chat', mockSetup:'apply', el:()=>document.querySelector('#judge-scrim .modal'),
+    postShow:()=>openJudgeModal('t1'),
+    b:'AI 말이 맞는지 틀렸는지는 AI가 정하지 않아요 — "좋아요 / 잘 모르겠어요 / 다른 생각"으로 내가 직접 판단해요.' },
+  { sec:'3-바', t:'정리 도구', mockScreen:'chat', mockSetup:'apply', el:()=>document.getElementById('quick-actions'),
+    postShow:()=>{ const q=document.getElementById('quick-actions'); if(q){ q.classList.add('qa-open'); renderQuickActions(); } },
+    b:'생각을 표·마인드맵 같은 판에 직접 정리하는 도구예요. 하나를 고르면 그 도구가 바로 펼쳐져요.' },
+  { sec:'3-사', t:'수식 기호', mockScreen:'chat', mockSetup:'apply', el:()=>document.getElementById('math-symbols'),
+    b:'수학 공부에서는 분수·제곱 같은 수식 기호를 눌러서 바로 넣을 수 있어요.' },
+  { sec:'4-가', t:'돌아보기 — AI위임 성찰', mockScreen:'reflect', mockSetup:'reflect', el:()=>document.querySelector('.tl-tags'),
+    b:'내가 한 말마다 "내가 생각했는지 · AI에게 맡겼는지"를 표시해요.' },
+  { sec:'4-나', t:'돌아보기 — 프롬프트 성찰', mockScreen:'reflect', mockSetup:'reflect', el:()=>document.querySelector('.prompt-rate'),
+    b:'내가 쓴 질문을 골라, 자세함·이어짐·분명함을 스스로 점수 매겨요.' },
+  { sec:'4-다', t:'혼자 풀어보기', mockScreen:'residual', mockSetup:'residualDoing', el:()=>document.getElementById('res-items'),
     b:'대화를 마친 뒤, AI 없이 비슷한 문제를 혼자 풀어봐요. 공부 전 점수와 나란히 비교해서 얼마나 늘었는지 봐요.' },
-  { sec:'4-다', t:'최종 성찰', mockScreen:'residual', mockSetup:'residualDone', el:()=>document.getElementById('res-journal'),
+  { sec:'4-라', t:'최종 성찰', mockScreen:'residual', mockSetup:'residualDone', el:()=>document.getElementById('res-journal'),
     b:'AI 사용 이후 혼자 풀어본 결과를 보면서, 어려웠던 점과 새롭게 알게 된 점을 한 문장 이상 적어요. 이게 오늘 공부의 마지막 단계예요.' }
 ];
 let _tourIdx = 0;
 let _tourResize = null;
 let _tourSessionBackup;
 let _tourHasBackup = false;
+let _tourAccBackup;
+let _tourHasAccBackup = false;
 // DOM(막·구멍·설명카드)만 지운다 — 단계를 넘길 때마다 매번 부른다(투어 자체를 끝내는 건 아님).
+// 버그 수정(22번째 피드백): 판단하기 모달을 쓰는 단계(3-마)를 지나 다음 단계로 가도
+// 모달이 안 닫혀 있으면 그다음 단계 위에 계속 겹쳐 보인다 — 단계를 넘길 때마다 닫는다.
 function clearTourDom(){
   document.querySelectorAll('.tour-dim,.tour-hole,.tour-card').forEach(e=>e.remove());
   if(_tourResize){ window.removeEventListener('resize', _tourResize); _tourResize = null; }
+  const judgeScrim = document.getElementById('judge-scrim'); if(judgeScrim) judgeScrim.classList.remove('open');
 }
-// 투어를 완전히 끝낸다 — 가짜 세션이 있었으면 원래 session(보통 null)으로 되돌리고 홈으로.
+// 투어를 완전히 끝낸다 — 가짜 세션·더미 기록이 있었으면 원래 값(session은 대개 null,
+// acc.sessions는 내 진짜 기록)으로 되돌리고 홈으로 간다.
 // 버그 수정: 예전엔 session이 원래 null이었던 경우("아직 공부 시작 전")와 "아직 안 쓴 값"을
 // 똑같이 undefined로 구분해서, 단계를 한 번만 넘겨도 이게 "투어 끝"으로 오인돼 매번 홈으로
 // 튕겨 나갔다 — 원래 값을 _tourHasBackup(불리언)으로 따로 표시해 구분한다.
 function closeTour(){
   clearTourDom();
-  if(_tourHasBackup){ session = _tourSessionBackup; _tourSessionBackup = undefined; _tourHasBackup = false; show('home'); }
+  if(_tourHasAccBackup){ const acc=account(); if(acc) acc.sessions=_tourAccBackup; _tourAccBackup=undefined; _tourHasAccBackup=false; }
+  if(_tourHasBackup){ session = _tourSessionBackup; _tourSessionBackup = undefined; _tourHasBackup = false; }
+  show('home');
 }
 function renderTour(i){
   clearTourDom();
@@ -182,7 +209,17 @@ function renderTour(i){
   const scrim = document.getElementById('scrim'); if(scrim) scrim.classList.remove('open');
   _tourIdx = Math.max(0, Math.min(TOUR_STEPS.length-1, i||0));
   const step = TOUR_STEPS[_tourIdx];
-  if(step.mockScreen){
+  // 이 단계가 더 이상 가짜 세션/더미 기록을 안 쓰면, 떠나기 전에 원래 값으로 되돌린다.
+  if(!step.mockScreen && _tourHasBackup){ session = _tourSessionBackup; _tourSessionBackup = undefined; _tourHasBackup = false; }
+  if(!step.mockHome && _tourHasAccBackup){ const acc=account(); if(acc) acc.sessions=_tourAccBackup; _tourAccBackup=undefined; _tourHasAccBackup=false; }
+  if(step.mockHome){
+    const acc = account();
+    if(acc){
+      if(!_tourHasAccBackup){ _tourAccBackup = acc.sessions; _tourHasAccBackup = true; }
+      acc.sessions = buildMockHomeSessions();
+    }
+    show('home');
+  } else if(step.mockScreen){
     if(!_tourHasBackup){ _tourSessionBackup = (typeof session!=='undefined') ? session : null; _tourHasBackup = true; }
     // 단계마다 "기본 대화" 위에 그 단계에 맞는 모양(활성화 퀴즈 결과, 방법 고르기 카드 등)을
     // 새로 얹는다 — 매번 새로 만들어야 이전 단계가 바꿔 둔 turns/residual이 안 섞인다.
@@ -191,10 +228,10 @@ function renderTour(i){
     session = _mockSession;
     show(step.mockScreen);
   } else if(step.screen){
-    if(_tourHasBackup){ session = _tourSessionBackup; _tourSessionBackup = undefined; _tourHasBackup = false; }
     const active = document.querySelector('.screen.is-active');
     if(!active || active.dataset.screen !== step.screen) show(step.screen);
   }
+  if(step.postShow) step.postShow();
   const total = TOUR_STEPS.length;
   document.body.insertAdjacentHTML('beforeend', '<div class="tour-dim"></div>');
   const card = document.createElement('div'); card.className = 'tour-card';
@@ -219,9 +256,13 @@ function renderTour(i){
       const left = Math.min(Math.max(10, r.left), vw - card.offsetWidth - 10);
       card.style.top = top+'px'; card.style.left = left+'px';
     };
+    // 버그 수정(22번째 피드백 "최종 성찰 팝업이 저지랄"): 부드러운 스크롤 애니메이션이 끝나기
+    // 전에 고정된 260ms 뒤 좌표를 다시 재던 것이 타이밍이 안 맞아 카드가 엉뚱한 곳에 겹쳐
+    // 보였다 — 스크롤을 즉시 이동으로 바꾸고, 다음 화면이 그려진 직후(requestAnimationFrame)
+    // 딱 한 번만 다시 잰다.
+    target.scrollIntoView({ block:'center', behavior:'auto' });
+    requestAnimationFrame(place);
     place();
-    target.scrollIntoView({ block:'center', behavior:'smooth' });
-    setTimeout(place, 260); // 스크롤 끝난 뒤 위치 다시 맞춤
     _tourResize = place;
     window.addEventListener('resize', _tourResize);
   } else {
