@@ -88,7 +88,8 @@
     const errs = evs.map(e => e.errorType).filter(e => e && e !== '특별한 착오 없음');
     const r = s.reflect || {};
     return {
-      date: String(s.startedAt || '').slice(0, 10), subject: s.ctx.subject, std: s.ctx.std, goal: s.goal || '', sameSubject: !!same.length,
+      id: s.id || null, date: String(s.startedAt || '').slice(0, 10), subject: s.ctx.subject, subjKey: s.ctx.subjKey || s.ctx.subject, code: s.ctx.code || '', grade: s.ctx.grade || '', area: s.ctx.area || '',
+      std: s.ctx.std, goal: s.goal || '', sameSubject: !!same.length,
       strategies: (s.strategies || []).slice(), promise: String(r.note || r.noteA || '').trim(), journal: String((s.residual && s.residual.journal) || '').trim(),
       hard: last && last.missing && last.missing[0] ? String(last.missing[0]) : '', errorType: errs[errs.length - 1] || '',
       plan: s.nextPlan || null, planWhy: s.nextPlanWhy || '', wonder: s.wonder || '',

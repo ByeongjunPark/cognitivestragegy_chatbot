@@ -1217,6 +1217,24 @@
   .pl-row{display:flex;flex-direction:column;gap:2px;margin-top:8px;font-size:13px}
   .pl-row span{color:var(--muted);font-weight:700;font-size:12px}
   .pl-row b{color:var(--ink);font-weight:700}
+
+  /* ===== 다음 공부 이어 가기 · 과업 안내 ===== */
+  #home-next{margin-top:20px}
+  .ns-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:6px}
+  .ns-card{display:flex;align-items:center;gap:12px;text-align:left;background:var(--surface-2);border:1px solid var(--line);border-radius:16px;padding:14px 16px;cursor:pointer;transition:transform .15s,box-shadow .15s;width:100%}
+  .ns-card:hover,.ns-card:focus-visible{transform:translateY(-2px);box-shadow:0 8px 18px rgba(30,41,59,.1)}
+  .ns-card.warn{background:#fff7e6;border-color:#f7d79a;margin:6px 0 4px}
+  .ns-ic{font-size:28px;line-height:1;flex:none}
+  .ns-card > span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .ns-card b{font-size:14.5px;color:var(--ink)}
+  .ns-card small{font-size:12.5px;color:var(--ink-2);line-height:1.45}
+  .ns-go{flex:none;font-size:13px;font-weight:800;color:var(--accent-ink)}
+  .task-guide{border:1px dashed var(--line-strong);border-radius:14px;padding:10px 13px;margin-top:8px;display:flex;flex-direction:column;gap:10px;background:#fff}
+  .tg-row{display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+  .tg-row b{font-size:12.5px;color:var(--ink-2)}
+  .tg-row small{font-size:11.5px;color:var(--muted)}
+  .tg-frame{white-space:normal;text-align:left}
+  .tg-ex{font-size:13px;color:var(--ink);background:var(--surface-2);border-radius:10px;padding:6px 10px}
 </style>
 </head>
 <body>
@@ -2097,12 +2115,15 @@ ${/영어/.test(String(session.ctx.subject||'')) ? '과목 규칙(영어): 과�
 ${session.ctx.subject==='수학' && (session.tasks||[]).length ? `앞서 낸 과업: ${(session.tasks||[]).slice(-3).map(t=>'"'+t.task+'"').join(', ')} — 이번에는 같은 성취기준 안에서 유형이나 난이도가 다른 문제(예: 계산 → 문장제 → 오류 찾기 → 거꾸로 풀기)로 낸다. 새 문제는 1개만.` : ''}
 ${lastEval ? `직전 시도 진단: 빠진 점=${(lastEval.missing||[]).join(', ')||'없음'}, 착오 유형=${lastEval.errorType||'-'} — 이번 과업은 이 부분을 다시 다룰 수 있게 해라.` : ''}
 규칙: 과업은 지금까지 대화에서 다룬 실제 내용(아래 대화 이력)을 소재로 하고, 해설의 범위를 벗어나지 마라. 과업은 target에 적은 핵심 개념(해설에 나온 개념)을 이해해야만 해낼 수 있어야 한다 — 장소·상황을 떠올려 묘사하게만 하는 과업은 안 된다. 성공 기준 가운데 적어도 1개는 그 핵심 개념을 바르게 쓰는 것이어야 한다. 과업 1개만, 학생이 한 번의 답으로 해낼 수 있는 크기로. 과업 문장 안에 정답·풀이·계산 결과·"예:" 예시 답을 절대 넣지 마라(학습자가 할 몫이다). 성공 기준은 학습자의 답에서 눈으로 확인할 수 있는 것으로, 각 20자 안팎.
-{"task":"학습자에게 줄 과업(한두 문장, 학년에 맞는 쉬운 말)","target":"이 과업이 다루는 핵심 내용","form":"결과물 형태","criteria":["성공 기준1","성공 기준2","성공 기준3"],"commonErrors":["예상 착오1","예상 착오2"]}`;
+{"task":"학습자에게 줄 과업(한두 문장, 학년에 맞는 쉬운 말)","target":"이 과업이 다루는 핵심 내용","form":"결과물 형태","criteria":["성공 기준1","성공 기준2","성공 기준3"],"commonErrors":["예상 착오1","예상 착오2"],"frame":"학습자가 답을 쓰기 시작할 문장 틀(빈칸은 ___, 정답 낱말은 넣지 말 것)","example":"오늘 내용과 다른 소재로 같은 형식을 보여 주는 짧은 보기 한 줄(오늘 과업의 답이 되면 안 됨)"}`;
   const raw = await callLLM(buildMessages(sys, null, 10).concat([{ role:'user', content:'위 조건으로 과업 명세 JSON을 만들어라.' }]), { temperature:0.3 });
   const j = parseJSON(raw);
   if(!j || !j.task || !Array.isArray(j.criteria) || !j.criteria.length) throw new Error('spec shape');
   return { id:uid(), stratId:strat.id, task:String(j.task), target:String(j.target||''), form:String(j.form||''),
-    criteria:j.criteria.slice(0,4).map(String), commonErrors:(j.commonErrors||[]).slice(0,3).map(String), evals:[], at:new Date().toISOString() };
+    criteria:j.criteria.slice(0,4).map(String), commonErrors:(j.commonErrors||[]).slice(0,3).map(String), evals:[], at:new Date().toISOString(),
+    frame: /___/.test(String(j.frame||'')) ? CS.koClean(String(j.frame).slice(0,80), { allowEnglish: session.ctx.subject==='영어' }) : '',
+    // 보기가 오늘 과업의 핵심 내용과 낱말이 많이 겹치면 답을 알려 주는 셈이라 뺀다
+    example: (()=>{ const ex = CS.koClean(String(j.example||'').slice(0,100), { allowEnglish: session.ctx.subject==='영어' }); if(!ex) return ''; const a = new Set(CS.contentTokens(String(j.target||'') + ' ' + (j.criteria||[]).join(' '))); return CS.contentTokens(ex).filter(w=>a.has(w)).length >= 2 ? '' : ex; })() };
 }
 // apply 단계: 과업 명세를 먼저 만들고, 그 명세를 학습자에게 자연스러운 말로 건넨다.
 async function issueTask(strat, leadInstr){
@@ -2608,6 +2629,7 @@ function renderHome(){
   const S = acc.sessions.filter(s=>!s.incomplete && !s.practice); // 통계·그래프는 끝낸 공부만(연습 기록 제외, WP4-2)
   { let gl = $('#home-glance'); if(!gl){ gl = document.createElement('div'); gl.id = 'home-glance'; $('#home-draft').insertAdjacentElement('afterend', gl); }
     gl.innerHTML = S.length ? glanceCardHTML(S[S.length-1]) : ''; }
+  try{ renderNextStudy(); }catch(e){ flag && flag('next-study-error', String(e && e.message || e)); }
   try{ renderBadges(); }catch(e){ flag && flag('badge-error', String(e && e.message || e)); } // 디지털 배지(둘째 줄)
   $('#agg-sessions').textContent = S.length;
   const analysisBtn = $('#agg-analysis-btn'), analysisBox = $('#agg-analysis-box');
@@ -3328,6 +3350,7 @@ function startSession(){
     phaseTimes:null, flags:[], helpRequests:[], scoreReports:[], errorReports:[], skipped:{},
     isSample: !!window._practiceMode, practice: !!window._practiceMode,
     // extraStds(요청사항 4): 과목을 넘나드는 공부를 위해 학생이 직접 더한 관련 성취기준(최대 2개).
+    continuesFrom: window._contFrom || null,
     ctx:{ stdConfirmedAt:new Date().toISOString(), grade, band:bandOf(grade), subject:subj, subjKey: stPicks[0].subjKey || subjKey, code:stPicks[0].code, std:stPicks[0].name, area:stPicks[0].area||'', concept:stPicks[0].concept||'',
       extraStds: stPicks.slice(1).map(it=>({ code:it.code, name:it.name, area:it.area||'', concept:it.concept||'', subject:SUBJECT_ALIAS[it.subjKey]||it.subjKey })) },
     // 요청사항(3·4번째 피드백) 2: "오늘 나의 목표" 입력란과 대화 중 "목표 말하기" 절차를 모두
@@ -3942,7 +3965,7 @@ function renderStream(){
     let extra='';
     if(!mine){
       // (개선) 과업 명세의 성공 기준(원리9 자기점검의 준거)과 AI 진단 근거(원리10 검증 대상)를 보여준다.
-      if(t.taskId){ const sp = taskById(t.taskId); if(sp) extra += taskCardHTML(sp); }
+      if(t.taskId){ const sp = taskById(t.taskId); if(sp) extra += taskCardHTML(sp) + taskGuideHTML(sp); }
       if(t.evalId){ const sp = taskById(t.evalTaskId); const ev = sp && sp.evals.find(e=>e.id===t.evalId); if(ev) extra += evalCardHTML(ev); }
       const j=t.judge;
       const stCls = j==='accept'?'st-accept':j==='hold'?'st-hold':j==='comment'?'st-comment':'';
@@ -4678,7 +4701,7 @@ async function generateDiagItems(mode){
 교육과정 해설(출제 범위 — 벗어나지 말 것): ${session.ctx.concept||'-'}
 ${evidence ? '교육과정 원문 근거(이 범위 안의 사실·용어만 쓸 것): ' + evidence + '\n' : ''}학습목표: ${session.goal||'-'}
 ${focusRule()}
-`;
+${session.prevLink && session.prevLink.code===session.ctx.code && session.prevLink.hard ? `지난번 같은 내용을 공부할 때 어려웠던 점: "${session.prevLink.hard}" — 문항 가운데 1개는 이 부분이 이제 되는지 다시 확인하게 만들어라.\n` : ''}`;
   const shape = `{"items":[${tags.map(t=> typeOf(t)==='mcq' ? `{"tag":"${t}","type":"mcq","q":"...","options":["...","...","...","..."],"answer":0}` : `{"tag":"${t}","type":"text","q":"...","rubric":{"full":"만점 답에 꼭 들어갈 핵심 요소","partial":"부분 점수를 줄 수 있는 최소 요소"}}`).join(',')}]}`;
   const ladder = `난이도 사다리(반드시 지킬 것):
 1) 기억(DOK1·기본): 핵심 용어·사실을 떠올리는 문항. 오답 3개 중 1개 이상은 이 내용에서 학생들이 흔히 하는 오개념에서 나온 그럴듯한 오답으로 만든다.

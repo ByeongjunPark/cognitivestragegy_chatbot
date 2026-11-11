@@ -696,3 +696,73 @@ function prevLinkRule(){
     + (pl.promise ? ` 학습자가 남긴 다짐: "${trim(pl.promise, 80)}".` : '')
     + ' 오늘 내용과 이어지는 부분이 있으면 자연스럽게 연결하고, 다짐을 지키도록 한 번쯤 부드럽게 떠올리게 해라. 지난 내용을 다시 가르치거나 평가하지 마라.';
 }
+
+/* ---------- 지난 공부를 바탕으로 다음 공부 잇기 ----------
+   지난 결과(혼자 풀기 점수·어려웠던 점·다음 계획)를 보고 ① 다시 다지기 ② 다음 내용으로 나아가기를 추천하고,
+   누르면 학년·과목·성취기준·목표가 채워진 시작 화면으로 간다(고르는 건 학습자). */
+function nextStdOf(pl){
+  const band = bandOf(pl.grade); const arr = ((CURRICULUM_STANDARDS[band]||{})[pl.subjKey]) || [];
+  const i = arr.findIndex(x=>x.code===pl.code); if(i < 0) return null;
+  const nx = arr.slice(i+1).find(x=>x.code!==pl.code); return nx ? Object.assign({}, nx, { subjKey: pl.subjKey }) : null;
+}
+function nextStudyRecs(){
+  const acc = account(); if(!acc) return { pl:null, recs:[] };
+  const pl = CS.prevLink(acc.sessions||[], null); if(!pl) return { pl:null, recs:[] };
+  const recs = [];
+  const weak = !!pl.hard || (pl.post!=null && pl.post < 75);
+  const plan = pl.plan && STRATS.find(x=>x.id===pl.plan);
+  const planTxt = plan ? ` · 정해 둔 방법: ${plan.emoji} ${plan.label}` : '';
+  if(weak && pl.code) recs.push({ kind:'again', icon:'🔁', title:'지난 내용 다시 다지기', sub:(pl.hard ? `지난번 어려웠던 점: ${trim(pl.hard,40)}` : `혼자 풀기 ${pl.post}점 — 한 번 더 하면 더 단단해져요`) + planTxt,
+    grade:pl.grade, subjKey:pl.subjKey, code:pl.code, goal: pl.hard ? `지난번에 헷갈린 "${trim(pl.hard,30)}" 부분을 다시 공부하고 싶어요` : (pl.goal||'') });
+  const nx = pl.code ? nextStdOf(pl) : null;
+  if(nx) recs.push({ kind:'next', icon:'🚀', title:'다음 내용으로 나아가기', sub:`${trim(nx.name,46)}${weak ? '' : ' — 지난번 내용을 잘 해냈어요'}`, grade:pl.grade, subjKey:nx.subjKey, code:nx.code, goal:'' });
+  if(!weak) recs.reverse();
+  return { pl, recs };
+}
+function renderNextStudy(){
+  const anchor = document.getElementById('home-glance'); if(!anchor) return;
+  let box = document.getElementById('home-next'); if(!box){ box = document.createElement('div'); box.id = 'home-next'; anchor.insertAdjacentElement('afterend', box); }
+  const { pl, recs } = nextStudyRecs();
+  const acc = account();
+  const deferred = acc && acc.draft && acc.draft.session && acc.draft.session.residualDeferred && !((acc.draft.session.residual||{}).result);
+  if(!pl && !deferred){ box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="widget ns-widget"><div class="widget-head"><span class="bdg-head-ic" aria-hidden="true">🧭</span><div><h4>다음 공부 이어 가기</h4><small>${pl ? `지난 공부(${esc(pl.date)} · ${esc(pl.subject)})를 바탕으로 골라 봤어요` : ''}</small></div></div>
+    ${deferred ? `<button type="button" class="ns-card warn" data-ns="residual"><span class="ns-ic">⏳</span><span><b>지난 공부의 ‘혼자 풀어보기’가 남았어요</b><small>먼저 풀면 공부 전·후를 비교할 수 있어요</small></span><span class="ns-go">이어서 풀기 →</span></button>` : ''}
+    <div class="ns-grid">${recs.map((r,i)=>`<button type="button" class="ns-card" data-ns="${i}"><span class="ns-ic">${r.icon}</span><span><b>${esc(r.title)}</b><small>${esc(r.sub)}</small></span><span class="ns-go">시작 →</span></button>`).join('')}</div></div>`;
+  box._recs = recs;
+}
+function startFromRec(r){
+  window._contFrom = { kind:r.kind, code:r.code };
+  show('start');
+  setTimeout(()=>{
+    const sc = $('#st-school'); if(sc){ sc.value = schoolOfGrade(r.grade); sc.dataset.touched = '1'; fillStartBandForSchool(); }
+    const b = $('#st-band'); if(b){ b.value = r.grade; b.dataset.touched = '1'; }
+    fillStartSubjects();
+    const sub = $('#st-subject'); if(sub) sub.value = r.subjKey;
+    const it = (((CURRICULUM_STANDARDS[bandOf(r.grade)]||{})[r.subjKey])||[]).find(x=>x.code===r.code);
+    if(it){ stPicks = [Object.assign({}, it, { subjKey:r.subjKey })]; }
+    if(r.goal) $('#st-topic').value = r.goal;
+    fillStartStds(); paintGoalHelpers();
+  }, 0);
+}
+document.addEventListener('click', e=>{
+  const c = e.target.closest && e.target.closest('.ns-card'); if(!c) return;
+  if(c.dataset.ns==='residual'){ if(typeof resumeDraft==='function') resumeDraft(); return; }
+  const box = document.getElementById('home-next'); const r = box && box._recs && box._recs[+c.dataset.ns]; if(r) startFromRec(r);
+});
+
+/* ---------- 과업 답하는 방법 안내(답은 주지 않는 문장 틀·다른 소재 보기) ----------
+   원리1 적응적 페이딩: AI 도움 많이 = 문장 틀 + 다른 소재 보기, 보통 = 문장 틀만, 조금 = 안내 없음. */
+function taskGuideHTML(spec){
+  if(!spec || !(spec.frame || spec.example)) return '';
+  const sup = typeof effSupport==='function' ? effSupport() : (session && session.support) || 'high';
+  if(sup==='low') return '';
+  const frame = spec.frame ? `<div class="tg-row"><b>✍️ 이렇게 써 볼 수 있어요</b><button type="button" class="chip tg-frame" data-v="${esc(spec.frame)}">${esc(spec.frame)}</button><small>누르면 입력칸에 들어가요. ___에 내 생각을 채워요.</small></div>` : '';
+  const ex = sup==='high' && spec.example ? `<div class="tg-row"><b>👀 다른 내용으로 든 보기</b><span class="tg-ex">${esc(spec.example)}</span><small>모양만 참고해요. 오늘 내용의 답은 내가 써요.</small></div>` : '';
+  return frame || ex ? `<div class="task-guide">${frame}${ex}</div>` : '';
+}
+document.addEventListener('click', e=>{
+  const b = e.target.closest && e.target.closest('.tg-frame'); if(!b) return;
+  const el = document.getElementById('chat-input'); if(!el || el.disabled) return;
+  el.value = (el.value ? el.value + ' ' : '') + b.dataset.v; el.focus();
+});
