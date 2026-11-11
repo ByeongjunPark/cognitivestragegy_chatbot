@@ -54,6 +54,15 @@
   // 화면 요소를 가리키는 말: "아래에서 골라" 류 + (실제 모델 시범 운용에서 관찰) "아래 정답 표에서 확인해 보세요"처럼 없는 표·카드를 보라는 말
   const WIDGET_REF = /((아래|밑|위)(에서|의|에\s*있는|쪽|에\s*나온|\s*카드|\s*버튼)?[^.!?]{0,18}(골라|고르|선택|눌러|누르))|((카드|버튼|보기|선택지)[을를에서]*\s*[^.!?]{0,8}(골라|고르|선택해|눌러|누르))|(((정답|정리|결과)\s*(표|카드)|(아래|밑|위)(에|의)?\s*(있는\s*)?(표|카드|화면))[^.!?]{0,20}(확인|살펴))/;
   function needsWidget(text) { return WIDGET_REF.test(String(text || '')); }
+  // 화면에 없는 표·자료·그림·지문을 "보자"고 가리키는 말(실제 모델에서 자주 나왔다).
+  // 같은 말 안에 따옴표로 자료를 직접 써 준 경우는 괜찮다.
+  const MATERIAL_REF = /(다음|아래|위|이|제시된|주어진|앞의|아래의|다음의)\s*(에\s*나온\s*)?(표|자료|그래프|도표|지문|그림|사진|지도|사례|발문|예문)(를|을|에서|에|의|를\s*보|을\s*보|\s)/;
+  function hasInlineMaterial(text) { return /[“"「『][^”"」』]{15,}[”"」』]/.test(String(text || '')); }
+  function missingMaterial(text) { const t = String(text || ''); return MATERIAL_REF.test(t) && !hasInlineMaterial(t); }
+  function dropMaterialRefs(text, fallback) {
+    const kept = splitSentences(text).filter(x => !MATERIAL_REF.test(x));
+    return kept.join(' ').trim() || fallback || '';
+  }
   // 위젯이 붙지 않는 말에서 화면을 가리키는 문장을 빼고, 비면 중립 문구로 바꾼다.
   function neutralizeWidgetRef(text, fallback) {
     const ss = splitSentences(text);
@@ -304,7 +313,7 @@
 
   Object.assign(CS, {
     splitSentences, isQuestion, countQuestions, keepOneQuestion, capSentences, overCap,
-    WIDGET_REF, needsWidget, neutralizeWidgetRef,
+    WIDGET_REF, needsWidget, neutralizeWidgetRef, MATERIAL_REF, missingMaterial, dropMaterialRefs,
     sentenceTone, toneProfile, isMixedTone, toHaeyo, sentenceToHaeyo, dropBanmalPronouns,
     BROKEN_PATTERNS, looksBroken, englishWords, fixTypos, koClean,
     BANNED_PROBES, SOFT_PROBE, hasBannedProbe, softenProbes, hasAck,

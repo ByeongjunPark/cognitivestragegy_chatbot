@@ -196,3 +196,11 @@ test('지난 공부와 이어 주기: 같은 과목의 가장 최근 기록에�
   assert.equal(b.subject, '사회'); assert.equal(b.sameSubject, false);
   assert.equal(CS.prevLink([], '수학'), null);
 });
+
+test('화면에 없는 표·자료·지문을 가리키는 말을 잡고, 자료를 직접 써 준 말은 통과시킨다', () => {
+  for (const t of ['다음 표를 보고 빈칸을 채워 보세요.', '아래 자료를 읽고 어떤 점이 보이는지 말해 봐요.', '이 그래프를 보면 기온이 어떻게 변하나요?', '다음 지문을 읽어 보세요.', '제시된 사례를 살펴볼까요?'])
+    assert.ok(CS.missingMaterial(t), t);
+  assert.ok(!CS.missingMaterial('다음 자료를 읽어 봐요. "여름에는 태풍이 남쪽 바다에서 올라와 강한 바람과 많은 비를 몰고 와요." 무엇이 보이나요?'));
+  assert.ok(!CS.missingMaterial('표·그림으로 정리하기를 골랐네요. 좋아요.'));
+  assert.equal(CS.dropMaterialRefs('좋아요. 다음 표를 보고 빈칸을 채워 보세요.', '어떻게 생각해요?'), '좋아요.');
+});

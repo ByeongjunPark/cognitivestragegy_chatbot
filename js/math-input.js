@@ -55,6 +55,15 @@ document.addEventListener('click', e=>{
   const so = e.target.closest && e.target.closest('.step-open'); if(so){ e.stopImmediatePropagation(); openStepEditor(); return; }
   const b = e.target.closest && e.target.closest('.sym-btn'); if(!b) return;
   e.stopImmediatePropagation();
-  const target = (typeof micTarget === 'function' && micTarget()) || document.getElementById('chat-input');
+  const box = b.closest('[data-sym-target]');
+  const own = box && document.querySelector(box.dataset.symTarget);
+  const last = typeof micTarget === 'function' && micTarget();
+  // 문항 기호판: 그 문항 안에서 마지막으로 누른 칸(풀이·설명)이 있으면 거기에, 없으면 그 문항의 답 칸에
+  const target = own ? (last && box.parentElement && box.parentElement.contains(last) ? last : own) : (last || document.getElementById('chat-input'));
   insertAtCursor(target, b.dataset.sym);
 }, true);
+
+// 문항 하나에 붙이는 작은 기호판(수학): 답 칸 바로 아래
+function mathPaletteFor(selector){
+  return `<div class="item-sym" data-sym-target='${selector}'><span class="item-sym-t">🔣 수식 기호</span>${mathPaletteHTML()}</div>`;
+}

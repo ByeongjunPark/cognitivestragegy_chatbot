@@ -72,6 +72,7 @@ function qualityIssues(text, opts){
   if(!o.suffix && CS.countQuestions(text) > 1) issues.push('multi-q');
   if(!o.suffix && askCount(text) > 1 && !issues.includes('multi-q')) issues.push('multi-ask');
   if(CS.toneProfile(text).banmal > 0) issues.push('tone');
+  if(CS.missingMaterial(text) && !materialOnScreen(text)) issues.push('material');
   return issues;
 }
 function retryWarning(issues){
@@ -82,6 +83,7 @@ function retryWarning(issues){
   if(issues.includes('multi-q')) w.push('질문을 2개 이상 했다. 질문은 딱 1개만');
   if(issues.includes('multi-ask')) w.push('과제를 낸 뒤 다른 질문이나 요청을 덧붙였다. 요청은 딱 1개만 하고, 뒤에 "~해 볼까요?"를 붙이지 마라');
   if(issues.includes('tone')) w.push('반말이 섞였다. 처음부터 끝까지 해요체로만');
+  if(issues.includes('material')) w.push('화면에 없는 표·자료·그래프·지문을 보라고 했다. 자료가 필요하면 2~3문장짜리 짧은 자료를 따옴표("") 안에 직접 써서 보여 주고, 표·그래프·그림은 말로 가리키지 마라');
   return w.length ? ' (고쳐야 할 점: ' + w.join(' / ') + '.)' : '';
 }
 // LLM 문장 → 학생 화면 문장. 순서: 용어 교정 → 해요체 → 추궁형 완화 → (질문 1개·분량 상한) → 위젯 일치
@@ -106,6 +108,8 @@ function finalizeAiText(text, o){
     t = CS.capSentences(t, o.reveal ? { sentences: cap.sentences+3, chars: cap.chars*2 } : cap);
     t = widgetCheck(t, o.fallbackAsk || CS.COPY.neutralAsk);
   }
+  // 다시 만들어도 없는 자료를 가리키면 그 문장을 뺀다(학생이 찾을 수 없는 자료를 기다리지 않게)
+  if(CS.missingMaterial(t) && !materialOnScreen(t)){ flag('material', t); t = CS.dropMaterialRefs(t, o.fallbackAsk || CS.COPY.neutralAsk); }
   if(CS.looksBroken(t, { allowEnglish: subj==='영어' }).broken){
     flag('broken', t);
     t = o.suffix ? o.suffix : ('알려 줘서 고마워요. ' + (o.fallbackAsk || CS.COPY.neutralAsk));
@@ -782,4 +786,12 @@ function subjectTalkRule(){
   if(/과학/.test(subj)) return '과학 과목 대화 규칙: 학습자의 생각을 현상·관찰과 이어 주고, 근거(관찰·실험 결과)를 바탕으로 말하게 돕는다.';
   if(/수학/.test(subj)) return '수학 과목 대화 규칙: 답보다 풀이 과정을 함께 보고, 맞게 한 단계는 분명히 칭찬한 뒤 처음 어긋난 단계 하나만 짚는다.';
   return '';
+}
+
+// 화면에 실제로 있는 자료를 가리키는 건 괜찮다: 방금 펼친 정리 도구(표·마인드맵 등), 교육과정 자료 카드
+function materialOnScreen(text){
+  const t = String(text||''), recent = (session && session.turns || []).slice(-4);
+  if(recent.some(x=>x.structured) && /(표|그림|도표|마인드맵|사슬)/.test(t)) return true;
+  if(recent.some(x=>x.kind==='source-card') && /자료|사례/.test(t) && !/(표|그래프|도표|지문|그림|사진|지도)/.test(t)) return true;
+  return false;
 }
