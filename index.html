@@ -3803,7 +3803,12 @@ function renderStream(){
             <div class="msc-note"><b>이유:</b> ${esc(t.reason)}</div>
           </div></div>`);
         } else {
-          const canSubmit = t.score && (t.reason||'').trim().length>=2;
+          // 버그 수정(요청사항 18번째 피드백 "필수가 너무 많다"): MODE_CFG의
+          // required.checkpointReasonText는 두 모드 다 false(이유는 선택)로 정해져 있고
+          // 입력칸 placeholder도 "(선택)"이라고 해 놓고선, 정작 이 버튼은 이유 글자 수
+          // 2자 이상을 늘 강제하고 있었다 — 설정과 실제 동작이 어긋났다. 설정을 실제로 따른다.
+          const needReason = cfg().required.checkpointReasonText;
+          const canSubmit = t.score && (!needReason || (t.reason||'').trim().length>=2);
           box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card checkpoint-card">
             <div class="msc-title">잠깐! 이해도 체크포인트</div>
             <p style="font-size:13px;color:var(--ink);margin:2px 0 8px">${esc(CS.COPY.cpQuestion)}</p>
@@ -3843,8 +3848,10 @@ function renderStream(){
         return;
       }
       if(t.kind==='source-card'){ box.insertAdjacentHTML('beforeend', `<div class="msg note">${sourceCardHTML(t)}</div>`); return; }
-      if(t.kind==='next-strat'){ const nx = STRATS.find(x=>x.id===t.next), dn = STRATS.find(x=>x.id===t.done);
-        box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card"><div class="msc-title">${esc(dn?dn.label:'지금 방법')}은 충분히 해 봤어요. 다음엔 어떻게 할까요?</div>${t.answered?`<div class="msc-note">${t.go?`"${esc(nx?nx.label:'')}"(으)로 넘어갔어요.`:'지금 방법으로 계속해요.'}</div>`:`<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-sm btn-primary ns-go" data-id="${t.id}">${nx?nx.emoji+' '+esc(nx.label):'다음 방법'}(으)로 해 보기</button><button type="button" class="btn btn-sm ns-stay" data-id="${t.id}">지금 방법 계속</button></div>`}</div></div>`); return; }
+      if(t.kind==='next-strat'){ const nx = t.next ? STRATS.find(x=>x.id===t.next) : null, dn = STRATS.find(x=>x.id===t.done);
+        const goLabel = nx ? `${nx.emoji} ${esc(nx.label)}(으)로 해 보기` : '이 정도면 됐어요';
+        const doneNote = t.go ? (nx ? `"${esc(nx.label)}"(으)로 넘어갔어요.` : '이 정도면 됐다고 했어요.') : '지금 방법으로 계속해요.';
+        box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card"><div class="msc-title">${esc(dn?dn.label:'지금 방법')}은 충분히 해 봤어요. 다음엔 어떻게 할까요?</div>${t.answered?`<div class="msc-note">${doneNote}</div>`:`<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-sm btn-primary ns-go" data-id="${t.id}">${goLabel}</button><button type="button" class="btn btn-sm ns-stay" data-id="${t.id}">지금 방법 계속</button></div>`}</div></div>`); return; }
       if(t.kind==='meta-form'){ box.insertAdjacentHTML('beforeend', `<div class="msg note">${metaFormHTML(t)}</div>`); return; }
       if(t.kind==='activate-quiz'){
         const items = session.prior.items||[];
@@ -4290,8 +4297,12 @@ async function reviewStruct(tid){
   await ai(instr, null, null, { maxLen:650, noNewTask:true });
   const at = [...session.turns].reverse().find(x=>x.role==='ai' && !x.structured);
   if(at && ev){ at.evalId = ev.id; at.evalTaskId = spec.id; renderStream(); }
-  if(nextStrat){
-    session.turns.push({ id:uid(), role:'note', kind:'next-strat', next:nextStrat.id, done:doneStrat.id, answered:false });
+  if(doneStrat){
+    // 버그 수정(요청사항 17번째 피드백): 전에는 다음으로 넘길 방법이 없으면(마지막 하나
+    // 남은 방법) 카드도 없이 조용히 stratDone만 켜 버렸다 — 겉으로는 아무 설명도 없는데
+    // "이야기 끝내기" 버튼이 갑자기 강조돼, 학습자 모르게 뭔가 넘어간 것처럼 느껴졌다.
+    // 다음 방법이 있든 없든 항상 같은 확인 카드를 띄워 고르게 한다(원리2).
+    session.turns.push({ id:uid(), role:'note', kind:'next-strat', next:nextStrat?nextStrat.id:null, done:doneStrat.id, answered:false });
     session.cycleIdx = 3; session.cycleNow = 'check'; renderCycleStrip(); renderStream();
   } else {
     // 산출물 검토가 곧 점검(check) 단계이므로, 다음 학습자 입력은 조정(adjust)으로 이어지게 한다.
@@ -4331,7 +4342,7 @@ function renderStructHTML(tid, s){
     const remaining = bank.map((word,idx)=>({word,idx})).filter(x=>!order.includes(x.idx));
     return `<div class="struct-box" data-tid="${tid}">
       <div class="struct-head">순서를 직접 정해봐요</div>
-      <p class="hint" style="padding:0 16px 8px">아래 후보를 순서대로 눌러 담아요. 잘못 담았으면 쌓인 것을 눌러 다시 빼요.</p>
+      <p class="hint struct-how" style="padding:0 16px 8px">${esc(structHelp('chain'))} 아래 후보를 순서대로 눌러 담아요. 잘못 담았으면 쌓인 것을 눌러 다시 빼요.</p>
       <div class="struct-chain" style="padding:0 16px 10px">${order.length ? order.map((idx,i)=>`<button type="button" class="chain-step chain-op" data-tid="${tid}" data-op="remove" data-idx="${idx}">${esc(bank[idx])}</button>${i<order.length-1?'<span class="chain-arrow">→</span>':''}`).join('') : '<span class="hint">아직 없어요</span>'}</div>
       <div class="chip-list" style="padding:0 16px 12px">${remaining.map(x=>`<button type="button" class="chip chain-op" data-tid="${tid}" data-op="add" data-idx="${x.idx}">${esc(x.word)}</button>`).join('')}</div>
       ${reviewBtnHTML(tid)}
@@ -4340,11 +4351,13 @@ function renderStructHTML(tid, s){
   if(s.type==='drill' && Array.isArray(p.items)){
     const st = s.state || {};
     return `<div class="struct-box" data-tid="${tid}"><div class="struct-head">소리 내어 반복해서 외워봐요 (다 외웠으면 눌러 체크해요)</div>
+      <p class="hint struct-how">${esc(structHelp('drill'))} 낱말을 눌러서 다 외웠다고 표시해요.</p>
       <div class="struct-drill">${p.items.map((it,i)=>`<button type="button" class="drill-item ${st[i]?'done':''}" data-idx="${i}"><span class="di-check">${st[i]?'✓':'○'}</span><span>${esc(it)}</span></button>`).join('')}</div>${reviewBtnHTML(tid)}</div>`;
   }
   if(s.type==='retrieval' && Array.isArray(p.items)){
     const st = s.state || {};
     return `<div class="struct-box" data-tid="${tid}"><div class="struct-head">안 보고 먼저 떠올려봐요 (쓴 뒤 정답을 확인해요)</div>
+      <p class="hint struct-how">${esc(structHelp('retrieval'))}</p>
       <div class="struct-retrieval">${p.items.map((it,i)=>{
         const row = st[i]||{};
         return `<div class="retr-item">
@@ -4360,6 +4373,7 @@ function renderStructHTML(tid, s){
   if(s.type==='checklist' && Array.isArray(p.items)){
     const st = s.state || {};
     return `<div class="struct-box" data-tid="${tid}"><div class="struct-head">스스로 아는지 확인해봐요</div>
+      <p class="hint struct-how">${esc(structHelp('checklist'))} "알아요"를 누르면 왜 아는지 한 줄로 써야 해요(진짜 아는지 스스로 확인하는 거예요).</p>
       <div class="struct-checklist">${p.items.map((it,i)=>{
         const v = st[i];
         const pf = (s.proof||{})[i] || '';
@@ -5522,13 +5536,20 @@ function sendChat(){
     const stratEvals = (session.tasks||[]).filter(t=>strat && t.stratId===strat.id).flatMap(t=>t.evals||[]);
     const lastLevel = stratEvals.length ? stratEvals[stratEvals.length-1].level : null;
     const enough = strat && ((rounds>=2 && lastLevel!=null && lastLevel>=1) || rounds>=3);
+    // 버그 수정(요청사항 17번째 피드백 "전략이 멋대로 넘어간다"): 여기서 바로 다음 방법의
+    // 과업을 내버리면 학습자 동의 없이 방법이 바뀐 것처럼 느껴진다 — 산출물 쪽 경로
+    // (reviewStruct())는 이미 "다음 방법으로 해 볼래요 / 지금 방법 계속" 확인 카드를
+    // 거치는데, 대화 턴 수 기준의 이 경로만 빠져 있었다. 같은 확인 카드(next-strat)를
+    // 띄워 넘어갈지 계속할지는 항상 학습자가 고르게 한다(원리2).
     if(enough && others.length){
       doneMap[strat.id] = true; session.stratDone = doneMap;
       const nextStrat = currentApplyStrat();
-      // 이번 adjust 메시지 자체가 "다음 전략 과업 배정"을 겸하므로, 다음 학습자 입력은 그
-      // 과업에 대한 시도로 보고 그다음 AI 응답이 곧장 check(점검)로 이어지게 커서를 맞춘다.
-      session.cycleIdx = 2; session.cycleNow = 'apply'; renderCycleStrip();
-      issueTask(nextStrat, `학습자가 "${strat.label}" 방법으로 과업을 ${lastLevel===2?'잘 해냈다':'어느 정도 해 봤다'}. 그 점을 구체적으로 짧게 짚어주고, "이제 다음 방법인 ${nextStrat?nextStrat.label:''}으로 넘어가 봐요"라고 알려준 뒤, 바로 새 과업을 낸다.`);
+      askNoTask = true;
+      instr = `(새 문제·과업은 내지 마라) 학습자가 "${strat.label}" 방법으로 과업을 ${lastLevel===2?'잘 해냈다':'어느 정도 해 봤다'}. 그 점을 구체적으로 짧게 짚어주기만 하고, 다음에 뭘 할지는 묻지 마라(화면에 선택 카드가 따로 뜬다).`;
+      ai(instr, null, null, { noNewTask: askNoTask }).then(()=>{
+        session.turns.push({ id:uid(), role:'note', kind:'next-strat', next:nextStrat.id, done:strat.id, answered:false });
+        session.cycleIdx = 3; session.cycleNow = 'check'; renderCycleStrip(); renderStream();
+      });
       return;
     }
     askNoTask = true;
@@ -6295,8 +6316,9 @@ function init(){
     const nsb = e.target.closest('.ns-go, .ns-stay');
     if(nsb && !busy){ const t = session.turns.find(x=>x.id===nsb.dataset.id); if(!t || t.answered) return;
       t.answered = true; t.go = nsb.classList.contains('ns-go'); renderStream();
-      if(t.go){ const nx = STRATS.find(x=>x.id===t.next); session.cycleIdx = 2; session.cycleNow = 'apply'; renderCycleStrip(); issueTask(nx, `학습자가 다음 방법인 ${nx.label}(으)로 넘어가기로 직접 골랐다. 그 방법의 과업을 낸다.`); }
-      else { if(session.stratDone) delete session.stratDone[t.done]; pushNote('좋아요. 지금 방법으로 계속해요.'); }
+      if(t.go && t.next){ const nx = STRATS.find(x=>x.id===t.next); session.cycleIdx = 2; session.cycleNow = 'apply'; renderCycleStrip(); issueTask(nx, `학습자가 다음 방법인 ${nx.label}(으)로 넘어가기로 직접 골랐다. 그 방법의 과업을 낸다.`); }
+      else if(!t.go){ if(session.stratDone) delete session.stratDone[t.done]; pushNote('좋아요. 지금 방법으로 계속해요.'); }
+      // t.go && !t.next: 더 넘어갈 방법이 없다(이미 session.stratDone에 표시돼 있음) — 과업 없이 그대로 둔다.
       return; }
     const ckb = e.target.closest('.ck-btn');
     if(ckb && !e.target.closest('.ck-proof')){
@@ -6503,7 +6525,8 @@ function init(){
       const t = session.turns.find(x=>x.id===cpId); if(!t) return;
       t.reason = cpReason.value;
       const btn = document.querySelector(`.cp-submit[data-cp="${cpId}"]`);
-      if(btn) btn.disabled = !(t.score && t.reason.trim().length>=2);
+      const needReason = cfg().required.checkpointReasonText;
+      if(btn) btn.disabled = !(t.score && (!needReason || t.reason.trim().length>=2));
       return;
     }
     const tblCell = e.target.closest('.tbl-cell');
