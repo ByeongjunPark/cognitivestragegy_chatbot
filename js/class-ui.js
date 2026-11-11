@@ -511,11 +511,15 @@ function goalExampleSentences(){
   };
   return [...new Set(picks.map(it=>`${core(it)}에 대해 알고 싶어요`))];
 }
+function prevLinkNow(subject){ const acc = typeof account==='function' ? account() : null; return acc ? CS.prevLink(acc.sessions||[], subject) : null; }
 function paintGoalHelpers(){
   const box = $('#st-goal-help'); if(!box) return;
   const w = lastWonder();
+  const subjSel = $('#st-subject') && $('#st-subject').value; const pl = prevLinkNow(subjSel ? (SUBJECT_ALIAS[subjSel]||subjSel) : null);
+  const again = pl && pl.hard ? `지난번에 헷갈린 "${trim(pl.hard, 30)}" 부분을 다시 공부하고 싶어요` : '';
   const ex = goalExampleSentences();
-  box.innerHTML = (w ? `<button type="button" class="chip goal-ex" data-v="${esc(w)}">💭 지난번에 궁금했던 것: ${esc(trim(w,40))}</button>` : '') +
+  box.innerHTML = (again ? `<button type="button" class="chip goal-ex" data-v="${esc(again)}">🔗 지난번 이어서: ${esc(trim(pl.hard,30))}</button>` : '') +
+    (w ? `<button type="button" class="chip goal-ex" data-v="${esc(w)}">💭 지난번에 궁금했던 것: ${esc(trim(w,40))}</button>` : '') +
     ex.map(s=>`<button type="button" class="chip goal-ex" data-v="${esc(s)}">${esc(s)}</button>`).join('');
 }
 // 넓은 입력이면 바로 고르지 않고 "이 중에서 어느 쪽이 궁금해요?"로 2~3개 좁혀 되묻는다
@@ -662,3 +666,33 @@ document.addEventListener('click', e=>{
   b.parentElement.querySelectorAll('[data-c]').forEach(x=>x.classList.toggle('is-selected', x===b));
   if(typeof syncResSubmit==='function') syncResSubmit();
 });
+
+/* ---------- 지난 공부와 이어 주기: 대화 시작 카드 + AI 참고 정보 ---------- */
+// 자기조절 순환(돌아보기 → 다음 계획): 지난번에 내가 남긴 다짐과 어려웠던 점을 새 공부 시작에 다시 보여 준다.
+function pushPrevLinkCard(){
+  if(!session || session._prevLinked) return;
+  const acc = account(); if(!acc) return;
+  const pl = CS.prevLink((acc.sessions||[]).filter(x=>x.id!==session.id), session.ctx.subject);
+  if(!pl || !(pl.promise || pl.hard || pl.journal)) return;
+  session._prevLinked = true; session.prevLink = pl;
+  session.turns.push({ id:uid(), role:'note', kind:'prev-link', pl });
+  renderStream();
+}
+function prevLinkCardHTML(t){
+  const pl = t.pl || {};
+  const rows = [
+    pl.promise ? `<div class="pl-row"><span>📝 지난번 내 다짐</span><b>“${esc(trim(pl.promise, 80))}”</b></div>` : '',
+    pl.hard ? `<div class="pl-row"><span>🧩 지난번에 어려웠던 점</span><b>${esc(trim(pl.hard, 60))}</b></div>` : '',
+    pl.pre!=null && pl.post!=null ? `<div class="pl-row"><span>📈 지난번 점수</span><b>공부 전 ${pl.pre}점 → 혼자 풀기 ${pl.post}점</b></div>` : ''
+  ].join('');
+  return `<div class="meta-score-card prev-link"><div class="msc-title">🔗 지난 공부에서 이어 가요 <span class="hint" style="font-weight:500">${esc(pl.date||'')} · ${esc(pl.subject||'')}</span></div>${rows}
+    <p class="msc-note" style="margin-top:6px">오늘은 지난번 다짐을 한 번 지켜 봐요.</p></div>`;
+}
+// 대화 AI가 참고할 지난 공부 요약(같은 과목일 때만). 지난 내용을 다시 가르치거나 평가하지 않게 한다.
+function prevLinkRule(){
+  const pl = session && session.prevLink; if(!pl || !pl.sameSubject) return '';
+  return `[지난 공부 연결 — 너만 참고] ${pl.date}에 같은 과목 "${trim(pl.std, 50)}"을(를) 공부했다.`
+    + (pl.hard ? ` 그때 어려웠던 점: ${trim(pl.hard, 60)}.` : '')
+    + (pl.promise ? ` 학습자가 남긴 다짐: "${trim(pl.promise, 80)}".` : '')
+    + ' 오늘 내용과 이어지는 부분이 있으면 자연스럽게 연결하고, 다짐을 지키도록 한 번쯤 부드럽게 떠올리게 해라. 지난 내용을 다시 가르치거나 평가하지 마라.';
+}

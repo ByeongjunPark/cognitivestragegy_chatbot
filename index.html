@@ -1212,6 +1212,11 @@
   @media(prefers-reduced-motion:reduce){.ld-books span,.ld-dots i{animation:none}}
 
   .res-conf{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+
+  .prev-link{max-width:520px!important;border-color:#bcd1fb!important;background:#f5f9ff!important}
+  .pl-row{display:flex;flex-direction:column;gap:2px;margin-top:8px;font-size:13px}
+  .pl-row span{color:var(--muted);font-weight:700;font-size:12px}
+  .pl-row b{color:var(--ink);font-weight:700}
 </style>
 </head>
 <body>
@@ -3880,6 +3885,7 @@ function renderStream(){
         return;
       }
       if(t.kind==='source-card'){ box.insertAdjacentHTML('beforeend', `<div class="msg note">${sourceCardHTML(t)}</div>`); return; }
+      if(t.kind==='prev-link'){ box.insertAdjacentHTML('beforeend', `<div class="msg note">${prevLinkCardHTML(t)}</div>`); return; }
       if(t.kind==='next-strat'){ const nx = t.next ? STRATS.find(x=>x.id===t.next) : null, dn = STRATS.find(x=>x.id===t.done);
         const goLabel = nx ? `${nx.emoji} ${esc(nx.label)}(으)로 해 보기` : '이 정도면 됐어요';
         const doneNote = t.go ? (nx ? `"${esc(nx.label)}"(으)로 넘어갔어요.` : '이 정도면 됐다고 했어요.') : '지금 방법으로 계속해요.';
@@ -4616,6 +4622,7 @@ async function advancePrep(){
   // (WP1-1-⑤) 시작 화면에서 정한 역할 나누기가 대화에 실제로 반영됨을 한 줄로 보여 준다
   { const sp = CS.taskSplit(TASK_BLOCKS, session.taskBlocks, session.fixedToggle);
     if(sp.meMore.length) pushNote(CS.COPY.greetPlanLead + sp.meMore.join(' · ') + ' — AI는 내가 먼저 해 볼 때까지 기다려요.'); }
+  pushPrevLinkCard(); // 지난번 다짐·어려웠던 점을 이어 보여 준다
   await startActivationQuiz();
 }
 // 학습자가 [다음으로]를 눌렀을 때 (가 단계는 이제 퀴즈 제출 버튼으로 넘어가서 여기서 다루지 않는다)
@@ -5030,6 +5037,7 @@ function sysPrompt(instruction){
 session.ctx.concept ? `이 성취기준의 핵심 개념·내용요소(교육과정 해설): ${session.ctx.concept} — 대화 내용이 이 범위를 벗어나지 않도록 반드시 참고하라(그대로 읽어주지 말고, 학습자 수준으로 풀어서 자연스럽게 녹여라).` : '',
 (session.ctx.extraStds && session.ctx.extraStds.length) ? `학습자가 이 공부와 함께 다루고 싶다고 직접 더한 관련 성취기준: ${session.ctx.extraStds.map(e=>`[${e.subject}] ${e.name}${e.concept?' — '+e.concept:''}`).join(' / ')} — 기회가 되면 원래 성취기준과 이 내용을 자연스럽게 연결해줘라(억지로 매 턴 끼워 넣지는 마라).` : '',
 `학습목표: ${session.goal || '(아직 미정)'}`,
+prevLinkRule(),
 focusRule(),
 `지원강도(비계) 단계: ${effSupport()} — high면 구체적 힌트, mid면 방향만, low면 되묻는 질문 위주로 행동하되 이 단계명도 말하지 마라.`,
 `학습자가 고른 공부 방법(인지전략, 여러 개 가능): ${stratLabel}`,

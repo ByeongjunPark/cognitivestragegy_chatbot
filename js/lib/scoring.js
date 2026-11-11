@@ -74,6 +74,29 @@
     };
   }
 
+  /* ---------- 지난 공부와 이어 주기 ----------
+     지난 공부에서 남긴 것(다짐 한 문장, 어려웠던 점, 다음 계획, 궁금했던 것, 점수 변화)을 골라 다음 공부의 시작·대화에 잇는다.
+     같은 과목 기록이 있으면 그것을, 없으면 가장 최근 기록을 쓴다. 비교·평가 없이 내 기록만. */
+  function prevLink(sessions, subject) {
+    const S = (sessions || []).filter(x => !x.incomplete && !x.practice && !x.isSample && x.ctx)
+      .sort((a, b) => String(a.startedAt || '').localeCompare(String(b.startedAt || '')));
+    if (!S.length) return null;
+    const same = S.filter(x => subject && x.ctx.subject === subject);
+    const s = (same.length ? same : S)[(same.length ? same : S).length - 1];
+    const evs = (s.tasks || []).flatMap(t => t.evals || []);
+    const last = evs[evs.length - 1] || null;
+    const errs = evs.map(e => e.errorType).filter(e => e && e !== '특별한 착오 없음');
+    const r = s.reflect || {};
+    return {
+      date: String(s.startedAt || '').slice(0, 10), subject: s.ctx.subject, std: s.ctx.std, goal: s.goal || '', sameSubject: !!same.length,
+      strategies: (s.strategies || []).slice(), promise: String(r.note || r.noteA || '').trim(), journal: String((s.residual && s.residual.journal) || '').trim(),
+      hard: last && last.missing && last.missing[0] ? String(last.missing[0]) : '', errorType: errs[errs.length - 1] || '',
+      plan: s.nextPlan || null, planWhy: s.nextPlanWhy || '', wonder: s.wonder || '',
+      pre: s.prior && s.prior.diagScore != null ? s.prior.diagScore : null, post: s.residual && s.residual.postScore != null ? s.residual.postScore : null,
+      postDeferred: !!(s.residualDeferred && !(s.residual && s.residual.result))
+    };
+  }
+
   /* ---------- 역할분담 슬라이더 (WP1-1) — 데이터 의미: 값 ≥ 50 = AI가 맡음(하위 호환) ---------- */
   function sliderLabel(v) {
     if (v >= 70) return 'AI가 많이';
@@ -278,7 +301,7 @@
 
   Object.assign(CS, {
     META_AXES, LEVEL_LABELS, level3, metaScoreView, calibView,
-    sliderLabel, isAiSide, taskSplit, PRESETS, applyPreset, presetOf, metaTaskScore, strategyReview,
+    sliderLabel, isAiSide, taskSplit, PRESETS, applyPreset, presetOf, metaTaskScore, strategyReview, prevLink,
     srcOf, isTypedTurn, migrateTurnsSrc,
     phaseEnter, phaseLeave, phaseSwitch, phaseMs, totalMs, median,
     effectiveSupport, startBoost, weakAxis, nextPlanCandidates, growthCard

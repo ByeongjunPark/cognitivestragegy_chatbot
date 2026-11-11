@@ -180,3 +180,19 @@ test('스스로 점검을 거부·장난 답만 했으면 0점이 아니라 "건
   const v = CS.metaScoreView({ skipped: true, answers: { understand: '시러' }, scoreDetail: null });
   assert.equal(v.ok, false); assert.equal(v.skipped, true); assert.equal(v.failed, false);
 });
+
+test('지난 공부와 이어 주기: 같은 과목의 가장 최근 기록에서 다짐·어려웠던 점·점수를 고른다', () => {
+  const mk = (d, subj, extra) => Object.assign({ startedAt: d, ctx: { subject: subj, std: subj + ' 성취기준' }, reflect: {}, tasks: [] }, extra || {});
+  const S = [
+    mk('2026-11-01', '수학', { reflect: { note: '다음엔 헷갈리는 곳을 먼저 말할래요.' }, tasks: [{ evals: [{ level: 1, errorType: '근거가 부족함', missing: ['까닭을 안 씀'] }] }], prior: { diagScore: 50 }, residual: { postScore: 75 } }),
+    mk('2026-11-02', '사회', { reflect: { note: '사회 다짐' } }),
+    mk('2026-11-03', '수학', { incomplete: true })
+  ];
+  const a = CS.prevLink(S, '수학');
+  assert.equal(a.date, '2026-11-01'); assert.equal(a.sameSubject, true);
+  assert.equal(a.promise, '다음엔 헷갈리는 곳을 먼저 말할래요.'); assert.equal(a.hard, '까닭을 안 씀'); assert.equal(a.errorType, '근거가 부족함');
+  assert.equal(a.pre, 50); assert.equal(a.post, 75);
+  const b = CS.prevLink(S, '과학');
+  assert.equal(b.subject, '사회'); assert.equal(b.sameSubject, false);
+  assert.equal(CS.prevLink([], '수학'), null);
+});
