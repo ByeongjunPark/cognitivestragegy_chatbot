@@ -66,12 +66,72 @@ function showPinCard(list, nick){
 }
 
 /* ---------- 첫 사용 둘러보기: iorad식 실제 화면 가리키기 투어 (WP4-2) ----------
-   요청사항(20번째 피드백) "여전히 허접하다, iorad처럼 실제 화면을 가리키면서 해 달라" —
-   모달 안의 작은 미리보기 대신, 진짜 화면(홈/시작) 위에 반투명 막을 깔고 설명할 실제
-   요소만 뚫어 보이게(스포트라이트) 가리키며 설명한다. 아직 세션이 없어 실제로 보여줄 수
-   없는 대화·성찰 단계는 실제 클래스를 그대로 쓴 작은 예시 창(.gd-frame)으로 보여준다.
-   사용자가 준 목차(1.메인화면/2.배울 것 정하기/3.대화 과정/4.성찰하기, 가나다라 하위
-   항목)를 그대로 13단계로 옮겼다. */
+   요청사항(20·21번째 피드백) "iorad처럼 실제 화면을 가리켜라", "7번부터는 왜 작은 예시
+   카드로만 나오냐, 실제 채팅창을 mock data로 보여줘야지" — 대화·성찰 단계도 더 이상
+   작은 예시 창이 아니라, 진짜 #chat/#reflect/#residual 화면 위에 그대로 띄운다. 아직
+   실제로 공부한 적이 없으니 "이미 대화를 좀 나눈 상태"를 흉내 낸 가짜 세션(buildMockSession)
+   하나를 만들어 session 전역변수에 잠깐 끼워 넣고, 그 화면이 쓰는 진짜 렌더 함수
+   (renderStream/enterReflect/enterResidual)로 그린다 — 다른 특수 카드(활성화 퀴즈
+   결과·스스로 점검 결과·방법 고르기)와 완전히 같은 모양이 된다. 투어가 끝나면 원래
+   session으로 되돌린다(실제 공부를 시작한 적이 없으면 보통 null). */
+let _mockSession = null;
+function buildMockSession(){
+  const now = Date.now();
+  return {
+    id:'tour-mock', startedAt:new Date(now-20*60000).toISOString(), endedAt:null,
+    mode:'class40', diagTags:['기억','예시','설명','적용'], appVersion:'tour',
+    phaseTimes:null, flags:[], helpRequests:[], scoreReports:[], errorReports:[], skipped:{},
+    isSample:true, practice:true, classDurationMin:null,
+    ctx:{ stdConfirmedAt:new Date(now-20*60000).toISOString(), grade:'초등학교 5학년', band:'초등학교 5~6학년', subject:'수학', subjKey:'수학', code:'TOUR', std:'분수의 덧셈과 뺄셈', area:'수와 연산', concept:'분모가 다른 분수는 통분한 뒤 더하거나 뺀다.', extraStds:[] },
+    goal:'분수를 그림으로 나타내면서 더하는 방법을 알고 싶어요', wonder:'',
+    prior:{ score:4, items:[
+      { id:'p0', tag:'기억', type:'text', q:'통분이 뭔지 떠올려서 써 보세요.', a:'분모를 같게 만드는 거요', score:70, note:'' },
+      { id:'p1', tag:'적용', type:'text', q:'1/3과 1/4을 통분해 보세요.', a:'4/12랑 3/12', score:60, note:'' }
+    ], diagScore:62, diagFeedback:'기억하고 있는 것도 있고 아직 헷갈리는 것도 있어요.' },
+    meta:{ usualMethod:'문제를 여러 번 풀어봐요', raw:'', u:'', s:'', c:'', score:55,
+      scoreDetail:{ understand:67, strategy:33, connect:67 }, scoreVersion:'v2-subind',
+      indLabels:null, indicators:{ understand:{s:1,r:1,c:0}, strategy:{s:0,r:1,c:0}, connect:{s:1,r:1,c:0} },
+      scoreEvidence:{ understand:'분모가 다를 때 헷갈려요', strategy:'문제를 많이 풀면 될 것 같아요', connect:'전에 배운 분수 크기 비교랑 비슷해요' },
+      feedback:'헷갈리는 곳을 더 구체적으로 짚어보면 좋아요.', gradeFailed:false, calib:null, step:3, reasked:{} },
+    strategies:['organization'], strategyLabel:'🗂️ 표·그림으로 정리하기', strategyReason:'여러 정보가 헷갈려서', strategyChangeLog:[], stratTurnIdx:0, stratDone:{}, stratRounds:{ organization:1 },
+    taskBlocks:{}, fixedToggle:{},
+    support:'mid', supportStart:'high',
+    acceptStreak:0, holdStreak:0, cpHighStreak:0, stuckCount:1,
+    phase:'explore', prepStep:'init', awaitPick:null, pendingActivation:false,
+    cycleIdx:2, cycleNow:'apply', cycleStarted:true,
+    checkpointInterval:4, checkpointForceSoon:false, lowUnderstandFlag:false,
+    checkpoints:[{ turnId:'t2', score:4, reason:'표로 정리하니 알 것 같아요', at:new Date(now-5*60000).toISOString() }],
+    turnsSinceCheckpoint:0, pendingCheckpoint:false,
+    retrievalQueue:[], turnsSinceRetrieval:0,
+    turns:[
+      { id:'t1', role:'ai', text:'"표로 정리하기" 방법으로 해보자. 분모가 다른 분수 두 개를 표에 정리해볼래?', phase:'explore', kind:null, support:'mid', judge:null, comment:'', structOffer:null },
+      { id:'t2', role:'me', text:'1/3이랑 1/4을 표에 써볼게', phase:'explore', delegate:false, initiative:'self', src:'typed' },
+      { id:'t3', role:'ai', text:'좋아, 통분한 결과를 표 칸에 채워볼래? 어떤 낱말을 넣을지는 네가 정해.', phase:'explore', kind:null, support:'mid', judge:'accept', comment:'', structOffer:null }
+    ],
+    reflect:{ note:'', noteA:'', tags:{ t2:'self' }, step:'delegate', promptRatings:[
+      { turnId:'t2', text:'1/3이랑 1/4을 표에 써볼게', specificity:4, logic:3, clarity:4 }
+    ] },
+    residual:{ started:true, items:[
+      { id:'r0', tag:'기억', type:'text', q:'(사전 1번과 같은 종류) 통분이 뭔지 다시 떠올려 써 보세요.', a:'분모를 같게 만드는 거예요', e:'', c:80, score:85, correct:true, note:'', strategyId:null },
+      { id:'r1', tag:'적용', type:'text', q:'(사전 2번과 같은 종류) 1/2과 1/5을 통분해 보세요.', a:'5/10이랑 2/10', e:'', c:80, score:80, correct:true, note:'', strategyId:'organization' }
+    ], result:null, postScore:null, judge:null, comment:'', journal:'' }
+  };
+}
+// 각 단계 직전에 가짜 세션을 그 단계에 맞는 모양으로 살짝 바꾼다(활성화 퀴즈는 "이미
+// 답한 결과" 화면을, 혼자 풀어보기는 "푸는 중"과 "결과 나온 뒤" 두 가지를 보여줘야 한다).
+const TOUR_SETUPS = {
+  activate(s){ s.turns = [{ id:'aq1', role:'note', kind:'activate-quiz', answered:true }]; },
+  meta(s){ s.turns = [{ id:'ms1', role:'note', kind:'meta-score', text:'', meta:Object.assign({}, s.meta.scoreDetail, { feedback:s.meta.feedback }) }]; },
+  pick(s){ pendingStrategyPick = ['organization']; strategyPickMode = 'initial';
+    s.turns = [{ id:'sp1', role:'ai', text:'좋아, 오늘은 어떤 방법으로 공부해볼까?', phase:'explore', kind:'strategy-pick', support:'mid', judge:null, comment:'', structOffer:null, pickDone:false }]; },
+  apply(s){ /* buildMockSession()의 기본 대화(turns)를 그대로 쓴다 */ },
+  reflect(s){ /* 기본 reflect.tags/promptRatings를 그대로 쓴다 */ },
+  residualDoing(s){ s.residual = Object.assign({}, s.residual, { result:null, postScore:null, journal:'' }); },
+  residualDone(s){ s.residual = Object.assign({}, s.residual, {
+    result:{ selfExplain:{ level:'높음', note:'표로 정리한 걸 떠올려서 설명했어요.' }, metacogBrier:0.08, transfer:{ applied:true, note:'표로 정리하는 방법을 그대로 썼어요.' } },
+    postScore:82, journal:'처음엔 통분이 헷갈렸는데, 표로 정리하면서 알게 됐어요.'
+  }); }
+};
 const TOUR_STEPS = [
   { sec:'', t:'내 공부방에 온 걸 환영해요', b:'여기서 AI와 함께 공부하고, 내가 어떻게 공부했는지 돌아봐요. 화면을 하나씩 직접 짚어가며 보여줄게요.' },
   { sec:'1-가', t:'공부 내역 보기', screen:'home', el:()=>{ const s = document.getElementById('sess-list'); return s && s.closest('.widget'); },
@@ -84,54 +144,61 @@ const TOUR_STEPS = [
     b:'수업시간모드(학교급별 시간 제한)와 자유모드 중 고르고, 학교급을 고르면 학년·과목이 그 학교급만 나와요. "오늘 공부하고 싶은 것"을 내 말로 적으면 맞는 내용을 찾아 줘요.' },
   { sec:'2-나', t:'AI와 할 일 나누기', screen:'start', el:()=>document.getElementById('tb-details'),
     b:'이 공부에서 AI가 맡을 일과 내가 할 일을 미리 정해요. 막대를 밀어서 비율을 바꿀 수 있어요.' },
-  { sec:'3-가', t:'아는 것 확인하기', mock:`<div class="gd-frame-body"><div class="msg ai"><div class="av">AI</div><div class="bubble">분모가 다른 분수를 더할 때, 먼저 뭘 해야 할까?</div></div>
-      <textarea class="textarea" rows="2" readonly placeholder="아는 만큼 적어보기">통분을 먼저 해야 할 것 같아요.</textarea></div>`,
-    b:'시험이 아니에요. 지금 아는 만큼 적어요. 몰라도 "모르겠어요"라고 쓰면 돼요.' },
-  { sec:'3-나', t:'스스로 점검하기', mock:`<div class="gd-frame-body"><div class="lv3-row"><span class="lv3-lab">이해 점검</span><span class="lv3-bar l1"><i style="width:58%"></i></span><b class="lv3-txt">해 보는 중이에요</b></div>
-      <div class="msg ai" style="margin-top:8px"><div class="av">AI</div><div class="bubble">헷갈리는 부분이 있다면 어디야?</div></div></div>`,
+  { sec:'3-가', t:'아는 것 확인하기', mockScreen:'chat', mockSetup:'activate', el:()=>{ const all=document.querySelectorAll('#stream .msg.note'); return all[all.length-1]; },
+    b:'시험이 아니에요. 지금 아는 만큼 적어요. 몰라도 "모르겠어요"라고 쓰면 돼요. 결과는 맞다·틀리다가 아니라 참고만 해요.' },
+  { sec:'3-나', t:'스스로 점검하기', mockScreen:'chat', mockSetup:'meta', el:()=>{ const all=document.querySelectorAll('#stream .msg.note'); return all[all.length-1]; },
     b:'헷갈리는 곳을 짚고, 어떤 방법으로 공부하는지, 전에 배운 것과 어떻게 이어지는지 스스로 짚어봐요.' },
-  { sec:'3-다', t:'공부 방법 고르기', mock:`<div class="gd-frame-body"><button type="button" class="strat-card is-selected" style="width:100%">
-      <div class="sc-top"><span class="sc-check">✓</span><span class="sc-name">🗂️ 표·그림으로 정리하기</span></div>
-      <div class="sc-desc">표나 마인드맵으로 짜임새 있게 정리해요</div>
-      <div class="sc-when">이럴 때 좋아요 · 여러 정보가 뒤섞여서 헷갈릴 때</div></button></div>`,
+  { sec:'3-다', t:'공부 방법 고르기', mockScreen:'chat', mockSetup:'pick', el:()=>{ const all=document.querySelectorAll('#stream .msg.ai'); return all[all.length-1]; },
     b:'5가지 방법 중 하나 이상 골라요. 오늘 내용에 잘 맞는 방법엔 안내 배지가 붙어요.' },
-  { sec:'3-라', t:'방법대로 해 보기', mock:`<div class="gd-frame-body"><div class="msg ai"><div class="av">AI</div><div class="bubble">분모가 다른 분수 두 개를 표에 정리해볼래?</div></div>
-      <div class="msg me"><div class="av">나</div><div class="bubble">1/3이랑 1/4을 써볼게</div></div>
-      <div class="row" style="margin-top:8px"><button type="button" class="stuck">막혔어요</button><button type="button" class="msg-act">이 말 판단하기</button></div></div>`,
+  { sec:'3-라', t:'방법대로 해 보기', mockScreen:'chat', mockSetup:'apply', el:()=>document.getElementById('btn-stuck'),
     b:'고른 방법으로 실제 과업을 해 봐요. 막히면 [막혔어요]로 도움을 고르고, AI 말은 [이 말 판단하기]로 내가 직접 판단해요.' },
-  { sec:'4-가', t:'돌아보기 — AI위임 성찰 · 프롬프트 성찰', mock:`<div class="gd-frame-body"><div class="msg me"><div class="av">나</div><div class="bubble">1/3이랑 1/4을 써볼게</div></div>
-      <div class="tl-tags" style="max-width:220px;margin:6px 0 10px"><button type="button" class="on">🧠 내가 생각</button><button type="button">🤖 AI에게 맡김</button></div>
-      <div class="field-label" style="margin-bottom:4px">내 질문 — 자세함</div><div class="understand-pick" style="flex-direction:row;max-width:220px"><button type="button" class="u-chip">1</button><button type="button" class="u-chip is-selected">2</button><button type="button" class="u-chip">3</button></div></div>`,
+  { sec:'4-가', t:'돌아보기 — AI위임 성찰 · 프롬프트 성찰', mockScreen:'reflect', mockSetup:'reflect', el:()=>document.querySelector('.tl-tags'),
     b:'내가 한 말마다 "내가 생각했는지·AI에게 맡겼는지" 표시하고(AI위임 성찰), 내가 쓴 질문의 자세함·이어짐·분명함도 스스로 매겨요(프롬프트 성찰).' },
-  { sec:'4-나', t:'혼자 풀어보기', mock:`<div class="gd-frame-body"><div class="msc-row"><span>공부 전</span><span class="bar"><i style="width:48%"></i></span><b>48점</b></div>
-      <div class="msc-row"><span>혼자 풀 때</span><span class="bar"><i style="width:80%"></i></span><b>80점</b></div></div>`,
+  { sec:'4-나', t:'혼자 풀어보기', mockScreen:'residual', mockSetup:'residualDoing', el:()=>document.getElementById('res-items'),
     b:'대화를 마친 뒤, AI 없이 비슷한 문제를 혼자 풀어봐요. 공부 전 점수와 나란히 비교해서 얼마나 늘었는지 봐요.' },
-  { sec:'4-다', t:'최종 성찰', mock:`<div class="gd-frame-body"><label class="field-label" for="gd-mock-journal">최종 성찰 — AI 없이 혼자 풀어본 결과를 보면서 적어요</label>
-      <textarea class="textarea" id="gd-mock-journal" rows="2" readonly>처음엔 통분이 헷갈렸는데, 표로 정리하면서 알게 됐어요.</textarea></div>`,
+  { sec:'4-다', t:'최종 성찰', mockScreen:'residual', mockSetup:'residualDone', el:()=>document.getElementById('res-journal'),
     b:'AI 사용 이후 혼자 풀어본 결과를 보면서, 어려웠던 점과 새롭게 알게 된 점을 한 문장 이상 적어요. 이게 오늘 공부의 마지막 단계예요.' }
 ];
 let _tourIdx = 0;
 let _tourResize = null;
-function guideFrameHTML(mock){
-  if(!mock) return '';
-  return `<div class="gd-frame"><div class="gd-frame-bar"><span class="gd-frame-dot"></span><span class="gd-frame-dot"></span><span class="gd-frame-dot"></span></div>${mock}</div>`;
-}
-function closeTour(){
+let _tourSessionBackup;
+let _tourHasBackup = false;
+// DOM(막·구멍·설명카드)만 지운다 — 단계를 넘길 때마다 매번 부른다(투어 자체를 끝내는 건 아님).
+function clearTourDom(){
   document.querySelectorAll('.tour-dim,.tour-hole,.tour-card').forEach(e=>e.remove());
   if(_tourResize){ window.removeEventListener('resize', _tourResize); _tourResize = null; }
 }
+// 투어를 완전히 끝낸다 — 가짜 세션이 있었으면 원래 session(보통 null)으로 되돌리고 홈으로.
+// 버그 수정: 예전엔 session이 원래 null이었던 경우("아직 공부 시작 전")와 "아직 안 쓴 값"을
+// 똑같이 undefined로 구분해서, 단계를 한 번만 넘겨도 이게 "투어 끝"으로 오인돼 매번 홈으로
+// 튕겨 나갔다 — 원래 값을 _tourHasBackup(불리언)으로 따로 표시해 구분한다.
+function closeTour(){
+  clearTourDom();
+  if(_tourHasBackup){ session = _tourSessionBackup; _tourSessionBackup = undefined; _tourHasBackup = false; show('home'); }
+}
 function renderTour(i){
-  closeTour();
+  clearTourDom();
+  // 방어적으로 한 번 더: 투어가 떠 있는 동안은 이 팝업(#scrim)이 항상 닫혀 있어야 한다.
+  const scrim = document.getElementById('scrim'); if(scrim) scrim.classList.remove('open');
   _tourIdx = Math.max(0, Math.min(TOUR_STEPS.length-1, i||0));
   const step = TOUR_STEPS[_tourIdx];
-  if(step.screen){
+  if(step.mockScreen){
+    if(!_tourHasBackup){ _tourSessionBackup = (typeof session!=='undefined') ? session : null; _tourHasBackup = true; }
+    // 단계마다 "기본 대화" 위에 그 단계에 맞는 모양(활성화 퀴즈 결과, 방법 고르기 카드 등)을
+    // 새로 얹는다 — 매번 새로 만들어야 이전 단계가 바꿔 둔 turns/residual이 안 섞인다.
+    _mockSession = buildMockSession();
+    TOUR_SETUPS[step.mockSetup](_mockSession);
+    session = _mockSession;
+    show(step.mockScreen);
+  } else if(step.screen){
+    if(_tourHasBackup){ session = _tourSessionBackup; _tourSessionBackup = undefined; _tourHasBackup = false; }
     const active = document.querySelector('.screen.is-active');
     if(!active || active.dataset.screen !== step.screen) show(step.screen);
   }
   const total = TOUR_STEPS.length;
   document.body.insertAdjacentHTML('beforeend', '<div class="tour-dim"></div>');
-  const card = document.createElement('div'); card.className = 'tour-card' + (step.mock ? ' wide' : '');
-  card.innerHTML = `${step.sec?`<div class="tour-badge">${esc(step.sec)}</div>`:''}<h4>${esc(step.t)}</h4>${guideFrameHTML(step.mock)}<p>${esc(step.b)}</p>
+  const card = document.createElement('div'); card.className = 'tour-card';
+  card.innerHTML = `${step.sec?`<div class="tour-badge">${esc(step.sec)}</div>`:''}<h4>${esc(step.t)}</h4><p>${esc(step.b)}</p>
     <div class="row" style="justify-content:space-between">
       <button type="button" class="btn btn-sm btn-ghost" id="tour-skip">건너뛰기</button>
       <span class="row" style="gap:8px">${_tourIdx>0?'<button type="button" class="btn btn-sm" id="tour-prev">← 이전</button>':''}${_tourIdx<total-1?`<button type="button" class="btn btn-sm btn-primary" id="tour-next">다음 (${_tourIdx+1}/${total}) →</button>`:'<button type="button" class="btn btn-sm btn-primary" id="tour-practice">연습해 보기</button>'}</span>
@@ -187,7 +254,9 @@ function maybeAutoGuide(){
     </div></div>`, { hideOk:true });
   const remember = ()=>{ const c = document.getElementById('gd-never'); if(c && c.checked){ try{ localStorage.setItem(guideNeverKey(), '1'); }catch(e){} } };
   document.getElementById('gd-no').onclick = ()=>{ remember(); document.getElementById('scrim').classList.remove('open'); };
-  document.getElementById('gd-yes').onclick = ()=>{ remember(); openGuide(0); };
+  // 버그 수정(요청사항 21번째 피드백): "안내 보기"를 눌러도 이 팝업(#scrim)이 안 닫혀서
+  // 투어 스포트라이트 뒤에 이 팝업이 그대로 깔려 보였다 — 투어를 시작하기 전에 꼭 닫는다.
+  document.getElementById('gd-yes').onclick = ()=>{ remember(); document.getElementById('scrim').classList.remove('open'); openGuide(0); };
   document.getElementById('gd-snooze').onclick = ()=>{ try{ localStorage.setItem(guideSnoozeKey(), String(Date.now() + 7*24*60*60*1000)); }catch(e){} document.getElementById('scrim').classList.remove('open'); };
 }
 function startPractice(){
