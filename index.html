@@ -84,6 +84,17 @@
   .gd-frame-bar{background:var(--surface-2);padding:7px 10px;display:flex;gap:5px;border-bottom:1px solid var(--line)}
   .gd-frame-dot{width:7px;height:7px;border-radius:50%;background:var(--line-strong);display:inline-block}
   .gd-frame-body{padding:13px;transform:scale(.92);transform-origin:top left;width:108.7%}
+  /* 요청사항(20번째 피드백) "iorad처럼 실제 화면을 가리키면서 설명해줘" — 진짜 화면 위에
+     반투명 막을 깔고, 설명할 실제 요소 자리만 박스섀도 트릭으로 뚫어 보이게 한다(스포트라이트).
+     실제 세션이 없어 보여줄 수 없는 단계는 .tour-card.centered로 가운데에 작은 예시 창을 띄운다. */
+  .tour-dim{position:fixed;inset:0;z-index:150;background:rgba(16,24,40,.15)}
+  .tour-hole{position:fixed;z-index:151;border-radius:12px;box-shadow:0 0 0 9999px rgba(16,24,40,.6);pointer-events:none;transition:all .25s ease}
+  .tour-card{position:fixed;z-index:152;background:#fff;border-radius:14px;box-shadow:0 12px 32px -8px rgba(16,24,40,.4);padding:16px;width:300px;max-width:calc(100vw - 20px)}
+  .tour-card.wide{width:380px}
+  .tour-card.centered{left:50%!important;top:50%!important;transform:translate(-50%,-50%)}
+  .tour-card h4{margin:2px 0 8px;font-size:15px}
+  .tour-card p{margin:0 0 12px;font-size:13px;line-height:1.55;color:var(--ink-2)}
+  .tour-badge{display:inline-block;font-size:11px;font-weight:800;color:var(--accent-ink);background:var(--accent-wash);border-radius:999px;padding:2px 9px;margin-bottom:6px}
   @media(max-width:860px){ .headline{font-size:24px} .card{padding:20px} }
 
   .field-label{display:block;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px}
@@ -1698,7 +1709,7 @@
            점을 성찰일지로 남기도록 한다" — 결과 판단(res-judge)과는 별개로, 공부 전체를 마치며
            남기는 마지막 성찰일지를 따로 둔다. -->
       <div>
-        <label class="field-label" for="res-journal">마지막으로 <span class="req-tag">꼭 적어요 · 한 문장 이상</span> — 이번에 어려웠던 점이나, 이 공부를 하면서 새롭게 알게 된 점을 적어봐요</label>
+        <label class="field-label" for="res-journal">최종 성찰 <span class="req-tag">꼭 적어요 · 한 문장 이상</span> — AI 없이 혼자 풀어본 결과를 보면서, 이번에 어려웠던 점이나 새롭게 알게 된 점을 적어봐요</label>
         <div class="starters" data-for="res-journal"><button type="button" class="mic-for" data-for="res-journal" aria-label="말로 쓰기">🎤 말로 쓰기</button><button type="button">처음엔 ___가 어려웠는데,</button><button type="button">이제 ___를 알게 됐어요.</button></div>
         <textarea class="textarea" id="res-journal" placeholder="예: 처음엔 ~가 헷갈렸는데 ~하면서 알게 됐어요 / AI랑 이야기하고 나서 ~를 새롭게 알았어요"></textarea>
       </div>
@@ -5934,7 +5945,7 @@ function syncResSubmit(){
 function syncResFinish(){
   const ok = String(session.residual.journal||'').trim().length >= MIN_REFLECT;
   const b = $('#res-finish'); if(b) b.disabled = !ok;
-  const g = $('#res-finish-gate'); if(g) g.textContent = ok ? '' : '마지막 글을 한 문장 이상 적으면 저장할 수 있어요';
+  const g = $('#res-finish-gate'); if(g) g.textContent = ok ? '' : '최종 성찰을 한 문장 이상 적으면 저장할 수 있어요';
 }
 // (개선) 설명은 대화 중 쓴 방법의 "쌍둥이 문제"(방법이 짝지어진 문항)에서만 필수로 받는다.
 // 원리13은 "유사한 과업 수행 + 전후 비교"를 요구하고 문항별 설명은 요구하지 않아서, 나머지는 선택으로 둔다.

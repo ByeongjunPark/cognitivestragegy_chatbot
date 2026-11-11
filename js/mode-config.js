@@ -76,7 +76,7 @@
     { k: 'explore',  t: '방법대로 해 보기', budget: 'explore' },
     { k: 'reflect',  t: '돌아보기',         budget: 'reflect' },
     { k: 'residual', t: '혼자 풀어보기',    budget: 'residual' },
-    { k: 'journal',  t: '마지막 글',        budget: null }
+    { k: 'journal',  t: '최종 성찰',        budget: null }
   ]);
   function remainingMinutes(mode, stepKey, elapsedInStepMs) {
     const cfg = modeCfg(mode);

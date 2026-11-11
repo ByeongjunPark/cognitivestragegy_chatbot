@@ -65,49 +65,108 @@ function showPinCard(list, nick){
   };
 }
 
-/* ---------- 첫 사용 둘러보기 6장 + 연습해 보기 (WP4-2) ----------
-   요청사항(19번째 피드백) "글만 있어 허접하다, 실제 UI를 보여줘야" — 카드마다 그 단계의
-   실제 화면을 작은 창(.gd-frame)으로 보여준다. 진짜 쓰는 클래스(.msg/.bubble/.chip 등)를
-   그대로 가져다 쓰므로 실제 화면과 똑같이 보인다(안 눌리는 예시일 뿐). */
-const GUIDE_CARDS = [
-  { t:'내 공부방에 온 걸 환영해요', b:'여기서 AI와 함께 공부하고, 내가 어떻게 공부했는지 돌아봐요. 로그인할 때마다 이 안내를 다시 볼지 물어봐요.' },
-  { t:'1. 배울 것 정하기', b:'오늘 공부하고 싶은 것을 내 말로 적어요. 예시 문장을 눌러도 돼요. [AI와 할 일 나누기]에서 내가 먼저 할 일과 AI가 도와줄 일을 정해요.',
-    mock:`<div class="gd-frame-body"><div class="mode-row" style="margin-bottom:9px"><span class="chip mode-chip is-selected">수업시간모드</span><span class="chip mode-chip">자유모드</span></div>
-      <textarea class="textarea" rows="2" readonly>분수를 그림으로 나타내면서 더하는 방법을 알고 싶어요</textarea>
-      <button type="button" class="btn btn-sm btn-accent" style="margin-top:9px">딱 맞는 내용 찾기</button></div>` },
-  { t:'2. 아는 것 확인 · 스스로 점검', b:'시험이 아니에요. 지금 아는 만큼 풀고, 헷갈리는 곳을 골라요. 모르면 "모르겠어요"라고 써도 괜찮아요.',
-    mock:`<div class="gd-frame-body"><div class="msg ai"><div class="av">AI</div><div class="bubble">분모가 다른 분수를 더할 땐 어떻게 해야 할까?</div></div>
-      <div class="understand-pick" style="margin-top:10px"><button type="button" class="u-chip is-selected"><span class="u-emoji">🙂</span><span>맞을 것 같아요</span></button><button type="button" class="u-chip"><span class="u-emoji">🤔</span><span>잘 모르겠어요</span></button></div></div>` },
-  { t:'3. 방법 고르고 해 보기', b:'공부 방법을 고르면 AI가 할 일을 줘요. 내가 먼저 해 보고, 막히면 [막혔어요]를 눌러 필요한 도움을 골라요. AI 말은 [이 말 판단하기]로 내가 판단해요.',
-    mock:`<div class="gd-frame-body"><div class="msg ai"><div class="av">AI</div><div class="bubble">"표로 정리하기" 방법으로 해보자. 분모가 다른 분수 두 개를 표에 써볼래?</div></div>
+/* ---------- 첫 사용 둘러보기: iorad식 실제 화면 가리키기 투어 (WP4-2) ----------
+   요청사항(20번째 피드백) "여전히 허접하다, iorad처럼 실제 화면을 가리키면서 해 달라" —
+   모달 안의 작은 미리보기 대신, 진짜 화면(홈/시작) 위에 반투명 막을 깔고 설명할 실제
+   요소만 뚫어 보이게(스포트라이트) 가리키며 설명한다. 아직 세션이 없어 실제로 보여줄 수
+   없는 대화·성찰 단계는 실제 클래스를 그대로 쓴 작은 예시 창(.gd-frame)으로 보여준다.
+   사용자가 준 목차(1.메인화면/2.배울 것 정하기/3.대화 과정/4.성찰하기, 가나다라 하위
+   항목)를 그대로 13단계로 옮겼다. */
+const TOUR_STEPS = [
+  { sec:'', t:'내 공부방에 온 걸 환영해요', b:'여기서 AI와 함께 공부하고, 내가 어떻게 공부했는지 돌아봐요. 화면을 하나씩 직접 짚어가며 보여줄게요.' },
+  { sec:'1-가', t:'공부 내역 보기', screen:'home', el:()=>{ const s = document.getElementById('sess-list'); return s && s.closest('.widget'); },
+    b:'지난 공부 기록이에요. 눌러서 그날 나눈 이야기와 점수를 다시 볼 수 있어요.' },
+  { sec:'1-나', t:'나의 성장 보기', screen:'home', el:()=>document.querySelector('.widget.growth'),
+    b:'공부 방법·공부 전후·질문 실력·스스로 점검, 네 가지 탭으로 내가 쌓아온 기록을 그래프로 봐요.' },
+  { sec:'1-다', t:'디지털 배지 보기', screen:'home', el:()=>document.getElementById('home-badges'),
+    b:'끝까지 하기·도움 줄이기처럼 메타인지 행동을 하면 포인트가 쌓여 배지를 모을 수 있어요. 눌러서 어떻게 모으는지 봐요.' },
+  { sec:'2-가', t:'공부 방식 · 학교급 · 배울 것 정하기', screen:'start', el:()=>{ const m = document.getElementById('st-mode'); return m && m.closest('.card'); },
+    b:'수업시간모드(학교급별 시간 제한)와 자유모드 중 고르고, 학교급을 고르면 학년·과목이 그 학교급만 나와요. "오늘 공부하고 싶은 것"을 내 말로 적으면 맞는 내용을 찾아 줘요.' },
+  { sec:'2-나', t:'AI와 할 일 나누기', screen:'start', el:()=>document.getElementById('tb-details'),
+    b:'이 공부에서 AI가 맡을 일과 내가 할 일을 미리 정해요. 막대를 밀어서 비율을 바꿀 수 있어요.' },
+  { sec:'3-가', t:'아는 것 확인하기', mock:`<div class="gd-frame-body"><div class="msg ai"><div class="av">AI</div><div class="bubble">분모가 다른 분수를 더할 때, 먼저 뭘 해야 할까?</div></div>
+      <textarea class="textarea" rows="2" readonly placeholder="아는 만큼 적어보기">통분을 먼저 해야 할 것 같아요.</textarea></div>`,
+    b:'시험이 아니에요. 지금 아는 만큼 적어요. 몰라도 "모르겠어요"라고 쓰면 돼요.' },
+  { sec:'3-나', t:'스스로 점검하기', mock:`<div class="gd-frame-body"><div class="lv3-row"><span class="lv3-lab">이해 점검</span><span class="lv3-bar l1"><i style="width:58%"></i></span><b class="lv3-txt">해 보는 중이에요</b></div>
+      <div class="msg ai" style="margin-top:8px"><div class="av">AI</div><div class="bubble">헷갈리는 부분이 있다면 어디야?</div></div></div>`,
+    b:'헷갈리는 곳을 짚고, 어떤 방법으로 공부하는지, 전에 배운 것과 어떻게 이어지는지 스스로 짚어봐요.' },
+  { sec:'3-다', t:'공부 방법 고르기', mock:`<div class="gd-frame-body"><button type="button" class="strat-card is-selected" style="width:100%">
+      <div class="sc-top"><span class="sc-check">✓</span><span class="sc-name">🗂️ 표·그림으로 정리하기</span></div>
+      <div class="sc-desc">표나 마인드맵으로 짜임새 있게 정리해요</div>
+      <div class="sc-when">이럴 때 좋아요 · 여러 정보가 뒤섞여서 헷갈릴 때</div></button></div>`,
+    b:'5가지 방법 중 하나 이상 골라요. 오늘 내용에 잘 맞는 방법엔 안내 배지가 붙어요.' },
+  { sec:'3-라', t:'방법대로 해 보기', mock:`<div class="gd-frame-body"><div class="msg ai"><div class="av">AI</div><div class="bubble">분모가 다른 분수 두 개를 표에 정리해볼래?</div></div>
       <div class="msg me"><div class="av">나</div><div class="bubble">1/3이랑 1/4을 써볼게</div></div>
-      <div class="row" style="margin-top:8px"><button type="button" class="stuck">막혔어요</button><button type="button" class="msg-act">이 말 판단하기</button></div></div>` },
-  { t:'4. 돌아보기 · 혼자 풀어보기', b:'내가 한 말과 질문을 살펴보고 한 문장을 써요. 마지막엔 AI 없이 비슷한 문제를 풀어 공부 전과 비교해요.',
-    mock:`<div class="gd-frame-body"><div class="msg me"><div class="av">나</div><div class="bubble">1/3이랑 1/4을 써볼게</div></div>
+      <div class="row" style="margin-top:8px"><button type="button" class="stuck">막혔어요</button><button type="button" class="msg-act">이 말 판단하기</button></div></div>`,
+    b:'고른 방법으로 실제 과업을 해 봐요. 막히면 [막혔어요]로 도움을 고르고, AI 말은 [이 말 판단하기]로 내가 직접 판단해요.' },
+  { sec:'4-가', t:'돌아보기 — AI위임 성찰 · 프롬프트 성찰', mock:`<div class="gd-frame-body"><div class="msg me"><div class="av">나</div><div class="bubble">1/3이랑 1/4을 써볼게</div></div>
       <div class="tl-tags" style="max-width:220px;margin:6px 0 10px"><button type="button" class="on">🧠 내가 생각</button><button type="button">🤖 AI에게 맡김</button></div>
-      <textarea class="textarea" rows="2" readonly>통분할 때 분모를 맞추는 게 헷갈렸는데, 표로 써보니 알겠다.</textarea></div>` },
-  { t:'5. 내 공부방에서 성장 보기', b:'공부할 때마다 쓴 방법, 어려움을 푼 과정, AI 도움을 받은 정도가 쌓여요. 처음이면 [연습해 보기]로 먼저 해 봐도 좋아요(연습 기록은 성장 그래프에 안 들어가요).',
-    mock:`<div class="gd-frame-body"><div class="strat-row"><span class="emoji" aria-hidden="true">🗂️</span><span class="lab">표·그림으로 정리하기</span><span class="track" aria-hidden="true"><i style="width:80%"></i></span><span class="num">4</span></div>
-      <div class="strat-row"><span class="emoji" aria-hidden="true">🧐</span><span class="lab">따져서 살펴보기</span><span class="track" aria-hidden="true"><i style="width:40%"></i></span><span class="num">2</span></div></div>` }
+      <div class="field-label" style="margin-bottom:4px">내 질문 — 자세함</div><div class="understand-pick" style="flex-direction:row;max-width:220px"><button type="button" class="u-chip">1</button><button type="button" class="u-chip is-selected">2</button><button type="button" class="u-chip">3</button></div></div>`,
+    b:'내가 한 말마다 "내가 생각했는지·AI에게 맡겼는지" 표시하고(AI위임 성찰), 내가 쓴 질문의 자세함·이어짐·분명함도 스스로 매겨요(프롬프트 성찰).' },
+  { sec:'4-나', t:'혼자 풀어보기', mock:`<div class="gd-frame-body"><div class="msc-row"><span>공부 전</span><span class="bar"><i style="width:48%"></i></span><b>48점</b></div>
+      <div class="msc-row"><span>혼자 풀 때</span><span class="bar"><i style="width:80%"></i></span><b>80점</b></div></div>`,
+    b:'대화를 마친 뒤, AI 없이 비슷한 문제를 혼자 풀어봐요. 공부 전 점수와 나란히 비교해서 얼마나 늘었는지 봐요.' },
+  { sec:'4-다', t:'최종 성찰', mock:`<div class="gd-frame-body"><label class="field-label" for="gd-mock-journal">최종 성찰 — AI 없이 혼자 풀어본 결과를 보면서 적어요</label>
+      <textarea class="textarea" id="gd-mock-journal" rows="2" readonly>처음엔 통분이 헷갈렸는데, 표로 정리하면서 알게 됐어요.</textarea></div>`,
+    b:'AI 사용 이후 혼자 풀어본 결과를 보면서, 어려웠던 점과 새롭게 알게 된 점을 한 문장 이상 적어요. 이게 오늘 공부의 마지막 단계예요.' }
 ];
-let _guideIdx = 0;
+let _tourIdx = 0;
+let _tourResize = null;
 function guideFrameHTML(mock){
   if(!mock) return '';
   return `<div class="gd-frame"><div class="gd-frame-bar"><span class="gd-frame-dot"></span><span class="gd-frame-dot"></span><span class="gd-frame-dot"></span></div>${mock}</div>`;
 }
-function openGuide(i){
-  _guideIdx = Math.max(0, Math.min(GUIDE_CARDS.length-1, i||0));
-  const c = GUIDE_CARDS[_guideIdx];
-  const links = _guideIdx === GUIDE_CARDS.length-1 && (GUIDE_LINKS.video || GUIDE_LINKS.slides)
-    ? `<p>${GUIDE_LINKS.video ? `<a href="${esc(GUIDE_LINKS.video)}" target="_blank" rel="noopener">사용법 영상 보기</a> ` : ''}${GUIDE_LINKS.slides ? `<a href="${esc(GUIDE_LINKS.slides)}" target="_blank" rel="noopener">사용법 슬라이드 보기</a>` : ''}</p>` : '';
-  modalHTML(`${c.t} (${_guideIdx+1}/${GUIDE_CARDS.length})`, `<div class="stack" style="gap:10px">${guideFrameHTML(c.mock)}<p style="margin:0">${esc(c.b)}</p>${links}
-    <div class="row" style="justify-content:space-between"><button type="button" class="btn btn-sm btn-ghost" id="gd-skip">건너뛰기</button>
-    <span class="row" style="gap:8px">${_guideIdx>0?'<button type="button" class="btn btn-sm" id="gd-prev">← 이전</button>':''}${_guideIdx<GUIDE_CARDS.length-1?'<button type="button" class="btn btn-sm btn-primary" id="gd-next">다음 →</button>':'<button type="button" class="btn btn-sm btn-primary" id="gd-practice">연습해 보기</button>'}</span></div></div>`, { hideOk:true });
-  const close = ()=>document.getElementById('scrim').classList.remove('open');
-  const on = (id, fn)=>{ const el = document.getElementById(id); if(el) el.onclick = fn; };
-  on('gd-skip', close); on('gd-prev', ()=>openGuide(_guideIdx-1)); on('gd-next', ()=>openGuide(_guideIdx+1));
-  on('gd-practice', ()=>{ close(); startPractice(); });
+function closeTour(){
+  document.querySelectorAll('.tour-dim,.tour-hole,.tour-card').forEach(e=>e.remove());
+  if(_tourResize){ window.removeEventListener('resize', _tourResize); _tourResize = null; }
 }
+function renderTour(i){
+  closeTour();
+  _tourIdx = Math.max(0, Math.min(TOUR_STEPS.length-1, i||0));
+  const step = TOUR_STEPS[_tourIdx];
+  if(step.screen){
+    const active = document.querySelector('.screen.is-active');
+    if(!active || active.dataset.screen !== step.screen) show(step.screen);
+  }
+  const total = TOUR_STEPS.length;
+  document.body.insertAdjacentHTML('beforeend', '<div class="tour-dim"></div>');
+  const card = document.createElement('div'); card.className = 'tour-card' + (step.mock ? ' wide' : '');
+  card.innerHTML = `${step.sec?`<div class="tour-badge">${esc(step.sec)}</div>`:''}<h4>${esc(step.t)}</h4>${guideFrameHTML(step.mock)}<p>${esc(step.b)}</p>
+    <div class="row" style="justify-content:space-between">
+      <button type="button" class="btn btn-sm btn-ghost" id="tour-skip">건너뛰기</button>
+      <span class="row" style="gap:8px">${_tourIdx>0?'<button type="button" class="btn btn-sm" id="tour-prev">← 이전</button>':''}${_tourIdx<total-1?`<button type="button" class="btn btn-sm btn-primary" id="tour-next">다음 (${_tourIdx+1}/${total}) →</button>`:'<button type="button" class="btn btn-sm btn-primary" id="tour-practice">연습해 보기</button>'}</span>
+    </div>`;
+  document.body.appendChild(card);
+  const target = step.el ? step.el() : null;
+  if(target){
+    document.body.insertAdjacentHTML('beforeend', '<div class="tour-hole"></div>');
+    const hole = document.querySelector('.tour-hole');
+    const place = ()=>{
+      const r = target.getBoundingClientRect(), pad = 6;
+      hole.style.left = (r.left-pad)+'px'; hole.style.top = (r.top-pad)+'px';
+      hole.style.width = (r.width+pad*2)+'px'; hole.style.height = (r.height+pad*2)+'px';
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const cardH = card.offsetHeight || 180;
+      let top = r.bottom + pad + 12;
+      if(top + cardH > vh - 10) top = Math.max(10, r.top - pad - cardH - 12);
+      const left = Math.min(Math.max(10, r.left), vw - card.offsetWidth - 10);
+      card.style.top = top+'px'; card.style.left = left+'px';
+    };
+    place();
+    target.scrollIntoView({ block:'center', behavior:'smooth' });
+    setTimeout(place, 260); // 스크롤 끝난 뒤 위치 다시 맞춤
+    _tourResize = place;
+    window.addEventListener('resize', _tourResize);
+  } else {
+    card.classList.add('centered');
+  }
+  const on = (id, fn)=>{ const el = document.getElementById(id); if(el) el.onclick = fn; };
+  on('tour-skip', closeTour);
+  on('tour-prev', ()=>renderTour(_tourIdx-1));
+  on('tour-next', ()=>renderTour(_tourIdx+1));
+  on('tour-practice', ()=>{ closeTour(); startPractice(); });
+}
+function openGuide(i){ renderTour(i); }
 function guideKey(){ return 'guideSeen:' + (DB && DB.currentUser || ''); }
 function guideNeverKey(){ return 'guideNever:' + (DB && DB.currentUser || ''); }
 // 요청사항(19번째 피드백): "다음부터 묻지 않기"(영구)만 있었는데, 지금 당장은 보기 귀찮지만
