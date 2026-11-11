@@ -161,3 +161,22 @@ test('디지털 배지: 끝낸 공부 기록에서 10 단위 포인트를 세고
   assert.equal(down.find(x => x.id === 'solo').raw, 0);
   assert.ok(CS.computeBadges([]).every(x => !x.earned && x.cur === 0));
 });
+
+test('한글 산출물 다듬기: 자주 나는 오타를 고치고, 한국어 수업의 영어 섞임·끊긴 문장을 잡는다', () => {
+  assert.equal(CS.koClean('좋아요. 이 부분을 알요.'), '좋아요. 이 부분을 알아요.');
+  assert.equal(CS.koClean('잘 되요. 내일 할께요.'), '잘 돼요. 내일 할게요.');
+  assert.equal(CS.koClean('좋은 생각이에요요.'), '좋은 생각이에요.');
+  assert.equal(CS.koClean('다음 단계로 넘어가요. Let me know.'), '다음 단계로 넘어가요.');
+  assert.equal(CS.koClean('태풍(typhoon)은 여름에 와요.'), '태풍은 여름에 와요.');
+  assert.equal(CS.koClean('Good morning. 좋아요.', { allowEnglish: true }), 'Good morning. 좋아요.');
+  assert.ok(CS.looksBroken('태풍은 strong wind 때문에 피해가 커요.').reasons.includes('english-mix'));
+  assert.ok(!CS.looksBroken('10 cm 자로 재요. AI가 도와줘요.').broken);
+  assert.ok(CS.looksBroken('그래서 간판이 떨어질 수').reasons.includes('cut'));
+  assert.equal(CS.classifyOffScript('공부하기시러', []), 'refuse');
+  assert.equal(CS.classifyOffScript('노잼이야', []), 'refuse');
+});
+
+test('스스로 점검을 거부·장난 답만 했으면 0점이 아니라 "건너뜀"으로 본다', () => {
+  const v = CS.metaScoreView({ skipped: true, answers: { understand: '시러' }, scoreDetail: null });
+  assert.equal(v.ok, false); assert.equal(v.skipped, true); assert.equal(v.failed, false);
+});

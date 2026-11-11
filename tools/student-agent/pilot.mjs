@@ -84,7 +84,8 @@ async function runOne(pid, sid, idx) {
   };
   const click = async (sel, i) => { const l = page.locator(sel); if (!(await l.count())) return false; await l.nth(i || 0).click({ timeout: 5000 }).catch(() => {}); await note('click'); return true; };
   const fill = async (sel, text, i) => { const l = page.locator(sel); if (!(await l.count())) return false; await l.nth(i || 0).fill(text).catch(() => {}); await l.nth(i || 0).dispatchEvent('input').catch(() => {}); await note('type', text.length); return true; };
-  const closeModals = async () => { for (let k = 0; k < 8; k++) { if (!(await page.locator('#scrim.open').count())) return; if (await page.locator('#gd-skip').count()) await page.click('#gd-skip'); else if (await page.locator('#pc-next').count()) await page.click('#pc-next'); else await page.click('#modal-ok').catch(() => {}); await page.waitForTimeout(150); } };
+  const closeModals = async () => { for (let k = 0; k < 6 && await page.locator('#tour-skip').count(); k++) { await page.click('#tour-skip').catch(() => {}); await page.waitForTimeout(100); } // 둘러보기 투어는 건너뛴다
+    for (let k = 0; k < 8; k++) { if (!(await page.locator('#scrim.open').count())) return; if (await page.locator('#gd-skip').count()) await page.click('#gd-skip'); else if (await page.locator('#pc-next').count()) await page.click('#pc-next'); else await page.click('#modal-ok').catch(() => {}); await page.waitForTimeout(150); } };
   const say = k => { const pool = S.talk; if (pid === 'disengaged' && k % 3 === 1) return ['그냥 답 알려줘', '배고파 급식 뭐야', 'ㅋㅋ 몰라'][k % 3]; if (pid === 'lowgrade') return ['몰라', '이거 맞아?', pool[k % pool.length].slice(0, 12)][k % 3]; if (pid === 'struggling' && k % 2) return ['잘 모르겠어요', pool[3]][k % 2]; return pool[k % pool.length]; };
 
   // ---- 들어가기 ----
@@ -110,6 +111,9 @@ async function runOne(pid, sid, idx) {
     await page.waitForFunction(() => document.querySelector('.screen.is-active')?.dataset.screen === 'home', null, { timeout: WAIT }).catch(() => errors.push('home not reached'));
   }
   await closeModals();
+  // 첫 로그인 안내·둘러보기 투어는 연구 시나리오와 무관하므로 닫는다
+  await page.waitForTimeout(600);
+  await ev(() => { try { document.getElementById('scrim').classList.remove('open'); if (window._tourActive && typeof closeTour === 'function') closeTour(); document.querySelectorAll('.tour-dim,.tour-hole,.tour-card').forEach(x => x.remove()); } catch (e) {} });
   // ---- 시작 ----
   await page.click('#btn-new-session'); await page.waitForTimeout(200); await closeModals();
   await page.selectOption('#st-band', S.grade).catch(() => {});
@@ -210,6 +214,7 @@ async function runOne(pid, sid, idx) {
     else if (await page.locator(`.res-a[data-i="${i}"]`).count()) await fill(`.res-a[data-i="${i}"]`, '분모를 같게 맞춘 다음 더해요');
     else { const cells = page.locator(`.res-cell[data-i="${i}"]`); for (let c = 0; c < Math.min(2, await cells.count()); c++) await cells.nth(c).fill('통분'); const cm = page.locator(`.res-cmp[data-i="${i}"]`); for (let c = 0; c < await cm.count(); c++) await cm.nth(c).fill('분모를 같게 해요'); }
     if (await page.locator(`.res-e[data-i="${i}"]`).count()) await fill(`.res-e[data-i="${i}"]`, '크기를 같게 맞춰야 해서요');
+    { const rc = page.locator(`.res-conf[data-i="${i}"] [data-c]`); if (await rc.count()) { await rc.nth(rng() < 0.6 ? 0 : 1).click(); await note('click'); } }
   }
   await click('#res-submit'); await idle();
   await page.waitForFunction(() => !!session.residual.result, null, { timeout: WAIT }).catch(() => errors.push('no residual result'));

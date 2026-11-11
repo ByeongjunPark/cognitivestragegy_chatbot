@@ -23,8 +23,8 @@
     const m = meta || {};
     const d = m.scoreDetail || null;
     const I = m.indicators || null;
-    const failed = !!(m.gradeFailed || (!d && (m.answers || m.raw)));
-    if (!d) return { ok: false, failed, axes: [], avg: null, avgLevel: null };
+    const failed = !!(m.gradeFailed || (!d && !m.skipped && (m.answers || m.raw)));
+    if (!d) return { ok: false, failed, skipped: !!m.skipped, axes: [], avg: null, avgLevel: null };
     const axes = META_AXES.map(a => {
       const score = d[a.k] == null ? null : round(+d[a.k]);
       const ind = m.indLabels && m.indLabels[a.k] ? m.indLabels[a.k].map(x => ({ label: String(x.label), on: !!x.on }))

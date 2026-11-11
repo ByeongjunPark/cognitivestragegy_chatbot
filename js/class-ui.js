@@ -66,7 +66,7 @@ function focusRule(){ const f = focusText(); return f ? `오늘의 초점(학습
 function qualityIssues(text, opts){
   const o = opts||{}; const issues = [];
   const subj = session && session.ctx && session.ctx.subject;
-  if(CS.looksBroken(text, { allowEnglish: subj==='영어' }).broken) issues.push('broken');
+  if(CS.looksBroken(CS.koClean(text, { allowEnglish: subj==='영어' }), { allowEnglish: subj==='영어' }).broken) issues.push('broken'); // 고칠 수 있는 오타는 고친 뒤에 본다
   if(CS.hasBannedProbe(text)) issues.push('probe');
   if(CS.termViolations(text, subj).length) issues.push('term');
   if(!o.suffix && CS.countQuestions(text) > 1) issues.push('multi-q');
@@ -87,7 +87,7 @@ function retryWarning(issues){
 // LLM 문장 → 학생 화면 문장. 순서: 용어 교정 → 해요체 → 추궁형 완화 → (질문 1개·분량 상한) → 위젯 일치
 function finalizeAiText(text, o){
   const subj = session.ctx.subject;
-  let t = String(text||'').trim();
+  let t = CS.koClean(String(text||'').trim(), { allowEnglish: subj==='영어' }); // 오타 고치기·영어 문장 빼기
   const tv = CS.termViolations(t, subj); if(tv.length){ flag('term', t, { rules: tv.map(v=>v.id) }); t = CS.fixTerms(t, subj); }
   if(CS.toneProfile(t).banmal){ t = CS.toHaeyo(t); if(CS.toneProfile(t).banmal) flag('tone', t); }
   if(CS.hasBannedProbe(t)){ flag('probe', t); t = CS.softenProbes(t); }
@@ -277,7 +277,7 @@ function metaCardInner(meta){
   const v = CS.metaScoreView(meta);
   const head = `<div class="msc-title">스스로 점검 결과 <span class="hint" style="font-weight:500">(${meta.scoreVersion==='v3-task' ? '점검 활동에서 해 본 결과예요' : '내가 말한 내용을 살펴본 거예요 · 맞다·틀리다가 아니에요'})</span></div>`;
   const usual = session && session.meta.usualMethod ? `<div class="msc-note"><b>평소 공부법:</b> ${esc(session.meta.usualMethod)}</div>` : '';
-  const body = v.ok ? v.axes.map(levelBarHTML).join('') : `<p class="msc-note">이번엔 채점하지 못했어요. 내가 쓴 답은 그대로 남아 있고, 선생님이 볼 수 있어요.</p>`;
+  const body = v.ok ? v.axes.map(levelBarHTML).join('') : v.skipped ? `<p class="msc-note">이번엔 스스로 점검을 건너뛰었어요.</p>` : `<p class="msc-note">이번엔 채점하지 못했어요. 내가 쓴 답은 그대로 남아 있고, 선생님이 볼 수 있어요.</p>`;
   const fb = meta.feedback ? `<div class="msc-note">${esc(meta.feedback)}</div>` : '';
   const reported = session && (session.scoreReports||[]).length;
   const report = `<div class="msc-foot"><button type="button" class="head-link score-report-btn">${reported ? '알려 줘서 고마워요 ✓' : '이 결과가 이상하면 알려 주기'}</button></div>`;
@@ -635,7 +635,7 @@ document.addEventListener('click', e=>{
 /* ---------- 보조 출력(성찰 질문·설명·패턴 분석)도 같은 말투·추궁형·비문 방어선 (WP1-4·3-1) ---------- */
 function polishAux(raw){
   let t = stripMarkdown(String(raw||'')).trim();
-  t = CS.softenProbes(CS.toHaeyo(t));
+  t = CS.softenProbes(CS.toHaeyo(CS.koClean(t, { allowEnglish: !!(session && session.ctx && session.ctx.subject==='영어') })));
   if(CS.looksBroken(t).broken){ flag('broken', t); }
   return CS.hideCodes(t);
 }
@@ -646,4 +646,19 @@ document.addEventListener('input', e=>{
   const box = it.closest('.struct-box'); const t = box && session.turns.find(x=>x.id===box.dataset.tid);
   if(!t || !t.structured) return;
   t.structured.proof = Object.assign({}, t.structured.proof||{}, { [it.dataset.idx]: it.value });
+});
+
+/* ---------- 방법 카드가 떠 있을 때 방법 이름을 말·글로 고르기 ---------- */
+function strategyFromText(v){
+  const t = String(v||'');
+  const M = [['rehearsal',/떠올|안\s*보고|외우|암기/],['elaboration',/예시|예를|연결/],['organization',/표|그림|정리|마인드\s*맵|도식/],['critical',/따져|비판|근거|맞는지/],['monitoring',/아는지|점검|체크/]];
+  return M.filter(([,re])=>re.test(t)).map(([id])=>id);
+}
+/* ---------- 혼자 풀어보기: 문항마다 '맞을 것 같아요?' 고르기(움직이지 않은 막대를 50%로 계산하던 문제) ---------- */
+document.addEventListener('click', e=>{
+  const b = e.target.closest && e.target.closest('.res-conf [data-c]'); if(!b || !session || !session.residual) return;
+  const it = session.residual.items[+b.dataset.i]; if(!it) return;
+  it.c = +b.dataset.c;
+  b.parentElement.querySelectorAll('[data-c]').forEach(x=>x.classList.toggle('is-selected', x===b));
+  if(typeof syncResSubmit==='function') syncResSubmit();
 });

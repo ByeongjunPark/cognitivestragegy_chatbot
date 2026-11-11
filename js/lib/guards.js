@@ -122,11 +122,34 @@
     /[ㄱ-ㅎㅏ-ㅣ]{2,}/,                                  // 낱자 모음·자음 덩어리
     /[가-힣]\s*[{}<>|\\^~`]{1,}\s*[가-힣]/               // 문장 중간 이상 기호
   ];
+  /* ---------- 한글 산출물 다듬기(오타·영어 섞임) ----------
+     실제 모델 출력에서 자주 나온 오타를 고치고, 한국어 수업에서 영어 낱말이 섞이면 잡아낸다(영어 과목 제외). */
+  const ALLOW_EN = /^(AI|OK|PPT|TV|PDF|URL|OX|DNA|LED|USB|GPS|CCTV|SNS|ID|PC|CD|UN|EU|IMF|GDP|km|cm|mm|kg|mg|ml|kcal|kWh|pH)$/i;
+  function englishWords(text) {
+    return (String(text || '').match(/[A-Za-z]{3,}/g) || []).filter(w => !ALLOW_EN.test(w));
+  }
+  const TYPO_FIX = [
+    [/알요(?=[.!?\s]|$)/g, '알아요'], [/([가-힣])요요(?=[.!?\s]|$)/g, '$1요'], [/에요요/g, '에요'],
+    [/(^|[^가-힣])되요/g, '$1돼요'], [/안\s*되요/g, '안 돼요'], [/([할줄볼갈올])께요/g, '$1게요'], [/([할줄볼갈올])께(?=[.!?\s]|$)/g, '$1게'],
+    [/몇일/g, '며칠'], [/금새/g, '금세'], [/역활/g, '역할'], [/어떻해/g, '어떻게 해'], [/희안/g, '희한'], [/왠만/g, '웬만'],
+    [/(을를|를을)(?=[\s.,!?]|$)/g, '를'], [/(은는|는은)(?=[\s.,!?]|$)/g, '는']
+  ];
+  function fixTypos(text) { return TYPO_FIX.reduce((t, [re, to]) => t.replace(re, to), String(text || '')); }
+  // 한국어 산출물: 오타 고치기 + (영어 과목이 아니면) 괄호 속 영어·영어로만 된 문장 빼기
+  function koClean(text, opts) {
+    let t = fixTypos(text);
+    if (opts && opts.allowEnglish) return t;
+    t = t.replace(/\s*\((?=[^)]*[A-Za-z]{3,})[A-Za-z0-9 ,.'’\-/]+\)/g, '');
+    const ss = splitSentences(t);
+    if (ss.length > 1) t = ss.filter(x => /[가-힣0-9]/.test(x) || !/[A-Za-z]/.test(x)).join(' ');
+    return t.trim();
+  }
   function looksBroken(text, opts) {
     const t = String(text || '');
     const reasons = [];
     BROKEN_PATTERNS.forEach((re, i) => { if (re.test(t)) reasons.push('p' + i); });
-    if (!(opts && opts.allowEnglish) && /[가-힣]\s?[a-zA-Z]{3,}\s?[가-힣]/.test(t) && !/(AI|OK|PPT|TV)/.test(t)) reasons.push('english-mix');
+    if (!(opts && opts.allowEnglish) && englishWords(t).length) reasons.push('english-mix');
+    if (TYPO_FIX.some(([re]) => { re.lastIndex = 0; return re.test(t); })) reasons.push('typo');
     const trimmed = t.trim();
     if (trimmed && !/[.!?…요다죠까)"'”’\]]$/.test(trimmed)) reasons.push('cut');
     return { broken: reasons.length > 0, reasons };
@@ -158,7 +181,7 @@
     const c = t.replace(/\s/g, '');
     if (!c) return 'odd';
     if (/^(몰라|모르겠|모름|잘\s*모르|글쎄|모르겟|몰라요|모르겠어요)/.test(t) || /^(몰라|모르겠)/.test(c)) return 'dontknow';
-    if (/(싫어|안\s*할래|귀찮|하기\s*싫|그만|재미없|안\s*해)/.test(t)) return 'refuse';
+    if (/(싫어|시러|싫다|안\s*할래|귀찮|하기\s*싫|그만|재미\s*없|노잼|안\s*해|하기\s*시러|공부\s*(안|싫))/.test(t)) return 'refuse';
     if (/(ㅋㅋ|ㅎㅎ|ㅋ{2,}|장난|메롱|똥|방구)/.test(t)) return 'joke';
     if (/^[^가-힣a-zA-Z0-9]+$/.test(c) || (c.length <= 2 && !/^(네|응|ㅇㅇ|예|맞아|아니)$/.test(c))) return 'odd';
     const offWords = /(게임|유튜브|점심|급식|배고파|떡볶이|축구|아이돌|롤|마크|친구랑|놀고\s*싶)/;
@@ -283,7 +306,7 @@
     splitSentences, isQuestion, countQuestions, keepOneQuestion, capSentences, overCap,
     WIDGET_REF, needsWidget, neutralizeWidgetRef,
     sentenceTone, toneProfile, isMixedTone, toHaeyo, sentenceToHaeyo, dropBanmalPronouns,
-    BROKEN_PATTERNS, looksBroken,
+    BROKEN_PATTERNS, looksBroken, englishWords, fixTypos, koClean,
     BANNED_PROBES, SOFT_PROBE, hasBannedProbe, softenProbes, hasAck,
     classifyOffScript, OFFSCRIPT_POLICY,
     TERM_RULES, termViolations, fixTerms, termRuleText,

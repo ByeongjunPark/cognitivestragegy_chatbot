@@ -86,10 +86,13 @@ test('맞춤 표 틀: 자리표시 머리글·일본어 낱말을 걸러 내고,
   assert.equal(normalizeTablePayload({ headers: ['가', '나'], example: ['하나'] }).example, null);
 });
 
-test('정리 도구는 드롭다운 목록으로 열리고(.qa-menu), 정리 도구는 학습자가 버튼을 눌러야만 열린다(저절로 펼치지 않는다, 원리2)', () => {
+test('정리 도구는 드롭다운 목록으로 열리고(.qa-menu), 정리 도구는 버튼으로 열고, 저절로 펼치는 건 표·그림으로 정리하기를 고른 경우뿐이다(원리2)', () => {
   const html = fs.readFileSync(ROOT + '/index.html', 'utf8');
   assert.ok(html.includes('class="qa-menu"'));
-  assert.ok(!/requestStructured\([^)]*\{ auto:true \}\)/.test(html));
+  // 저절로 펼치는 건 학습자가 '표·그림으로 정리하기'를 직접 고른 경우뿐이다
+  const autos = [...html.matchAll(/requestStructured\([^)]*\{ auto:true \}\)/g)];
+  assert.equal(autos.length, 1);
+  assert.ok(/strat\.id==='organization'[\s\S]{0,300}auto:true/.test(html));
 });
 
 test('채팅 목록은 칩을 눌러 다시 그릴 때 스크롤을 맨 아래로 튕기지 않는다', () => {

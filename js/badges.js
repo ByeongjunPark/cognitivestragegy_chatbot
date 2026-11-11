@@ -40,7 +40,8 @@
   ];
 
   const ids = s => Array.isArray(s.strategies) ? s.strategies : (s.strategy ? [s.strategy] : []);
-  const typedMine = (s, autoRe) => (s.turns || []).filter(t => t.role === 'me' && (CS.srcOf ? CS.srcOf(t, autoRe) === 'typed' : t.src === 'typed'));
+  const JUNK = ['joke', 'refuse', 'odd', 'chitchat', 'dontknow'];
+  const typedMine = (s, autoRe) => (s.turns || []).filter(t => t.role === 'me' && (CS.srcOf ? CS.srcOf(t, autoRe) === 'typed' : t.src === 'typed') && !(autoRe && autoRe.test(String(t.text || '').trim())) && !(CS.classifyOffScript && JUNK.includes(CS.classifyOffScript(t.text, []))));
 
   // 공부 하나에서 배지별로 얻은 포인트(방법 수집가만 누적 고유 개수라 따로 센다)
   function pointsOf(s, autoRe) {
