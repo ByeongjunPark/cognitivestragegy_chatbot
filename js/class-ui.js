@@ -544,9 +544,14 @@ document.addEventListener('click', e=>{
 function paintModeToggle(){
   const box = $('#st-mode'); if(!box) return;
   const m = currentMode(); const locked = !!new URLSearchParams(location.search).get('mode');
+  // 요청사항(15번째 피드백): 분(分)을 학교급에 따라 다르게 보여준다(초 40·중 45·고 50분) —
+  // 학교급 선택란이 아직 안 만들어졌을 수도 있는 첫 호출을 대비해 기본값을 둔다.
+  const schoolEl = $('#st-school');
+  const school = (schoolEl && schoolEl.value) || '초등학교';
+  const min = CS.classMinutesFor(school);
   box.innerHTML = `<span class="field-label" style="margin:0">공부 방식</span>` + Object.entries(CS.MODE_CFG).map(([k,v])=>
     `<button type="button" class="chip mode-chip ${m===k?'is-selected':''}" data-mode="${k}" ${locked && m!==k ? 'disabled title="선생님이 정한 방식이에요"' : ''}>${esc(v.label)}</button>`).join('') +
-    `<span class="hint" style="margin:0">${m==='class40' ? '문제·점검을 줄여 40분 안에 끝내요' : '모든 단계를 자세히 해요(시간이 더 걸려요)'}</span>`;
+    `<span class="hint" style="margin:0">${m==='class40' ? `문제·점검을 줄여 ${min}분 안에 끝내요(학교급에 따라 달라요)` : '시간 제한 없이 모든 단계를 자세히 해요'}</span>`;
 }
 document.addEventListener('click', e=>{
   const b = e.target.closest && e.target.closest('.mode-chip'); if(!b || b.disabled) return;

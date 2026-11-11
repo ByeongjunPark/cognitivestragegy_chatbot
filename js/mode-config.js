@@ -9,7 +9,9 @@
 
   const MODE_CFG = Object.freeze({
     class40: Object.freeze({
-      label: '한 차시(40분)',
+      // 요청사항(15번째 피드백): 분(分)을 라벨에 못박지 않는다 — 학교급별로 40/45/50분이 다르고,
+      // 실제 시간은 classMinutesFor(학교급)가 정한다(아래 hint 문구에서 보여줌).
+      label: '수업시간모드',
       // 사전·사후는 같은 유형·같은 개수(원리13 평행 문항). 선다 2(기억·예시) + 서술 2(설명·적용).
       diagTags: Object.freeze(['기억', '예시', '설명', '적용']), // 사전·사후 쌍둥이 4문항(선다 2 + 서술 2): 2문항이면 한 문항이 점수의 절반이라 변화·자신감 정확도를 재기 어렵다
       metaOneScreen: true,          // 스스로 점검: 한 화면에 평소 공부법 + 이해·전략·연결 3행(구별 유지, 원리7)
@@ -21,7 +23,7 @@
       verify: Object.freeze({ 과학: true, 사회: false, 수학: false })
     }),
     full: Object.freeze({
-      label: '자세히(전체)',
+      label: '자유모드',
       diagTags: Object.freeze(['기억', '예시', '설명', '적용']),
       metaOneScreen: false,
       checkpoint: Object.freeze({ minGap: 1, maxPerSession: 99 }), // 기존 동작(당기면 바로 다음 턴)
@@ -51,6 +53,10 @@
     const b = capBand(grade);
     return b === 'lo' ? '초저' : b === 'mid' ? '초고' : '중고';
   }
+
+  // 요청사항(15번째 피드백): 학교급별 한 차시 시간(실제 수업 시간표 기준) — 수업시간모드에서만 쓴다.
+  const SCHOOL_CLASS_MIN = Object.freeze({ '초등학교': 40, '중학교': 45, '고등학교': 50 });
+  function classMinutesFor(school) { return SCHOOL_CLASS_MIN[school] || SCHOOL_CLASS_MIN['초등학교']; }
 
   function resolveMode(search, stored) {
     let q = null;
@@ -85,5 +91,5 @@
     return Math.max(1, Math.round(min));
   }
 
-  Object.assign(CS, { DEFAULT_MODE, MODE_CFG, CAP, capBand, uiBand, resolveMode, modeCfg, STEPS, remainingMinutes });
+  Object.assign(CS, { DEFAULT_MODE, MODE_CFG, CAP, capBand, uiBand, resolveMode, modeCfg, STEPS, remainingMinutes, SCHOOL_CLASS_MIN, classMinutesFor });
 })(typeof window !== 'undefined' ? window : globalThis);

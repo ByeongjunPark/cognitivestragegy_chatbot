@@ -52,6 +52,9 @@
   .brand small{display:block;font-weight:500;color:var(--muted);font-size:11.5px;letter-spacing:0}
   .top-right{display:flex;align-items:center;gap:12px}
   .who{font-size:12.5px;color:var(--ink-2);font-weight:700}
+  .class-timer{font-size:12.5px;font-weight:800;padding:3px 10px;border-radius:999px;background:#eef1f3;color:var(--ink-2);font-variant-numeric:tabular-nums}
+  .class-timer.low{background:var(--amber-wash);color:var(--amber-ink)}
+  .class-timer.over{background:#fee2e2;color:#b91c1c}
   .icon-btn{height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:6px;transition:.15s}
   .icon-btn:hover{background:var(--surface-2);color:var(--ink)}
   .icon-btn.is-selected{background:var(--warn-wash,#fef3e2);border-color:var(--warn,#f0a13a);color:#9a3412}
@@ -1203,6 +1206,7 @@
       <span>AI와 공부하고 되돌아보기<small>같이 공부해요 · 스스로 확인해요 · 어떻게 배웠는지 돌아봐요</small></span>
     </div>
     <div class="top-right">
+      <span class="class-timer" id="class-timer" hidden></span>
       <span class="who" id="who" hidden></span>
       <button class="icon-btn" id="btn-home" hidden>내 공부방</button>
       <button class="icon-btn" id="btn-logout" hidden>나가기</button>
@@ -1346,6 +1350,10 @@
     <div class="card stack">
       <div class="callout info" id="practice-banner" hidden><b>연습 모드</b> — 연습한 기록은 성장 그래프에 들어가지 않아요. 마음 편히 눌러 봐요.</div>
       <div class="mode-row" id="st-mode" role="group" aria-label="공부 방식"></div>
+      <div>
+        <label class="field-label" for="st-school">학교급</label>
+        <select class="select" id="st-school"></select>
+      </div>
       <div class="row-2">
         <div>
           <label class="field-label" for="st-band">학년</label>
@@ -2198,6 +2206,16 @@ function bandOf(grade){
   if(grade.indexOf('중학교')===0) return '중학교 1~3학년';
   return '고등학교 1학년';
 }
+// 요청사항(15번째 피드백): 시작 전에 학교급(초/중/고)을 먼저 고르면, 학년 선택지도 그
+// 학교급만 보이고(겹쳐서 헷갈리지 않게), 수업시간모드의 한 차시 시간도 학교급에 맞춰
+// 정해진다(초 40분·중 45분·고 50분 — 실제 수업 시간표를 따른다).
+const SCHOOLS = ['초등학교','중학교','고등학교'];
+const SCHOOL_GRADES = {
+  '초등학교': GRADES.filter(g=>g.indexOf('초등학교')===0),
+  '중학교': GRADES.filter(g=>g.indexOf('중학교')===0),
+  '고등학교': GRADES.filter(g=>g.indexOf('고등학교')===0)
+};
+function schoolOfGrade(grade){ return SCHOOLS.find(k=>SCHOOL_GRADES[k].includes(grade)) || '초등학교'; }
 
 const $  = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
@@ -2399,6 +2417,29 @@ function show(name){
   if (name === 'reflect') enterReflect();
   if (name === 'residual') enterResidual();
   if (['reflect','residual'].includes(name)) saveDraft();
+  syncClassTimer(name);
+}
+// 요청사항(15번째 피드백): 수업시간모드에서는 맨 위에 남은 시간이 흘러가는 게 보여야 한다
+// (자유모드나 세션이 없을 때는 숨긴다). 1초마다 다시 그리고, 화면을 떠나면 꼭 멈춘다
+// (안 멈추면 setInterval이 쌓여 여러 번 겹쳐 돈다).
+let _classTimerIv = null;
+function renderClassTimer(){
+  const el = $('#class-timer'); if(!el) return;
+  if(!session || !session.classDurationMin){ el.hidden = true; return; }
+  el.hidden = false;
+  const elapsed = Date.now() - new Date(session.startedAt).getTime();
+  const totalMs = session.classDurationMin*60000;
+  const remain = Math.max(0, totalMs - elapsed);
+  const mm = Math.floor(remain/60000), ss = Math.floor((remain%60000)/1000);
+  el.textContent = `⏱ ${mm}:${String(ss).padStart(2,'0')} 남음`;
+  el.classList.toggle('low', remain>0 && remain<=5*60000);
+  el.classList.toggle('over', remain<=0);
+}
+function syncClassTimer(name){
+  if(_classTimerIv){ clearInterval(_classTimerIv); _classTimerIv=null; }
+  const active = ['chat','reflect','residual'].includes(name) && session && session.classDurationMin;
+  if(active){ renderClassTimer(); _classTimerIv = setInterval(renderClassTimer, 1000); }
+  else { const el = $('#class-timer'); if(el) el.hidden = true; }
 }
 function modal(title, body){
   $('#modal-title').textContent = title; $('#modal-body').textContent = body;
@@ -3029,10 +3070,26 @@ function clearSampleSessions(){
 /* ============================================================
    세션 시작 (성취기준만)
    ============================================================ */
+// 요청사항(15번째 피드백): 학교급을 먼저 고르면 학년 선택지를 그 학교급만으로 좁힌다.
+// 과목·예시 문장도 학년이 바뀔 때와 똑같이 다시 그려야 한다(이전 학교급의 값이 남지 않게).
+function fillStartBandForSchool(){
+  const school = $('#st-school').value || '초등학교';
+  const b = $('#st-band'); const prev = b.value; b.innerHTML = '';
+  (SCHOOL_GRADES[school]||[]).forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; b.appendChild(o); });
+  b.value = (prev && SCHOOL_GRADES[school].includes(prev)) ? prev : (SCHOOL_GRADES[school][0]||'');
+  stPicks = [];
+  fillStartSubjects(); paintGoalHelpers(); paintModeToggle();
+}
 function renderStart(){
+  const sc = $('#st-school');
+  if(!sc.options.length){ SCHOOLS.forEach(s=>{ const o=document.createElement('option'); o.value=s; o.textContent=s; sc.appendChild(o); }); }
+  { // (사용성 10-05) 학교급·학년은 지난 공부에서 고른 값을 기억한다.
+    const a0 = account(); const last = a0 && a0.sessions.filter(x=>!x.isSample && x.ctx && x.ctx.grade).slice(-1)[0];
+    if(last && GRADES.includes(last.ctx.grade) && !sc.dataset.touched) sc.value = schoolOfGrade(last.ctx.grade);
+  }
   const b = $('#st-band');
   if(!b.options.length){
-    GRADES.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; b.appendChild(o); });
+    (SCHOOL_GRADES[sc.value||'초등학교']||GRADES).forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; b.appendChild(o); });
     b.value = '초등학교 5학년';
   }
   { // (사용성 10-05) 학년은 지난 공부에서 고른 값을 기억한다.
@@ -3232,6 +3289,9 @@ function startSession(){
     id:uid(), startedAt:new Date().toISOString(), endedAt:null,
     // (WP2-1) 수업 모드와 그 모드의 문항 유형 — 사전·사후가 같은 목록을 쓴다(원리13)
     mode, diagTags: mc.diagTags.slice(), appVersion:'v33-eval2',
+    // 요청사항(15번째 피드백): 수업시간모드만 학교급별 한 차시 시간을 재고, 맨 위 타이머로 보여준다
+    // (자유모드는 시간 제한이 없으니 null로 둬서 타이머 자체를 안 보이게 한다).
+    classDurationMin: mode==='class40' ? CS.classMinutesFor(schoolOfGrade(grade)) : null,
     // (WP0-3 소요시간, WP1-4 의심 발화 등 표시, WP3-6 도움 요청 기록) — 새 필드만 추가(불변조건 6)
     phaseTimes:null, flags:[], helpRequests:[], scoreReports:[], errorReports:[], skipped:{},
     isSample: !!window._practiceMode, practice: !!window._practiceMode,
@@ -6062,6 +6122,7 @@ function init(){
   // 학년의 예시를 계속 보여줘서, 그 예시를 누르면 지금 학년엔 없는 내용이라 "딱 맞는 내용
   // 찾기"가 항상 실패했다(다시 입력해도 같은 문제가 반복됨). 과목 바꿀 때처럼 학년을 바꿀 때도
   // 예시를 새로 그린다.
+  $('#st-school').addEventListener('change', e=>{ e.target.dataset.touched = '1'; fillStartBandForSchool(); });
   $('#st-band').addEventListener('change', ()=>{ stPicks=[]; fillStartSubjects(); paintGoalHelpers(); });
   $('#st-subject').addEventListener('change', ()=>{ stPicks=[]; fillStartStds(); paintGoalHelpers(); });
   $('#st-filter').addEventListener('input', fillStartStds);
