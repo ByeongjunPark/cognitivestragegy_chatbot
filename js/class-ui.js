@@ -289,7 +289,7 @@ function metaCardInner(meta){
   const head = `<div class="msc-title">스스로 점검 결과 <span class="hint" style="font-weight:500">(${meta.scoreVersion==='v3-task' ? '점검 활동에서 해 본 결과예요' : '내가 말한 내용을 살펴본 거예요 · 맞다·틀리다가 아니에요'})</span></div>`;
   const usual = session && session.meta.usualMethod ? `<div class="msc-note"><b>평소 공부법:</b> ${esc(session.meta.usualMethod)}</div>` : '';
   const body = v.ok ? v.axes.map(levelBarHTML).join('') : v.skipped ? `<p class="msc-note">이번엔 스스로 점검을 건너뛰었어요.</p>` : `<p class="msc-note">이번엔 채점하지 못했어요. 내가 쓴 답은 그대로 남아 있고, 선생님이 볼 수 있어요.</p>`;
-  const fb = (v.ok ? metaWhyHTML(meta) : '') + (meta.feedback ? `<div class="msc-note">${esc(meta.feedback)}</div>` : '');
+  const fb = (v.ok ? metaWhyHTML(meta) + scenWhyHTML(meta) : '') + (meta.feedback ? `<div class="msc-note">${esc(meta.feedback)}</div>` : '');
   const reported = session && (session.scoreReports||[]).length;
   const report = `<div class="msc-foot"><button type="button" class="head-link score-report-btn">${reported ? '알려 줘서 고마워요 ✓' : '이 결과가 이상하면 알려 주기'}</button></div>`;
   return head + usual + body + fb + report;
@@ -310,11 +310,11 @@ document.addEventListener('click', e=>{
 //  ③ 연결 짓기: 오늘 내용의 바탕이 되는 개념 고르기 + 같은 점 한 줄
 const META_USUAL = { title:'평소에 이런 내용은 어떻게 공부해요?', chips:['교과서를 여러 번 읽어요','문제를 많이 풀어요','중요한 걸 정리해요','외울 때까지 반복해요','설명을 들으며 이해해요'], ph:'다른 방법이면 직접 써요(선택)' };
 const STRAT_SCENARIOS = [
-  { id:'s1', text:'배운 낱말이나 공식을 시험 때까지 잊지 않고 싶어요', key:'rehearsal', short:'잊지 않고 싶을 때' },
-  { id:'s2', text:'새로 배운 내용이 잘 와닿지 않아요', key:'elaboration', short:'잘 와닿지 않을 때' },
-  { id:'s3', text:'배운 내용이 많아서 머릿속이 뒤죽박죽이에요', key:'organization', short:'뒤죽박죽일 때' },
-  { id:'s4', text:'책이나 AI가 한 말이 정말 맞는지 궁금해요', key:'critical', short:'맞는지 궁금할 때' },
-  { id:'s5', text:'내가 제대로 이해했는지 잘 모르겠어요', key:'monitoring', short:'이해했는지 모를 때' }
+  { id:'s1', text:'배운 낱말이나 공식을 시험 때까지 잊지 않고 싶어요', key:'rehearsal', short:'잊지 않고 싶을 때', why:'안 보고 스스로 떠올려 볼수록 기억이 오래 남아요.' },
+  { id:'s2', text:'새로 배운 내용이 잘 와닿지 않아요', key:'elaboration', short:'잘 와닿지 않을 때', why:'이미 아는 것이나 내 경험과 이어 보면 새 내용의 뜻이 와닿아요.' },
+  { id:'s3', text:'배운 내용이 많아서 머릿속이 뒤죽박죽이에요', key:'organization', short:'뒤죽박죽일 때', why:'표나 그림으로 나누어 정리하면 많은 내용의 짜임새가 한눈에 보여요.' },
+  { id:'s4', text:'책이나 AI가 한 말이 정말 맞는지 궁금해요', key:'critical', short:'맞는지 궁금할 때', why:'근거를 찾아 따져 보면 그 말이 맞는지 스스로 판단할 수 있어요.' },
+  { id:'s5', text:'내가 제대로 이해했는지 잘 모르겠어요', key:'monitoring', short:'이해했는지 모를 때', why:'아는 것과 모르는 것을 나눠 확인하면 어디를 더 공부할지 알 수 있어요.' }
 ];
 function pickScenarios(){ const a = STRAT_SCENARIOS.map(x=>x.id); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a.slice(0,2); }
 function stratChip(id){ const x = STRATS.find(y=>y.id===id); return x ? `${x.emoji} ${x.label}` : '-'; }
@@ -818,4 +818,20 @@ function metaWhyHTML(meta){
     : ['내가 쓴 답에 정해 둔 세 가지(예: 헷갈리는 곳·그 까닭·어떻게 확인할지)가 들어 있는지 봐요. 들어 있으면 ✓예요.'];
   return `<details class="why-score"><summary>🔎 결과는 이렇게 정했어요</summary><ul>${rules.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
     <p class="why-rule">✓가 <b>하나도 없으면</b> “아직 낯설어요”, <b>일부</b>면 “해 보는 중이에요”, <b>모두</b>면 “잘 짚었어요”예요. 막대 아래 ✓ 표시를 보면 무엇 때문에 그렇게 나왔는지 알 수 있어요.</p></details>`;
+}
+
+/* ---------- 방법 알기: 상황마다 왜 그 방법이 가장 알맞은지 ----------
+   이 문항의 '알맞은 방법'은 AI가 그때그때 정하는 게 아니라, 공부 방법 연구(Weinstein & Mayer의 인지전략 분류)에 맞춰 미리 정해 둔 것이다. */
+function scenWhyHTML(meta){
+  const task = (meta && meta.task) || (session && session.meta && session.meta.task);
+  if(!task || !Array.isArray(task.scen) || !task.scen.length) return '';
+  const S = id => STRATS.find(x=>x.id===id);
+  const anyWrong = task.scen.some(x=>x.pick!==x.key);
+  const rows = task.scen.map(x=>{ const sc = STRAT_SCENARIOS.find(y=>y.id===x.id) || {}; const right = S(x.key), mine = S(x.pick); const ok = x.pick===x.key;
+    return `<div class="sw-row ${ok?'ok':''}"><div class="sw-q">💭 ${esc(sc.text||x.short||'')}</div>
+      <div class="sw-a">내가 고른 방법: <b>${mine?mine.emoji+' '+esc(mine.label):'-'}</b> ${ok?'✓':''}</div>
+      ${ok ? '' : `<div class="sw-a">가장 알맞은 방법: <b>${right?right.emoji+' '+esc(right.label):'-'}</b></div>`}
+      <div class="sw-why">왜냐하면 ${esc(sc.why||'')}</div></div>`; }).join('');
+  return `<details class="why-score"${anyWrong?' open':''}><summary>🎒 방법 알기 — 왜 그 방법이 알맞을까요?</summary>${rows}
+    <p class="why-rule">다른 방법도 도움이 될 수 있어요. 다만 그 상황에서 가장 잘 맞는 방법을 공부 방법 연구에 맞춰 미리 정해 두었어요.</p></details>`;
 }
