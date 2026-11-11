@@ -1243,6 +1243,16 @@
   .item-sym{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:6px;padding:6px 8px;background:var(--surface-2);border-radius:10px}
   .item-sym-t{font-size:12px;font-weight:700;color:var(--muted);margin-right:4px}
   .item-sym .sym-btn{min-width:34px;min-height:34px;padding:2px 8px;border:1px solid var(--line-strong);border-radius:8px;background:#fff;font-size:14px}
+
+  details.why-score{margin-top:8px;font-size:12.5px;color:var(--ink-2);text-align:left}
+  details.why-score summary{cursor:pointer;font-weight:800;color:var(--accent-ink)}
+  .why-rule{margin:6px 0;line-height:1.55}
+  .why-rows{display:flex;flex-direction:column;gap:4px;margin:6px 0}
+  .why-row{display:grid;grid-template-columns:5.5em 3.5em 1fr;gap:2px 8px;align-items:baseline;background:var(--surface-2);border-radius:8px;padding:5px 9px}
+  .why-row b{color:var(--ink)}.why-row em{font-style:normal}
+  .why-row small{grid-column:1/-1;color:var(--muted);font-size:11.5px}
+  .why-sum{margin:4px 0 0}.why-sum b{color:var(--ink)}
+  details.why-score ul{margin:6px 0;padding-left:18px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -3932,7 +3942,7 @@ function renderStream(){
           box.insertAdjacentHTML('beforeend', `<div class="msg note"><div class="meta-score-card">
             <div class="msc-title">아는 것 확인 결과 (참고용 · 맞다·틀리다가 아니에요)</div>
             ${items.map((it,i)=>`<div class="msc-row"><span>${i+1}. ${esc(it.tag)}</span><span class="bar"><i style="width:${it.score||0}%"></i></span><b>${it.score!=null?it.score+'점':'-'}</b></div>`).join('')}
-            ${items.map((it,i)=> it.note ? `<div class="msc-note" style="font-size:12px">${i+1}. ${esc(it.note)}</div>` : '').join('')}
+            ${scoreWhyHTML(items, '아는 것 확인')}
             ${session.prior.diagFeedback ? `<div class="msc-note">${esc(session.prior.diagFeedback)}</div>` : ''}
             <div class="msc-note msc-foot">이 점수는 나중에 "혼자 풀어보기" 점수와 비교해서 얼마나 늘었는지 보는 데 쓰이고, 잠시 뒤 공부 방법을 고를 때도 참고가 돼요.</div>
           </div></div>`);
@@ -6085,7 +6095,7 @@ function renderResidualResult(){
   const calibTxt = br==null ? '확인 못 했어요' : br < 0.1 ? '잘 맞았어요' : br < 0.25 ? '조금 달랐어요' : '많이 달랐어요';
   const cards = [
     card('📝', '정답 점수', `<div class="ax-big">${preTxt} <span>→</span> ${postTxt}</div>
-      <div class="ax-pair"><small>공부 전</small>${bar(pre,'pre')}<small>혼자 풀 때</small>${bar(post)}</div>`,
+      <div class="ax-pair"><small>공부 전</small>${bar(pre,'pre')}<small>혼자 풀 때</small>${bar(post)}</div>${scoreWhyHTML(session.residual.items, '혼자 풀기')}${scoreWhyHTML(session.prior.items, '공부 전')}`,
       `${dTxt ? `<span class="delta ${deltaKind==='up'?'up':'flat'}">${dTxt}</span> ` : ''}${esc(itemLine)}`),
     card('🧩', '영역별 변화', areas.length ? areas.map(x=>`<div class="ax-area"><b>${x[0]}</b>${bar(x[1],'pre')}${bar(x[2])}<span>${x[1]??'-'} → ${x[2]??'-'}</span></div>`).join('') : '<p class="hint">측정 안 됐어요</p>', '같은 종류 문항끼리 비교해요'),
     card('📈', '이해도 흐름', `<div class="ax-flow"><span><small>공부 전</small><b>${preTxt}</b></span><i>→</i><span><small>해 보는 중</small><b>${cpTxt}</b></span><i>→</i><span><small>혼자 풀 때</small><b>${postTxt}</b></span></div>`, `이해도 체크 ${cpScores.length}번`),

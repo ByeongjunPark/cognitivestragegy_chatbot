@@ -289,7 +289,7 @@ function metaCardInner(meta){
   const head = `<div class="msc-title">스스로 점검 결과 <span class="hint" style="font-weight:500">(${meta.scoreVersion==='v3-task' ? '점검 활동에서 해 본 결과예요' : '내가 말한 내용을 살펴본 거예요 · 맞다·틀리다가 아니에요'})</span></div>`;
   const usual = session && session.meta.usualMethod ? `<div class="msc-note"><b>평소 공부법:</b> ${esc(session.meta.usualMethod)}</div>` : '';
   const body = v.ok ? v.axes.map(levelBarHTML).join('') : v.skipped ? `<p class="msc-note">이번엔 스스로 점검을 건너뛰었어요.</p>` : `<p class="msc-note">이번엔 채점하지 못했어요. 내가 쓴 답은 그대로 남아 있고, 선생님이 볼 수 있어요.</p>`;
-  const fb = meta.feedback ? `<div class="msc-note">${esc(meta.feedback)}</div>` : '';
+  const fb = (v.ok ? metaWhyHTML(meta) : '') + (meta.feedback ? `<div class="msc-note">${esc(meta.feedback)}</div>` : '');
   const reported = session && (session.scoreReports||[]).length;
   const report = `<div class="msc-foot"><button type="button" class="head-link score-report-btn">${reported ? '알려 줘서 고마워요 ✓' : '이 결과가 이상하면 알려 주기'}</button></div>`;
   return head + usual + body + fb + report;
@@ -794,4 +794,28 @@ function materialOnScreen(text){
   if(recent.some(x=>x.structured) && /(표|그림|도표|마인드맵|사슬)/.test(t)) return true;
   if(recent.some(x=>x.kind==='source-card') && /자료|사례/.test(t) && !/(표|그래프|도표|지문|그림|사진|지도)/.test(t)) return true;
   return false;
+}
+
+/* ---------- 점수가 어떻게 나왔는지 쉽게 알려 주기(사전 확인·혼자 풀기·스스로 점검) ---------- */
+function scoreLevelWord(it){
+  if(it.score==null) return '채점하지 못했어요';
+  if(it.type==='mcq') return it.score===100 ? '맞혔어요' : '다른 답을 골랐어요';
+  return it.score>=100 ? '핵심을 모두 썼어요' : it.score>=50 ? '핵심 일부를 썼어요' : '아직 핵심이 빠졌어요';
+}
+function scoreWhyHTML(items, label){
+  const list = items || [], v = list.filter(it=>it.score!=null);
+  if(!v.length) return '';
+  const total = Math.round(v.reduce((a,b)=>a+b.score,0)/v.length);
+  return `<details class="why-score"><summary>🔎 ${esc(label)} 점수는 이렇게 나왔어요</summary>
+    <p class="why-rule">고르는 문제는 <b>맞으면 100점</b>, 아니면 0점이에요. 쓰는 문제는 <b>핵심을 모두 쓰면 100점</b>, <b>일부만 쓰면 50점</b>, 아직이면 0점이에요. ${v.length}문제 점수의 <b>평균</b>이 내 점수예요.</p>
+    <div class="why-rows">${list.map((it,i)=>`<div class="why-row"><span>${i+1}번 ${it.type==='mcq'?'고르기':'쓰기'}</span><b>${it.score==null?'-':it.score+'점'}</b><em>${esc(scoreLevelWord(it))}</em>${it.note && !/^(맞혔어요|핵심|아직 핵심|다른 답)/.test(it.note) ? `<small>${esc(trim(it.note, 90))}</small>` : ''}</div>`).join('')}</div>
+    <p class="why-sum">(${v.map(it=>it.score).join(' + ')}) ÷ ${v.length} = <b>${total}점</b></p></details>`;
+}
+function metaWhyHTML(meta){
+  const v3 = meta && meta.scoreVersion==='v3-task';
+  const rules = v3
+    ? ['🔍 이해 점검: 문제마다 고른 “맞을 것 같아요 / 잘 모르겠어요”가 실제 결과와 맞으면 ✓예요.', '🎒 방법 알기: 상황에 가장 알맞은 공부 방법을 고르면 ✓예요.', '🔗 연결 짓기: 이어지는 개념을 바르게 고르면 ✓, 같은 점을 맞게 쓰면 ✓예요.']
+    : ['내가 쓴 답에 정해 둔 세 가지(예: 헷갈리는 곳·그 까닭·어떻게 확인할지)가 들어 있는지 봐요. 들어 있으면 ✓예요.'];
+  return `<details class="why-score"><summary>🔎 결과는 이렇게 정했어요</summary><ul>${rules.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>
+    <p class="why-rule">✓가 <b>하나도 없으면</b> “아직 낯설어요”, <b>일부</b>면 “해 보는 중이에요”, <b>모두</b>면 “잘 짚었어요”예요. 막대 아래 ✓ 표시를 보면 무엇 때문에 그렇게 나왔는지 알 수 있어요.</p></details>`;
 }
